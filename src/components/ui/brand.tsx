@@ -1,14 +1,18 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function Brand() {
   return (
     <Link className="brand" href="/" aria-label="DeepFlow home">
-      <span className="brand__mark" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </span>
-      <span>DeepFlow</span>
+      <Image
+        className="brand__image"
+        src="/deepflow-logo-512.png"
+        alt=""
+        aria-hidden="true"
+        width={512}
+        height={128}
+        priority
+      />
     </Link>
   );
 }

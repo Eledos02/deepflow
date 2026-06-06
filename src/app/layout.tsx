@@ -4,7 +4,7 @@ import { Instrument_Serif, Manrope } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { JsonLd } from "@/components/seo/json-ld";
-import { siteConfig } from "@/lib/site";
+import { absoluteUrl, siteConfig } from "@/lib/site";
 
 import "@/styles/globals.css";
 
@@ -30,8 +30,49 @@ export const metadata: Metadata = {
   description: siteConfig.description,
   applicationName: siteConfig.name,
   category: "productivity",
+  manifest: "/manifest.json",
+  openGraph: {
+    type: "website",
+    siteName: siteConfig.name,
+    title: siteConfig.title,
+    description: siteConfig.description,
+    url: siteConfig.url,
+    images: [
+      {
+        url: "/deepflow-og.png",
+        width: 1200,
+        height: 630,
+        alt: "DeepFlow - Focus better. Finish what matters.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.title,
+    description: siteConfig.description,
+    images: ["/deepflow-og.png"],
+  },
   icons: {
-    icon: "/icon.svg",
+    icon: [
+      {
+        url: "/favicon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
+      {
+        url: "/favicon-16x16.png",
+        sizes: "16x16",
+        type: "image/png",
+      },
+    ],
+    apple: [
+      {
+        url: "/apple-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+    shortcut: "/favicon-32x32.png",
   },
 };
 
@@ -57,6 +98,7 @@ export default function RootLayout({
             name: siteConfig.name,
             url: siteConfig.url,
             description: siteConfig.description,
+            logo: absoluteUrl("/deepflow-logo-512.png"),
           }}
         />
         <a className="skip-link" href="#main-content">

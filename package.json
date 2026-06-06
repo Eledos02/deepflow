@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "generate-icons": "node scripts/generate-icons.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -21,6 +22,7 @@
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.7",
+    "sharp": "^0.34.5",
     "typescript": "6.0.3",
     "vitest": "4.1.8"
   },

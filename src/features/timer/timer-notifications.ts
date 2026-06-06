@@ -23,7 +23,7 @@ export function showTimerCompletionNotification(
       body: intention?.trim()
         ? `Finished: ${intention.trim()}`
         : "Your DeepFlow session is complete.",
-      icon: "/icon.svg",
+      icon: "/deepflow-icon-192.png",
       tag: "deepflow-timer-complete",
     });
   } catch {

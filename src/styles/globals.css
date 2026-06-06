@@ -258,45 +258,13 @@ a:focus-visible {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 11px;
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  flex: 0 0 auto;
 }
 
-.brand__mark {
-  position: relative;
-  display: grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  overflow: hidden;
-  border-radius: 9px;
-  background: var(--ink);
-}
-
-.brand__mark span {
-  position: absolute;
-  width: 4px;
-  border-radius: 10px;
-  background: var(--lime);
-  transform: rotate(35deg);
-}
-
-.brand__mark span:nth-child(1) {
-  height: 9px;
-  left: 8px;
-  bottom: 6px;
-}
-
-.brand__mark span:nth-child(2) {
-  height: 16px;
-}
-
-.brand__mark span:nth-child(3) {
-  height: 10px;
-  top: 5px;
-  right: 7px;
+.brand__image {
+  width: auto;
+  height: 35px;
+  object-fit: contain;
 }
 
 .desktop-nav {
@@ -3043,12 +3011,8 @@ a:focus-visible {
   gap: 60px;
 }
 
-.site-footer .brand__mark {
-  background: var(--lime);
-}
-
-.site-footer .brand__mark span {
-  background: var(--ink);
+.site-footer .brand__image {
+  filter: brightness(0) invert(1);
 }
 
 .footer-brand p,

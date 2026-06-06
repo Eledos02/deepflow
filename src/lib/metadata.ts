@@ -99,9 +99,7 @@ export function createMetadata({
   const normalizedTitle = title.trim();
   const normalizedDescription = description.trim();
   const canonical = absoluteUrl(path);
-  const socialImage = absoluteUrl(
-    `/social-card?title=${encodeURIComponent(normalizedTitle)}`,
-  );
+  const socialImage = absoluteUrl("/deepflow-og.png");
 
   return {
     title: normalizedTitle,
