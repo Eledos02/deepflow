@@ -4,7 +4,7 @@ import robots from "../app/robots";
 import sitemap from "../app/sitemap";
 import { getTimerPath, timers } from "../config/timers";
 import { getIndexableRoutes } from "./seo-routes";
-import { absoluteUrl, siteConfig } from "./site";
+import { absoluteUrl } from "./site";
 
 describe("indexable route registry", () => {
   it("includes every configured timer route automatically", () => {
@@ -34,6 +34,9 @@ describe("SEO route handlers", () => {
 
     expect(entries).toHaveLength(expectedUrls.length);
     expect(entries.map((entry) => entry.url)).toEqual(expectedUrls);
+    expect(entries.every((entry) =>
+      entry.url.startsWith("https://deepflownow.com/"),
+    )).toBe(true);
   });
 
   it("allows public crawling and advertises the sitemap", () => {
@@ -43,8 +46,8 @@ describe("SEO route handlers", () => {
         allow: "/",
         disallow: ["/api/", "/app/"],
       },
-      sitemap: absoluteUrl("/sitemap.xml"),
-      host: siteConfig.url,
+      sitemap: "https://deepflownow.com/sitemap.xml",
+      host: "https://deepflownow.com",
     });
   });
 });

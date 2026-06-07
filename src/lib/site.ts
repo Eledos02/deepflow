@@ -1,5 +1,4 @@
-const configuredSiteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://deepflow.app";
+export const productionSiteUrl = "https://deepflownow.com";
 
 export function normalizeSiteUrl(value: string) {
   let url: URL;
@@ -7,18 +6,16 @@ export function normalizeSiteUrl(value: string) {
   try {
     url = new URL(value);
   } catch {
-    throw new Error(`NEXT_PUBLIC_SITE_URL must be an absolute URL: ${value}`);
+    throw new Error(`Site URL must be an absolute URL: ${value}`);
   }
 
   if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new Error(
-      `NEXT_PUBLIC_SITE_URL must use http or https: ${value}`,
-    );
+    throw new Error(`Site URL must use http or https: ${value}`);
   }
 
   if (url.username || url.password || url.search || url.hash) {
     throw new Error(
-      `NEXT_PUBLIC_SITE_URL cannot include credentials, query parameters, or a hash: ${value}`,
+      `Site URL cannot include credentials, query parameters, or a hash: ${value}`,
     );
   }
 
@@ -32,8 +29,8 @@ export const siteConfig = {
   description:
     "Calm focus timers, deep work sessions, Pomodoro, and distraction-free productivity.",
   socialImage: "/deepflow-og.png",
-  url: normalizeSiteUrl(configuredSiteUrl),
-  email: "hello@deepflow.app",
+  url: normalizeSiteUrl(productionSiteUrl),
+  email: "hello@deepflownow.com",
   navigation: [
     { label: "Product", href: "/#product" },
     { label: "Focus timer", href: "/tools/focus-timer" },

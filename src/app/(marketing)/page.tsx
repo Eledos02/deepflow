@@ -90,7 +90,7 @@ export default function HomePage() {
                 <span />
                 <span />
                 <span />
-                <p>deepflow.app/focus</p>
+                <p>deepflownow.com/focus</p>
               </div>
               <TimerExperience tool={focusTool} />
             </div>

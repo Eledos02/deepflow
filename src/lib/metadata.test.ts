@@ -9,7 +9,7 @@ import {
   validateMetadataInput,
   type MetadataInput,
 } from "./metadata";
-import { absoluteUrl, normalizeSiteUrl, siteConfig } from "./site";
+import { normalizeSiteUrl, siteConfig } from "./site";
 
 const pageMetadataInputs: MetadataInput[] = [
   {
@@ -89,7 +89,7 @@ describe("metadata validation", () => {
 
     expect(metadata).toMatchObject({
       alternates: {
-        canonical: absoluteUrl("/timer/25"),
+        canonical: "https://deepflownow.com/timer/25",
       },
       robots: {
         index: true,
@@ -97,14 +97,14 @@ describe("metadata validation", () => {
       },
       openGraph: {
         type: "website",
-        url: absoluteUrl("/timer/25"),
+        url: "https://deepflownow.com/timer/25",
         locale: "en_US",
         title: "DeepFlow — Focus better. Finish what matters.",
         description:
           "Calm focus timers, deep work sessions, Pomodoro, and distraction-free productivity.",
         images: [
           {
-            url: absoluteUrl("/deepflow-og.png"),
+            url: "https://deepflownow.com/deepflow-og.png",
             width: 1200,
             height: 630,
           },
@@ -114,7 +114,7 @@ describe("metadata validation", () => {
         card: "summary_large_image",
         title: siteConfig.title,
         description: siteConfig.description,
-        images: [absoluteUrl("/deepflow-og.png")],
+        images: ["https://deepflownow.com/deepflow-og.png"],
       },
     });
   });
@@ -128,7 +128,7 @@ describe("site URL validation", () => {
   });
 
   it("rejects unsupported or relative origins", () => {
-    expect(() => normalizeSiteUrl("deepflow.app")).toThrow();
-    expect(() => normalizeSiteUrl("ftp://deepflow.app")).toThrow();
+    expect(() => normalizeSiteUrl("deepflownow.com")).toThrow();
+    expect(() => normalizeSiteUrl("ftp://deepflownow.com")).toThrow();
   });
 });

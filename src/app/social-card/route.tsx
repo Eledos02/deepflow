@@ -93,7 +93,7 @@ export async function GET(request: Request) {
                 background: "#8eaa58",
               }}
             />
-            deepflow.app
+            deepflownow.com
           </div>
         </div>
       </div>
