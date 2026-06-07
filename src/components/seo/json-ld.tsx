@@ -1,8 +1,15 @@
+import {
+  assertValidStructuredData,
+  type StructuredData,
+} from "@/lib/structured-data";
+
 type JsonLdProps = {
-  data: Record<string, unknown> | Array<Record<string, unknown>>;
+  data: StructuredData;
 };
 
 export function JsonLd({ data }: JsonLdProps) {
+  assertValidStructuredData(data);
+
   return (
     <script
       type="application/ld+json"

@@ -5,7 +5,8 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { JsonLd } from "@/components/seo/json-ld";
-import { absoluteUrl, siteConfig } from "@/lib/site";
+import { siteConfig } from "@/lib/site";
+import { createGlobalStructuredData } from "@/lib/structured-data";
 
 import "@/styles/globals.css";
 
@@ -97,16 +98,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${instrumentSerif.variable}`}>
-        <JsonLd
-          data={{
-            "@context": "https://schema.org",
-            "@type": "Organization",
-            name: siteConfig.name,
-            url: siteConfig.url,
-            description: siteConfig.description,
-            logo: absoluteUrl("/deepflow-logo-512.png"),
-          }}
-        />
+        <JsonLd data={createGlobalStructuredData()} />
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>

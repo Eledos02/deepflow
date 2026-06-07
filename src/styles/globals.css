@@ -480,8 +480,8 @@ a:focus-visible {
   border: 1px solid rgba(23, 35, 30, 0.12);
   border-radius: 24px;
   background: rgba(255, 254, 249, 0.88);
-  box-shadow: var(--shadow);
-  transform: rotate(1deg);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.08);
+  transform: rotate(0.5deg);
 }
 
 .product-window__bar {
@@ -530,7 +530,7 @@ a:focus-visible {
 }
 
 .floating-note--top {
-  top: 56px;
+  top: 110px;
   right: -34px;
 }
 
@@ -551,8 +551,8 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 10px;
-  bottom: 50px;
-  left: -36px;
+  bottom: 80px;
+  left: -13px;
 }
 
 .floating-note--bottom .focus-dot {
@@ -560,7 +560,7 @@ a:focus-visible {
   height: 10px;
   border-radius: 50%;
   background: #9fca59;
-  box-shadow: 0 0 0 5px rgba(159, 202, 89, 0.15);
+  box-shadow: 0 0 80px rgba(170,200,120,.18);
 }
 
 .timer-panel {

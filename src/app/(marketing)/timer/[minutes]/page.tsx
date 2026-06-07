@@ -17,6 +17,12 @@ import { getTimerPageContent } from "@/content/timer-pages";
 import { timerTools } from "@/content/timer-tools";
 import { createMetadata } from "@/lib/metadata";
 import { absoluteUrl } from "@/lib/site";
+import {
+  createBreadcrumbSchema,
+  createFaqSchema,
+  createHowToSchema,
+  createSoftwareApplicationSchema,
+} from "@/lib/structured-data";
 
 type TimerPageProps = {
   params: Promise<{ minutes: string }>;
@@ -66,64 +72,23 @@ export default async function TimerPage({ params }: TimerPageProps) {
     <>
       <JsonLd
         data={[
-          {
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
+          createSoftwareApplicationSchema({
             name: `${content.title} by DeepFlow`,
             description: content.description,
-            applicationCategory: "ProductivityApplication",
-            operatingSystem: "Any",
             url: canonicalUrl,
-            offers: {
-              "@type": "Offer",
-              price: "0",
-              priceCurrency: "USD",
-            },
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: content.faqs.map((item) => ({
-              "@type": "Question",
-              name: item.question,
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: item.answer,
-              },
-            })),
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "HowTo",
+          }),
+          createFaqSchema(content.faqs, canonicalUrl),
+          createHowToSchema({
             name: `How to use a ${minutes} minute timer`,
             description: `A practical four-step method for using DeepFlow's ${minutes} minute countdown effectively.`,
             totalTime: `PT${minutes}M`,
-            step: content.howTo.map((item, index) => ({
-              "@type": "HowToStep",
-              position: index + 1,
-              name: item.title,
-              text: item.description,
-              url: `${canonicalUrl}#timer-how-to-title`,
-            })),
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: "DeepFlow",
-                item: absoluteUrl("/"),
-              },
-              {
-                "@type": "ListItem",
-                position: 2,
-                name: content.title,
-                item: canonicalUrl,
-              },
-            ],
-          },
+            pageUrl: canonicalUrl,
+            steps: content.howTo,
+          }),
+          createBreadcrumbSchema({
+            pageName: content.title,
+            pageUrl: canonicalUrl,
+          }),
         ]}
       />
 

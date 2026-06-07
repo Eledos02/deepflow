@@ -9,6 +9,7 @@ import { ArrowIcon } from "@/components/ui/icons";
 import { getGuide, guides } from "@/content/guides";
 import { createMetadata } from "@/lib/metadata";
 import { absoluteUrl } from "@/lib/site";
+import { createArticleSchema } from "@/lib/structured-data";
 
 type GuidePageProps = {
   params: Promise<{ slug: string }>;
@@ -37,25 +38,16 @@ export default async function GuidePage({ params }: GuidePageProps) {
   const { slug } = await params;
   const guide = getGuide(slug);
   if (!guide) notFound();
+  const canonicalUrl = absoluteUrl(`/guides/${guide.slug}`);
 
   return (
     <>
       <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "Article",
+        data={createArticleSchema({
           headline: guide.title,
           description: guide.description,
-          mainEntityOfPage: absoluteUrl(`/guides/${guide.slug}`),
-          author: {
-            "@type": "Organization",
-            name: "DeepFlow",
-          },
-          publisher: {
-            "@type": "Organization",
-            name: "DeepFlow",
-          },
-        }}
+          url: canonicalUrl,
+        })}
       />
       <article>
         <header className="guide-hero">

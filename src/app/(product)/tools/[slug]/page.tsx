@@ -11,6 +11,10 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { getTimerTool, timerTools } from "@/content/timer-tools";
 import { createMetadata } from "@/lib/metadata";
 import { absoluteUrl } from "@/lib/site";
+import {
+  createFaqSchema,
+  createSoftwareApplicationSchema,
+} from "@/lib/structured-data";
 
 type ToolPageProps = {
   params: Promise<{ slug: string }>;
@@ -39,37 +43,18 @@ export default async function ToolPage({ params }: ToolPageProps) {
   const { slug } = await params;
   const tool = getTimerTool(slug);
   if (!tool) notFound();
+  const canonicalUrl = absoluteUrl(`/tools/${tool.slug}`);
 
   return (
     <>
       <JsonLd
         data={[
-          {
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
+          createSoftwareApplicationSchema({
             name: `${tool.shortTitle} Timer by DeepFlow`,
-            applicationCategory: "ProductivityApplication",
-            operatingSystem: "Any",
-            url: absoluteUrl(`/tools/${tool.slug}`),
             description: tool.description,
-            offers: {
-              "@type": "Offer",
-              price: "0",
-              priceCurrency: "USD",
-            },
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: tool.faqs.map((item) => ({
-              "@type": "Question",
-              name: item.question,
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: item.answer,
-              },
-            })),
-          },
+            url: canonicalUrl,
+          }),
+          createFaqSchema(tool.faqs, canonicalUrl),
         ]}
       />
       <section className="tool-hero">
