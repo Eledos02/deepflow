@@ -24,6 +24,7 @@ import {
 import { useTimer } from "@/features/timer/use-timer";
 import { useTimerAnalytics } from "@/features/timer/use-timer-analytics";
 import { useTimerPreferences } from "@/features/timer/use-timer-preferences";
+import { trackTimerEvent } from "@/lib/analytics";
 import { formatCompactDuration, formatDuration } from "@/lib/format";
 
 type TimerExperienceProps = {
@@ -131,9 +132,14 @@ export function TimerExperience({
       (tool.kind === "pomodoro" &&
         completion.durationSeconds === 25 * 60);
     const taskName = completion.taskName?.trim();
+    const durationMinutes = Math.max(
+      1,
+      Math.round(completion.durationSeconds / 60),
+    );
 
     if (soundEnabled) playCompletionTone();
     showTimerCompletionNotification(completion.durationSeconds, taskName);
+    trackTimerEvent("timer_complete", durationMinutes);
     recordSession({
       id: completion.sessionId,
       completedAtMs: completion.completedAtMs,
@@ -145,7 +151,10 @@ export function TimerExperience({
       category: countsAsFocus ? inferFocusCategory(taskName) : undefined,
     });
 
-    if (countsAsFocus) setIntention("");
+    if (countsAsFocus) {
+      trackTimerEvent("focus_session_complete", durationMinutes);
+      setIntention("");
+    }
   }, [recordSession, setIntention, soundEnabled, tool.kind]);
 
   const timer = useTimer({
@@ -183,12 +192,21 @@ export function TimerExperience({
 
   const handlePrimaryAction = () => {
     if (isRunning) {
+      trackTimerEvent("timer_pause", activeMinutes);
       timer.pause();
       return;
     }
 
     void requestTimerNotificationPermission();
+    if (timer.status !== "paused") {
+      trackTimerEvent("timer_start", activeMinutes);
+    }
     timer.start(intention);
+  };
+
+  const handleReset = () => {
+    trackTimerEvent("timer_reset", activeMinutes);
+    timer.reset();
   };
 
   const ringStyle = {
@@ -304,7 +322,7 @@ export function TimerExperience({
         </button>
         <button
           className="timer-button timer-button--secondary"
-          onClick={timer.reset}
+          onClick={handleReset}
           type="button"
         >
           <ResetIcon />

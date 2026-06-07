@@ -99,7 +99,7 @@ export function createMetadata({
   const normalizedTitle = title.trim();
   const normalizedDescription = description.trim();
   const canonical = absoluteUrl(path);
-  const socialImage = absoluteUrl("/deepflow-og.png");
+  const socialImage = absoluteUrl(siteConfig.socialImage);
 
   return {
     title: normalizedTitle,
@@ -121,22 +121,22 @@ export function createMetadata({
       type: "website",
       siteName: siteConfig.name,
       locale: "en_US",
-      title: normalizedTitle,
-      description: normalizedDescription,
+      title: siteConfig.title,
+      description: siteConfig.description,
       url: canonical,
       images: [
         {
           url: socialImage,
           width: 1200,
           height: 630,
-          alt: `${normalizedTitle} | ${siteConfig.name}`,
+          alt: siteConfig.title,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: normalizedTitle,
-      description: normalizedDescription,
+      title: siteConfig.title,
+      description: siteConfig.description,
       images: [socialImage],
     },
   };

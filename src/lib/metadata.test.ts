@@ -9,7 +9,7 @@ import {
   validateMetadataInput,
   type MetadataInput,
 } from "./metadata";
-import { absoluteUrl, normalizeSiteUrl } from "./site";
+import { absoluteUrl, normalizeSiteUrl, siteConfig } from "./site";
 
 const pageMetadataInputs: MetadataInput[] = [
   {
@@ -99,8 +99,12 @@ describe("metadata validation", () => {
         type: "website",
         url: absoluteUrl("/timer/25"),
         locale: "en_US",
+        title: "DeepFlow — Focus better. Finish what matters.",
+        description:
+          "Calm focus timers, deep work sessions, Pomodoro, and distraction-free productivity.",
         images: [
           {
+            url: absoluteUrl("/deepflow-og.png"),
             width: 1200,
             height: 630,
           },
@@ -108,6 +112,9 @@ describe("metadata validation", () => {
       },
       twitter: {
         card: "summary_large_image",
+        title: siteConfig.title,
+        description: siteConfig.description,
+        images: [absoluteUrl("/deepflow-og.png")],
       },
     });
   });

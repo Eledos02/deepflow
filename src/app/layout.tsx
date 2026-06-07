@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Manrope } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -21,6 +22,8 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
+const googleAnalyticsId = process.env.NEXT_PUBLIC_GA_ID?.trim();
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
@@ -39,10 +42,10 @@ export const metadata: Metadata = {
     url: siteConfig.url,
     images: [
       {
-        url: "/deepflow-og.png",
+        url: siteConfig.socialImage,
         width: 1200,
         height: 630,
-        alt: "DeepFlow - Focus better. Finish what matters.",
+        alt: siteConfig.title,
       },
     ],
   },
@@ -50,7 +53,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteConfig.title,
     description: siteConfig.description,
-    images: ["/deepflow-og.png"],
+    images: [siteConfig.socialImage],
   },
   icons: {
     icon: [
@@ -108,6 +111,7 @@ export default function RootLayout({
         <main id="main-content">{children}</main>
         <SiteFooter />
       </body>
+      {googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}
     </html>
   );
 }
