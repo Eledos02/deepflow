@@ -1,6 +1,6 @@
 import { getTimerPath, timers } from "../config/timers";
 import { guides } from "../content/guides";
-import { timerTools } from "../content/timer-tools";
+import { getTimerToolPath, timerTools } from "../content/timer-tools";
 
 export type IndexableRoute = {
   path: string;
@@ -10,17 +10,20 @@ export type IndexableRoute = {
 
 const staticRoutes = [
   { path: "/", changeFrequency: "weekly", priority: 1 },
+  { path: "/pomodoro-timer", changeFrequency: "monthly", priority: 0.95 },
   { path: "/pricing", changeFrequency: "monthly", priority: 0.7 },
 ] satisfies IndexableRoute[];
 
 export function getIndexableRoutes(): IndexableRoute[] {
   return [
     ...staticRoutes,
-    ...timerTools.map((tool) => ({
-      path: `/tools/${tool.slug}`,
-      changeFrequency: "monthly" as const,
-      priority: 0.9,
-    })),
+    ...timerTools
+      .filter((tool) => tool.slug !== "pomodoro-timer")
+      .map((tool) => ({
+        path: getTimerToolPath(tool.slug),
+        changeFrequency: "monthly" as const,
+        priority: 0.9,
+      })),
     ...timers.map((minutes) => ({
       path: getTimerPath(minutes),
       changeFrequency: "monthly" as const,

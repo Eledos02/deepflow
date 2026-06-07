@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { getTimerPath, timers } from "../config/timers";
 import { guides } from "../content/guides";
+import { pomodoroPage } from "../content/pomodoro-page";
 import { getTimerPageContent } from "../content/timer-pages";
-import { timerTools } from "../content/timer-tools";
+import { getTimerToolPath, timerTools } from "../content/timer-tools";
 import { absoluteUrl, siteConfig } from "./site";
 import {
   createArticleSchema,
@@ -90,7 +91,7 @@ describe("timer structured data", () => {
   });
 
   it.each(timerTools)("validates the $slug tool schemas", (tool) => {
-    const pageUrl = absoluteUrl(`/tools/${tool.slug}`);
+    const pageUrl = absoluteUrl(getTimerToolPath(tool.slug));
     const data = [
       createSoftwareApplicationSchema({
         name: `${tool.shortTitle} Timer by DeepFlow`,
@@ -106,6 +107,25 @@ describe("timer structured data", () => {
       "FAQPage",
     ]);
     expect(data[1]["mainEntity"]).toHaveLength(tool.faqs.length);
+  });
+
+  it("validates the dedicated Pomodoro page schemas", () => {
+    const pageUrl = absoluteUrl("/pomodoro-timer");
+    const data = [
+      createSoftwareApplicationSchema({
+        name: "DeepFlow Pomodoro Timer",
+        description: pomodoroPage.description,
+        url: pageUrl,
+      }),
+      createFaqSchema([...pomodoroPage.faqs], pageUrl),
+    ];
+
+    expectValidStructuredData(data);
+    expect(data.map((document) => document["@type"])).toEqual([
+      "SoftwareApplication",
+      "FAQPage",
+    ]);
+    expect(data[1]["mainEntity"]).toHaveLength(pomodoroPage.faqs.length);
   });
 });
 

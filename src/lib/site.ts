@@ -34,7 +34,7 @@ export const siteConfig = {
   navigation: [
     { label: "Product", href: "/#product" },
     { label: "Focus timer", href: "/tools/focus-timer" },
-    { label: "Pomodoro", href: "/tools/pomodoro-timer" },
+    { label: "Pomodoro", href: "/pomodoro-timer" },
     { label: "Guides", href: "/guides/deep-work" },
   ],
 } as const;

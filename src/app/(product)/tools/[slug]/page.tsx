@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import Link from "next/link";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { BenefitGrid } from "@/components/marketing/benefit-grid";
 import { ConversionCard } from "@/components/marketing/conversion-card";
@@ -8,7 +9,12 @@ import { SessionHistoryCard } from "@/components/product/session-history-card";
 import { TimerExperience } from "@/components/product/timer-experience";
 import { FaqSection } from "@/components/seo/faq-section";
 import { JsonLd } from "@/components/seo/json-ld";
-import { getTimerTool, timerTools } from "@/content/timer-tools";
+import { ArrowIcon } from "@/components/ui/icons";
+import {
+  getTimerTool,
+  getTimerToolPath,
+  timerTools,
+} from "@/content/timer-tools";
 import { createMetadata } from "@/lib/metadata";
 import { absoluteUrl } from "@/lib/site";
 import {
@@ -28,11 +34,13 @@ export async function generateMetadata({
   params,
 }: ToolPageProps): Promise<Metadata> {
   const { slug } = await params;
+  if (slug === "pomodoro-timer") return {};
+
   const tool = getTimerTool(slug);
   if (!tool) return {};
 
   return createMetadata({
-    title: `${tool.shortTitle} Timer - Free Online Timer`,
+    title: tool.seoTitle ?? `${tool.shortTitle} Timer - Free Online Timer`,
     description: tool.description,
     path: `/tools/${tool.slug}`,
     keywords: tool.keywords,
@@ -41,6 +49,10 @@ export async function generateMetadata({
 
 export default async function ToolPage({ params }: ToolPageProps) {
   const { slug } = await params;
+  if (slug === "pomodoro-timer") {
+    permanentRedirect(getTimerToolPath(slug));
+  }
+
   const tool = getTimerTool(slug);
   if (!tool) notFound();
   const canonicalUrl = absoluteUrl(`/tools/${tool.slug}`);
@@ -116,6 +128,41 @@ export default async function ToolPage({ params }: ToolPageProps) {
           </div>
         </div>
       </section>
+
+      {tool.sections ? (
+        <section className="section section--roomy">
+          <div className="shell shell--article article-body">
+            {tool.sections.map((section) => (
+              <section key={section.title}>
+                <h2>{section.title}</h2>
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </section>
+            ))}
+            <div className="article-cta">
+              <span className="eyebrow eyebrow--light">Choose your rhythm</span>
+              <h2>Keep studying with the timer that fits.</h2>
+              <p>
+                Use a structured Pomodoro cycle or open a longer focus session
+                when the material needs more continuity.
+              </p>
+              <div className="hero__actions">
+                <Link className="button button--light" href="/pomodoro-timer">
+                  Open Pomodoro Timer
+                  <ArrowIcon />
+                </Link>
+                <Link
+                  className="button button--ghost button--light"
+                  href="/tools/focus-timer"
+                >
+                  Open Focus Timer
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="section">
         <div className="shell">

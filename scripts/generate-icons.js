@@ -238,6 +238,52 @@ async function createHorizontalLogo(iconMaster) {
     .toBuffer();
 }
 
+async function createFooterLogo(markBuffer) {
+  const width = 512;
+  const height = 128;
+  const iconSize = 104;
+  const mark = await createTintedMark(
+    markBuffer,
+    67,
+    45,
+    colors.ink,
+  );
+  const icon = Buffer.from(`
+    <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 ${iconSize} ${iconSize}">
+      <rect width="${iconSize}" height="${iconSize}" rx="23" fill="#ffffff" />
+    </svg>
+  `);
+  const wordmark = Buffer.from(`
+    <svg width="380" height="${height}" viewBox="0 0 380 ${height}">
+      <text
+        x="18"
+        y="83"
+        fill="#ffffff"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="61"
+        font-weight="750"
+        letter-spacing="-2.5"
+      >${escapeXml("DeepFlow")}</text>
+    </svg>
+  `);
+
+  return sharp({
+    create: {
+      width,
+      height,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
+    .composite([
+      { input: icon, left: 4, top: 12 },
+      { input: mark, left: 22, top: 42 },
+      { input: wordmark, left: 122, top: 0 },
+    ])
+    .png()
+    .toBuffer();
+}
+
 async function createOgImage(iconMaster) {
   const icon = await sharp(iconMaster).resize(154, 154).png().toBuffer();
   const text = Buffer.from(`
@@ -310,12 +356,16 @@ async function main() {
   const sourceMark = await buildSourceMark();
   const iconMaster = await createIconMaster(sourceMark.buffer);
   const horizontalLogo = await createHorizontalLogo(iconMaster);
+  const footerLogo = await createFooterLogo(sourceMark.buffer);
   const ogImage = await createOgImage(iconMaster);
 
   await Promise.all([
     sharp(horizontalLogo)
       .png({ compressionLevel: 9 })
       .toFile(path.join(publicDir, "deepflow-logo-512.png")),
+    sharp(footerLogo)
+      .png({ compressionLevel: 9 })
+      .toFile(path.join(publicDir, "deepflow-logo-white.png")),
     writePng(iconMaster, "deepflow-icon-512.png", 512),
     writePng(iconMaster, "deepflow-icon-192.png", 192),
     writePng(iconMaster, "apple-icon.png", 180),
@@ -326,6 +376,7 @@ async function main() {
 
   const outputs = [
     "deepflow-logo-512.png",
+    "deepflow-logo-white.png",
     "deepflow-icon-512.png",
     "deepflow-icon-192.png",
     "apple-icon.png",

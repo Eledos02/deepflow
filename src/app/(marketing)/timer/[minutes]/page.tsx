@@ -107,6 +107,7 @@ export default async function TimerPage({ params }: TimerPageProps) {
           <TimerExperience
             compactHeading={content.title}
             initialMinutes={minutes}
+            key={minutes}
             tool={countdownTool}
           />
         </div>

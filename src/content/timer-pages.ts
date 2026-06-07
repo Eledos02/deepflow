@@ -47,7 +47,7 @@ const sharedLinks = {
       "Plan repeatable concentration blocks and keep a local record of completed focus sessions.",
   },
   pomodoro: {
-    href: "/tools/pomodoro-timer",
+    href: "/pomodoro-timer",
     label: "Pomodoro Timer",
     description:
       "Alternate focused work with intentional breaks using a complete Pomodoro workflow.",

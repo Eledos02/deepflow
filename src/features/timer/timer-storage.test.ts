@@ -1,9 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   calculateTimerAnalytics,
+  readAudioPreferences,
+  writeAudioPreferences,
   type CompletedTimerSession,
 } from "./timer-storage";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+function stubLocalStorage(initial: Record<string, string> = {}) {
+  const values = new Map(Object.entries(initial));
+  const localStorage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  };
+
+  vi.stubGlobal("window", { localStorage });
+  return values;
+}
 
 function session(
   id: string,
@@ -75,5 +92,39 @@ describe("calculateTimerAnalytics", () => {
       focusSecondsToday: 0,
       currentStreak: 0,
     });
+  });
+});
+
+describe("audio preferences", () => {
+  it("persists one global preference record and clamps volume", () => {
+    const values = stubLocalStorage();
+
+    writeAudioPreferences({
+      version: 1,
+      alarmSoundId: "zen-gong",
+      backgroundSoundId: "rain-window",
+      volume: 1.4,
+    });
+
+    expect(values.size).toBe(1);
+    expect(readAudioPreferences()).toEqual({
+      version: 1,
+      alarmSoundId: "zen-gong",
+      backgroundSoundId: "rain-window",
+      volume: 1,
+    });
+  });
+
+  it("ignores malformed stored audio preferences", () => {
+    stubLocalStorage({
+      "deepflow:audio-preferences:v1": JSON.stringify({
+        version: 1,
+        alarmSoundId: "missing-alarm",
+        backgroundSoundId: "rain-window",
+        volume: 0.5,
+      }),
+    });
+
+    expect(readAudioPreferences()).toBeNull();
   });
 });

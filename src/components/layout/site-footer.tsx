@@ -7,7 +7,7 @@ const footerGroups = [
     title: "Tools",
     links: [
       { label: "Focus timer", href: "/tools/focus-timer" },
-      { label: "Pomodoro timer", href: "/tools/pomodoro-timer" },
+      { label: "Pomodoro timer", href: "/pomodoro-timer" },
       { label: "Countdown timer", href: "/tools/countdown-timer" },
       { label: "25 minute timer", href: "/timer/25" },
     ],
@@ -28,7 +28,7 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="shell site-footer__grid">
         <div className="footer-brand">
-          <Brand />
+          <Brand variant="inverse" />
           <p>Quiet tools for ambitious minds.</p>
         </div>
         {footerGroups.map((group) => (

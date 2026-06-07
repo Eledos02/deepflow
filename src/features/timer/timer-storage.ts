@@ -3,6 +3,7 @@ import type { TimerStatus } from "@/features/timer/use-timer";
 const TIMER_STATE_PREFIX = "deepflow:timer-state:v1";
 const TIMER_PREFERENCES_PREFIX = "deepflow:timer-preferences:v1";
 const COMPLETED_SESSIONS_KEY = "deepflow:completed-sessions:v1";
+const AUDIO_PREFERENCES_KEY = "deepflow:audio-preferences:v1";
 const MAX_COMPLETED_SESSIONS = 2_000;
 
 export const TIMER_ANALYTICS_UPDATED_EVENT = "deepflow:timer-analytics-updated";
@@ -22,6 +23,18 @@ export type TimerPreferences = {
   version: 1;
   soundEnabled: boolean;
   intention: string;
+};
+
+export type AudioPreferences = {
+  version: 1;
+  alarmSoundId: "soft-bell" | "zen-gong";
+  backgroundSoundId:
+    | "rain-window"
+    | "fireplace"
+    | "ocean-waves"
+    | "white-noise"
+    | null;
+  volume: number;
 };
 
 export type CompletedTimerSession = {
@@ -185,6 +198,64 @@ export function writeTimerPreferences(
     );
   } catch {
     // Preferences are non-critical and should never block the timer.
+  }
+}
+
+export function readAudioPreferences(): AudioPreferences | null {
+  if (!canUseStorage()) return null;
+
+  try {
+    const raw = window.localStorage.getItem(AUDIO_PREFERENCES_KEY);
+    if (!raw) return null;
+
+    const value: unknown = JSON.parse(raw);
+    if (!value || typeof value !== "object") return null;
+
+    const preferences = value as Partial<AudioPreferences>;
+    const validAlarm =
+      preferences.alarmSoundId === "soft-bell" ||
+      preferences.alarmSoundId === "zen-gong";
+    const validBackground =
+      preferences.backgroundSoundId === null ||
+      preferences.backgroundSoundId === "rain-window" ||
+      preferences.backgroundSoundId === "fireplace" ||
+      preferences.backgroundSoundId === "ocean-waves" ||
+      preferences.backgroundSoundId === "white-noise";
+
+    if (
+      preferences.version !== 1 ||
+      !validAlarm ||
+      !validBackground ||
+      typeof preferences.volume !== "number" ||
+      !Number.isFinite(preferences.volume)
+    ) {
+      return null;
+    }
+
+    return {
+      version: 1,
+      alarmSoundId:
+        preferences.alarmSoundId === "zen-gong"
+          ? "zen-gong"
+          : "soft-bell",
+      backgroundSoundId: preferences.backgroundSoundId ?? null,
+      volume: Math.min(1, Math.max(0, preferences.volume)),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function writeAudioPreferences(preferences: AudioPreferences) {
+  if (!canUseStorage()) return;
+
+  try {
+    window.localStorage.setItem(
+      AUDIO_PREFERENCES_KEY,
+      JSON.stringify(preferences),
+    );
+  } catch {
+    // Audio preferences are optional and must never interrupt a timer.
   }
 }
 

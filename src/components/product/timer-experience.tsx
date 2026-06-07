@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useId, useMemo } from "react";
 
+import { AudioSettings } from "@/components/product/audio-settings";
 import {
   PauseIcon,
   PlayIcon,
   ResetIcon,
-  VolumeIcon,
-  VolumeOffIcon,
 } from "@/components/ui/icons";
+import { getTimerPath, isConfiguredTimer } from "@/config/timers";
 import type { TimerTool } from "@/content/timer-tools";
 import {
   getLocalDateKey,
@@ -24,6 +25,7 @@ import {
 import { useTimer } from "@/features/timer/use-timer";
 import { useTimerAnalytics } from "@/features/timer/use-timer-analytics";
 import { useTimerPreferences } from "@/features/timer/use-timer-preferences";
+import { useAudioPreferences } from "@/features/timer/use-audio-preferences";
 import { trackTimerEvent } from "@/lib/analytics";
 import { formatCompactDuration, formatDuration } from "@/lib/format";
 
@@ -60,33 +62,6 @@ function getOptions(tool: TimerTool, initialMinutes?: number): TimerOption[] {
   }));
 }
 
-function playCompletionTone() {
-  const AudioContextClass =
-    window.AudioContext ??
-    (
-      window as typeof window & {
-        webkitAudioContext?: typeof AudioContext;
-      }
-    ).webkitAudioContext;
-
-  if (!AudioContextClass) return;
-
-  const context = new AudioContextClass();
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-
-  oscillator.type = "sine";
-  oscillator.frequency.setValueAtTime(523.25, context.currentTime);
-  gain.gain.setValueAtTime(0.0001, context.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.7);
-  oscillator.connect(gain);
-  gain.connect(context.destination);
-  oscillator.start();
-  oscillator.stop(context.currentTime + 0.72);
-  oscillator.addEventListener("ended", () => void context.close());
-}
-
 export function TimerExperience({
   tool,
   initialMinutes,
@@ -94,6 +69,7 @@ export function TimerExperience({
   showIntention = false,
   showUpgradePrompt = false,
 }: TimerExperienceProps) {
+  const router = useRouter();
   const options = useMemo(
     () => getOptions(tool, initialMinutes),
     [initialMinutes, tool],
@@ -107,12 +83,23 @@ export function TimerExperience({
         : `tool:${tool.slug}`,
     [initialMinutes, tool.slug],
   );
+  const { intention, setIntention } = useTimerPreferences(storageKey);
   const {
-    intention,
-    setIntention,
-    setSoundEnabled,
-    soundEnabled,
-  } = useTimerPreferences(storageKey);
+    alarmSoundId,
+    audioError,
+    backgroundSoundId,
+    pauseBackground,
+    playAlarm,
+    playBackground,
+    previewing,
+    selectAlarmSound,
+    selectBackgroundSound,
+    setVolume,
+    stopBackground,
+    stopPreview,
+    togglePreview,
+    volume,
+  } = useAudioPreferences();
   const {
     currentStreak,
     focusSecondsToday,
@@ -137,7 +124,9 @@ export function TimerExperience({
       Math.round(completion.durationSeconds / 60),
     );
 
-    if (soundEnabled) playCompletionTone();
+    stopPreview();
+    stopBackground();
+    void playAlarm();
     showTimerCompletionNotification(completion.durationSeconds, taskName);
     trackTimerEvent("timer_complete", durationMinutes);
     recordSession({
@@ -155,7 +144,14 @@ export function TimerExperience({
       trackTimerEvent("focus_session_complete", durationMinutes);
       setIntention("");
     }
-  }, [recordSession, setIntention, soundEnabled, tool.kind]);
+  }, [
+    playAlarm,
+    recordSession,
+    setIntention,
+    stopBackground,
+    stopPreview,
+    tool.kind,
+  ]);
 
   const timer = useTimer({
     initialSeconds: startingMinutes * 60,
@@ -176,23 +172,36 @@ export function TimerExperience({
   const startLabel = tool.kind === "countdown" ? "Start timer" : "Start focus";
 
   useEffect(() => {
-    if (!isRunning) {
-      document.title = compactHeading
-        ? `${compactHeading} | DeepFlow`
-        : `${tool.shortTitle} timer | DeepFlow`;
-      return;
-    }
+    if (!isRunning) return;
 
+    const pageTitle = document.title;
     document.title = `${formatDuration(timer.remainingSeconds)} - ${tool.shortTitle}`;
+
+    return () => {
+      document.title = pageTitle;
+    };
   }, [compactHeading, isRunning, timer.remainingSeconds, tool.shortTitle]);
 
   const selectDuration = (minutes: number) => {
+    if (
+      initialMinutes !== undefined &&
+      isConfiguredTimer(minutes)
+    ) {
+      if (minutes === initialMinutes) return;
+
+      stopPreview();
+      stopBackground();
+      router.push(getTimerPath(minutes), { scroll: false });
+      return;
+    }
+
     timer.configure(minutes * 60);
   };
 
   const handlePrimaryAction = () => {
     if (isRunning) {
       trackTimerEvent("timer_pause", activeMinutes);
+      pauseBackground();
       timer.pause();
       return;
     }
@@ -201,11 +210,14 @@ export function TimerExperience({
     if (timer.status !== "paused") {
       trackTimerEvent("timer_start", activeMinutes);
     }
+    stopPreview();
+    void playBackground();
     timer.start(intention);
   };
 
   const handleReset = () => {
     trackTimerEvent("timer_reset", activeMinutes);
+    stopBackground();
     timer.reset();
   };
 
@@ -229,19 +241,17 @@ export function TimerExperience({
               ? "Session in progress"
               : "Ready when you are"}
         </span>
-        <button
-          aria-pressed={soundEnabled}
-          className="sound-toggle"
-          onClick={() => setSoundEnabled((current) => !current)}
-          type="button"
-        >
-          {soundEnabled ? (
-            <VolumeIcon width={16} height={16} />
-          ) : (
-            <VolumeOffIcon width={16} height={16} />
-          )}
-          {soundEnabled ? "Alert on" : "Alert off"}
-        </button>
+        <AudioSettings
+          alarmSoundId={alarmSoundId}
+          audioError={audioError}
+          backgroundSoundId={backgroundSoundId}
+          onAlarmChange={selectAlarmSound}
+          onBackgroundChange={selectBackgroundSound}
+          onPreview={(kind) => void togglePreview(kind)}
+          onVolumeChange={setVolume}
+          previewing={previewing}
+          volume={volume}
+        />
       </div>
 
       <div className="timer-options" aria-label="Timer duration">

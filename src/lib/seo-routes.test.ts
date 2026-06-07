@@ -15,6 +15,13 @@ describe("indexable route registry", () => {
     }
   });
 
+  it("uses the dedicated Pomodoro route as the canonical indexable URL", () => {
+    const paths = getIndexableRoutes().map((route) => route.path);
+
+    expect(paths).toContain("/pomodoro-timer");
+    expect(paths).not.toContain("/tools/pomodoro-timer");
+  });
+
   it("does not emit duplicate or non-canonical paths", () => {
     const paths = getIndexableRoutes().map((route) => route.path);
 

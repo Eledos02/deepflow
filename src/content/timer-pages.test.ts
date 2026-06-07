@@ -7,6 +7,18 @@ import {
   getTimerPageContent,
 } from "./timer-pages";
 
+const seoTargetMinutes = [
+  15,
+  20,
+  25,
+  30,
+  45,
+  50,
+  60,
+  90,
+  120,
+] as const;
+
 function getEditorialBlocks(minutes: (typeof timers)[number]) {
   const content = getTimerPageContent(minutes);
 
@@ -46,6 +58,33 @@ describe("timer page content", () => {
         ).toBeUndefined();
 
         seen.set(normalized, minutes);
+      }
+    }
+  });
+
+  it("keeps target-page SEO fields unique by duration", () => {
+    const titles = new Set<string>();
+    const descriptions = new Set<string>();
+    const introductions = new Set<string>();
+    const faqQuestions = new Set<string>();
+    const faqAnswers = new Set<string>();
+
+    for (const minutes of seoTargetMinutes) {
+      const content = getTimerPageContent(minutes);
+
+      expect(titles.has(content.title)).toBe(false);
+      expect(descriptions.has(content.description)).toBe(false);
+      expect(introductions.has(content.intro.join(" "))).toBe(false);
+
+      titles.add(content.title);
+      descriptions.add(content.description);
+      introductions.add(content.intro.join(" "));
+
+      for (const faq of content.faqs) {
+        expect(faqQuestions.has(faq.question)).toBe(false);
+        expect(faqAnswers.has(faq.answer)).toBe(false);
+        faqQuestions.add(faq.question);
+        faqAnswers.add(faq.answer);
       }
     }
   });

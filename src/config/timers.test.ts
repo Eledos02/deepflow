@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getTimerPath,
   getRelatedTimerMinutes,
   parseLegacyTimerSlug,
   parseTimerMinutes,
 } from "./timers";
+
+describe("getTimerPath", () => {
+  it.each([5, 10, 15, 20, 25, 30, 45, 50, 60, 90, 120])(
+    "maps %i minutes to its canonical duration route",
+    (minutes) => {
+      expect(getTimerPath(minutes)).toBe(`/timer/${minutes}`);
+    },
+  );
+});
 
 describe("parseTimerMinutes", () => {
   it("accepts configured numeric timer routes", () => {

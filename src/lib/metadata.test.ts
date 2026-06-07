@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { timers } from "../config/timers";
 import { guides } from "../content/guides";
+import { pomodoroPage } from "../content/pomodoro-page";
 import { getTimerPageContent } from "../content/timer-pages";
-import { timerTools } from "../content/timer-tools";
+import { getTimerToolPath, timerTools } from "../content/timer-tools";
 import {
   createMetadata,
   validateMetadataInput,
@@ -26,12 +27,20 @@ const pageMetadataInputs: MetadataInput[] = [
     path: "/pricing",
     keywords: ["DeepFlow pricing", "focus app pricing"],
   },
-  ...timerTools.map((tool) => ({
-    title: `${tool.shortTitle} Timer - Free Online Timer`,
-    description: tool.description,
-    path: `/tools/${tool.slug}`,
-    keywords: tool.keywords,
-  })),
+  {
+    title: pomodoroPage.title,
+    description: pomodoroPage.description,
+    path: "/pomodoro-timer",
+    keywords: [...pomodoroPage.keywords],
+  },
+  ...timerTools
+    .filter((tool) => tool.slug !== "pomodoro-timer")
+    .map((tool) => ({
+      title: tool.seoTitle ?? `${tool.shortTitle} Timer - Free Online Timer`,
+      description: tool.description,
+      path: getTimerToolPath(tool.slug),
+      keywords: tool.keywords,
+    })),
   ...guides.map((guide) => ({
     title: guide.title,
     description: guide.description,

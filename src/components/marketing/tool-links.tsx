@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { ArrowIcon, TimerIcon } from "@/components/ui/icons";
-import { timerTools } from "@/content/timer-tools";
+import { getTimerToolPath, timerTools } from "@/content/timer-tools";
 
 type ToolLinksProps = {
   exclude?: string;
@@ -19,7 +19,11 @@ export function ToolLinks({ exclude }: ToolLinksProps) {
         </div>
         <div className="tool-link-grid">
           {tools.map((tool) => (
-            <Link className="tool-link-card" href={`/tools/${tool.slug}`} key={tool.slug}>
+            <Link
+              className="tool-link-card"
+              href={getTimerToolPath(tool.slug)}
+              key={tool.slug}
+            >
               <span className="tool-link-card__icon">
                 <TimerIcon />
               </span>
