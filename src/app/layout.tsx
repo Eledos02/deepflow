@@ -34,6 +34,9 @@ export const metadata: Metadata = {
   applicationName: siteConfig.name,
   category: "productivity",
   manifest: "/manifest.json",
+  verification: {
+    google: "Vr7joc_qZNnluirVnu2R1nwGiN5iMsmvTDupNmu5YwE",
+  },
   openGraph: {
     type: "website",
     siteName: siteConfig.name,
