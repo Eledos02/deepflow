@@ -280,7 +280,7 @@ export function TimerExperience({
             id={intentionId}
             maxLength={80}
             onChange={(event) => setIntention(event.target.value)}
-            placeholder="e.g. Amazon supplier research"
+            placeholder="e.g. Write, study, plan, create..."
             type="text"
             value={intention}
           />

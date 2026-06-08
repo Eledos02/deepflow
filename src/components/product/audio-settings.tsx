@@ -81,7 +81,7 @@ export function AudioSettings({
         </div>
 
         <div className="audio-settings__field">
-          <label htmlFor={backgroundId}>Background sound</label>
+          <label htmlFor={backgroundId}>Ambient sound</label>
           <div className="audio-settings__control">
             <select
               id={backgroundId}
