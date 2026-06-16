@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { BenefitGrid } from "@/components/marketing/benefit-grid";
 import { ConversionCard } from "@/components/marketing/conversion-card";
+import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import { ProductPreview } from "@/components/marketing/product-preview";
 import { TimerExperience } from "@/components/product/timer-experience";
 import {
@@ -47,6 +48,7 @@ export default function HomePage() {
   return (
     <>
       <section className="hero">
+        <InteractiveBrainwaveBackground />
         <div className="hero__glow hero__glow--one" />
         <div className="hero__glow hero__glow--two" />
         <div className="shell hero__grid">

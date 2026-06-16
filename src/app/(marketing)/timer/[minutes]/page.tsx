@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
 import { RelatedTimers } from "@/components/marketing/related-timers";
+import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import { TimerLandingContent } from "@/components/marketing/timer-landing-content";
 import { TimerExperience } from "@/components/product/timer-experience";
 import { FaqSection } from "@/components/seo/faq-section";
@@ -93,6 +94,7 @@ export default async function TimerPage({ params }: TimerPageProps) {
       />
 
       <section className="duration-hero">
+        <InteractiveBrainwaveBackground />
         <div className="shell shell--narrow duration-hero__inner">
           <nav className="timer-breadcrumbs" aria-label="Breadcrumb">
             <Link href="/">DeepFlow</Link>
