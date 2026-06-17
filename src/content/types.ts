@@ -8,6 +8,12 @@ export type FaqItem = {
   answer: string;
 };
 
+export type SeoInternalLink = {
+  href: string;
+  label: string;
+  description: string;
+};
+
 export type SeoPage = {
   slug: string;
   eyebrow: string;
@@ -16,4 +22,5 @@ export type SeoPage = {
   keywords: string[];
   sections: ContentSection[];
   faqs: FaqItem[];
+  relatedLinks?: SeoInternalLink[];
 };

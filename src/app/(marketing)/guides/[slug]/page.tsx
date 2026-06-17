@@ -9,7 +9,11 @@ import { ArrowIcon } from "@/components/ui/icons";
 import { getGuide, guides } from "@/content/guides";
 import { createMetadata } from "@/lib/metadata";
 import { absoluteUrl } from "@/lib/site";
-import { createArticleSchema } from "@/lib/structured-data";
+import {
+  createArticleSchema,
+  createBreadcrumbSchema,
+  createFaqSchema,
+} from "@/lib/structured-data";
 
 type GuidePageProps = {
   params: Promise<{ slug: string }>;
@@ -43,11 +47,18 @@ export default async function GuidePage({ params }: GuidePageProps) {
   return (
     <>
       <JsonLd
-        data={createArticleSchema({
-          headline: guide.title,
-          description: guide.description,
-          url: canonicalUrl,
-        })}
+        data={[
+          createArticleSchema({
+            headline: guide.title,
+            description: guide.description,
+            url: canonicalUrl,
+          }),
+          createFaqSchema(guide.faqs, canonicalUrl),
+          createBreadcrumbSchema({
+            pageName: guide.title,
+            pageUrl: canonicalUrl,
+          }),
+        ]}
       />
       <article>
         <header className="guide-hero">
@@ -71,6 +82,30 @@ export default async function GuidePage({ params }: GuidePageProps) {
               ))}
             </section>
           ))}
+          {guide.relatedLinks ? (
+            <section>
+              <h2>Recommended DeepFlow tools</h2>
+              <p>
+                Use these timers and guides to turn the ideas above into a
+                repeatable focus routine.
+              </p>
+              <div className="timer-next-steps__grid">
+                {guide.relatedLinks.map((link) => (
+                  <Link
+                    className="timer-resource-card"
+                    href={link.href}
+                    key={link.href}
+                  >
+                    <span>
+                      <strong>{link.label}</strong>
+                      <small>{link.description}</small>
+                    </span>
+                    <ArrowIcon />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <div className="article-cta">
             <span className="eyebrow eyebrow--light">Put it into practice</span>
             <h2>Start one protected session.</h2>
