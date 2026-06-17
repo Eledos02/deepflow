@@ -77,6 +77,7 @@ export default async function TimerPage({ params }: TimerPageProps) {
             name: `${content.title} by DeepFlow`,
             description: content.description,
             url: canonicalUrl,
+            keywords: content.keywords,
           }),
           createFaqSchema(content.faqs, canonicalUrl),
           createHowToSchema({

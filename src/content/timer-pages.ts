@@ -360,28 +360,37 @@ const timerProfiles = {
   },
   20: {
     description:
-      "Set a free 20 minute timer for focused work, reading, creative practice, power naps, workouts, and efficient meeting activities.",
-    searchTerms: ["twenty minute timer", "20 minute focus timer", "20 minute countdown"],
-    intro: [
-      "Twenty minutes gives a task room to develop without feeling like a major claim on the calendar. It is a useful choice for reading a dense section, sketching concepts, practicing an instrument, completing a compact workout, or moving one project stage forward. The interval is long enough to settle after the first few minutes but short enough to maintain urgency.",
-      "For people who find the classic twenty-five-minute Pomodoro slightly too long, a twenty-minute work period can offer a gentler starting rhythm. It also fits naturally into an hour as two focused rounds with recovery and planning around them. The important choice is not the fashionable duration; it is selecting a repeatable boundary that supports the work.",
+      "Set a free 20 minute timer for quick study sessions, mobility exercises, inbox cleanup, focused reading, and practical daily resets.",
+    searchTerms: [
+      "twenty minute study timer",
+      "20 minute reading timer",
+      "20 minute cleanup timer",
     ],
-    useCases: ["creative practice", "focused reading", "compact workouts"],
+    intro: [
+      "Twenty minutes is a practical timer length for useful work that should not take over the day. It gives enough space to review a lecture section, clear an inbox batch, read a demanding article, complete a mobility routine, or reset a messy workspace without turning the activity into an open-ended project. The visible countdown keeps the commitment specific and makes the finish line easy to trust.",
+      "Use this interval when the task is important but compact. A twenty-minute session can create momentum before a longer focus block, or it can stand alone as a complete maintenance ritual. It is especially helpful for people who want more than a five-minute reset but do not need the full structure of a classic Pomodoro session.",
+    ],
+    useCases: [
+      "quick study sessions",
+      "focused reading",
+      "inbox cleanup",
+      "mobility exercises",
+    ],
     benefits: [
       {
-        title: "Reach useful concentration",
+        title: "Finish meaningful small work",
         description:
-          "Twenty minutes provides a modest cognitive runway without asking you to protect a large block of the day.",
+          "Twenty minutes is long enough for a real pass through a bounded task without inviting scope creep.",
       },
       {
-        title: "Create repeatable rounds",
+        title: "Reset attention between larger blocks",
         description:
-          "The interval pairs easily with short breaks, making it practical for study, practice, and energy-sensitive work.",
+          "Use the interval to read, move, tidy, or triage before returning to heavier concentration with less friction.",
       },
       {
-        title: "Keep meetings moving",
+        title: "Reduce avoidance on routine tasks",
         description:
-          "Timebox brainstorming, silent review, or decision preparation so one agenda item does not absorb the session.",
+          "A clear twenty-minute boundary makes inbox review, note cleanup, and small admin work easier to start.",
       },
     ],
     howTo: [
@@ -408,43 +417,50 @@ const timerProfiles = {
     ],
     sections: [
       {
-        title: "Build a twenty-minute focus cycle",
+        title: "What can you do in twenty minutes?",
         paragraphs: [
-          "A practical cycle uses twenty minutes of focused activity followed by three to five minutes away from the task. After two or three rounds, take a longer pause. This cadence can be easier to sustain than long sessions when you are learning to protect attention, working with variable energy, or alternating between physical and cognitive tasks.",
-          "Keep the definition of completion local to each round. Instead of expecting to finish the report, aim to verify the data table or draft the recommendation paragraph. Smaller checkpoints provide feedback and reduce the temptation to multitask. Over several rounds, those concrete outputs accumulate into substantial progress.",
+          "A twenty-minute timer is well matched to actions that have clear edges: review ten flashcards, read one article section, process the newest inbox messages, stretch hips and shoulders, or summarize notes from a meeting. The duration is long enough to settle into the task after the first minute, but short enough to discourage perfectionism.",
+          "For studying, use the block for active recall rather than passive rereading. Close the book, explain the concept from memory, solve a few problems, then use the final minutes to correct gaps. For reading, decide whether the goal is comprehension, extraction, or skim-and-sort before starting so the session has a measurable output.",
         ],
       },
       {
-        title: "Use the interval for learning and practice",
+        title: "Productivity use cases for a twenty-minute timer",
         paragraphs: [
-          "Twenty minutes works especially well for active practice because it leaves little space for passive drift. Test yourself on a topic, solve problems without looking at the answer, rehearse a difficult passage slowly, or explain a concept from memory. Deliberate activity produces better information about what you know than simply rereading until the timer ends.",
-          "If you use the interval for a power nap, allow a few minutes beyond the countdown for settling and waking. Keep the alarm audible, and avoid turning a short rest into sleep deprivation management. A timer can protect the boundary of a nap, but consistent nighttime sleep remains the more important foundation for attention.",
+          "This interval works well for daily maintenance. Set it for email cleanup, file organization, calendar review, or a quick desk reset. Because the timer ends soon, you can make faster decisions: delete, archive, reply, delegate, or save for a deeper session. The countdown prevents small operational work from quietly consuming the best attention of the day.",
+          "Twenty minutes is also a strong movement container. A mobility routine, short walk, or bodyweight circuit can restore energy without requiring a full workout window. When used between longer focus blocks, this kind of active reset often improves the next session more than staying seated with another stream of information.",
+        ],
+      },
+      {
+        title: "How to get the benefit",
+        paragraphs: [
+          "The benefit of a twenty-minute timer comes from choosing a task small enough to complete or visibly advance. Avoid vague goals such as catch up or work on reading. Use concrete targets like clear the first page of emails, annotate section two, or finish a ten-minute mobility flow and spend the rest breathing.",
+          "If the timer exposes a larger project, treat that as useful information. Capture the next step, then choose a longer timer only if the work deserves more protection. The twenty-minute page is most valuable when it helps you distinguish a quick task from something that needs deeper planning.",
         ],
       },
     ],
     faqs: [
       {
-        question: "What activities fit a 20 minute timer?",
+        question: "What can I do with a 20 minute timer?",
         answer:
-          "It is a strong fit for focused reading, drawing studies, instrument practice, bodyweight workouts, active recall, meal preparation, power naps, and structured meeting exercises.",
+          "Use it for quick study sessions, focused reading, inbox cleanup, mobility exercises, desk resets, short walks, note review, and other bounded tasks that need a clear endpoint.",
       },
       {
-        question: "Is twenty minutes a valid Pomodoro length?",
+        question: "Is 20 minutes long enough for studying?",
         answer:
-          "Yes. The original method uses twenty-five minutes, but a twenty-minute interval can preserve the same rhythm of single-task work and deliberate recovery.",
+          "Yes, if the study task is specific. It works best for active recall, flashcards, reviewing one concept, solving a small problem set, or summarizing a short reading.",
       },
       {
-        question: "How do I avoid wasting the first minutes?",
+        question: "Can I use this timer for inbox cleanup?",
         answer:
-          "Prepare the materials and define the exact stage before pressing Start. The timer should measure focused action, not searching for files or deciding what to do.",
+          "Yes. Set one rule before starting, such as archive obvious noise, reply to messages under two minutes, and flag anything that requires a separate focus block.",
       },
       {
-        question: "How long should the break be?",
+        question: "What break should follow a 20 minute session?",
         answer:
-          "Three to five minutes is often enough after one round. After several twenty-minute sessions, use a longer break that includes movement and distance from the screen.",
+          "Three to five minutes is usually enough after light work. If the session was a mobility routine or restorative reset, you may not need a separate break.",
       },
       {
-        question: "Will the countdown remain accurate in the background?",
+        question: "Does the 20 minute countdown keep working in another tab?",
         answer:
           "Yes. DeepFlow uses a fixed completion deadline, allowing the 20 minute timer to recover accurately when you return from another browser tab.",
       },
@@ -639,28 +655,37 @@ const timerProfiles = {
   },
   45: {
     description:
-      "Use a free 45 minute timer for sustained study, detailed writing, client sessions, strength training, and focused project milestones.",
-    searchTerms: ["45 minute focus timer", "forty five minute countdown", "45 minute study timer"],
-    intro: [
-      "Forty-five minutes creates a substantial working period while leaving space inside a standard hour for setup, recovery, and transition. It is a strong choice for sustained reading, detailed writing, a tutoring session, strength training, portfolio work, or a project milestone that needs more continuity than a short sprint can provide. The boundary encourages depth without asking attention to remain fixed indefinitely.",
-      "This duration rewards preparation. If the first ten minutes disappear into locating files and deciding what to do, a large share of the session is lost. Define the output, assemble the inputs, and clear the workspace before pressing Start. A prepared forty-five-minute interval can hold a complete arc from engagement through production to a useful stopping point.",
+      "Use a free 45 minute timer for deep work blocks, coding sessions, writing sessions, language learning, and sustained project progress.",
+    searchTerms: [
+      "45 minute deep work timer",
+      "45 minute coding timer",
+      "45 minute writing timer",
     ],
-    useCases: ["sustained study", "client sessions", "project milestones"],
+    intro: [
+      "Forty-five minutes is a serious working block for tasks that need continuity but still fit comfortably inside an hour. It is a strong choice for coding a specific behavior, drafting a substantial section, reviewing language material, practicing a complex skill, or moving through a deep work block before the next calendar commitment arrives.",
+      "This timer is most effective when setup is complete before the countdown begins. Open the repository, outline the section, gather the lesson material, or define the problem you are solving. Once the timer starts, the goal is not to sample several priorities; it is to stay with one demanding mode long enough for useful depth to appear.",
+    ],
+    useCases: [
+      "deep work blocks",
+      "coding sessions",
+      "writing sessions",
+      "language learning",
+    ],
     benefits: [
       {
-        title: "Develop real continuity",
+        title: "Protect complex context",
         description:
-          "The longer interval lets complex ideas connect before a notification or scheduled break resets your context.",
+          "Forty-five minutes gives code, writing, and study tasks enough time for context to become active and useful.",
       },
       {
-        title: "Preserve an hourly rhythm",
+        title: "Keep the hour usable",
         description:
-          "Fifteen minutes remain for notes, recovery, or transition before the next calendar hour begins.",
+          "The remaining quarter hour can hold notes, recovery, testing, or transition instead of forcing abrupt task switching.",
       },
       {
-        title: "Complete meaningful stages",
+        title: "Reach a real milestone",
         description:
-          "A prepared session can produce a full draft, analysis pass, lesson segment, or structured training block.",
+          "A prepared block can finish a bug investigation, draft a section, complete a lesson unit, or review a project stage.",
       },
     ],
     howTo: [
@@ -687,10 +712,24 @@ const timerProfiles = {
     ],
     sections: [
       {
-        title: "Why forty-five minutes supports deeper work",
+        title: "What can you do in forty-five minutes?",
         paragraphs: [
-          "Many demanding tasks need a cognitive runway. You must reconstruct the problem, hold relevant details in working memory, and test a direction before valuable output appears. Forty-five minutes gives that process room while maintaining a visible endpoint. It can be especially effective for people who feel interrupted by shorter intervals but lose energy during ninety-minute blocks.",
-          "Reduce mode switching inside the session. If you are drafting, leave fact checks as marked notes. If you are analyzing, postpone slide design. Grouping similar cognitive actions allows attention to become more efficient and produces a more coherent result. The countdown then protects not only time, but also the kind of thinking you intended to do.",
+          "A forty-five-minute timer can hold a meaningful coding session: reproduce the issue, inspect the relevant files, implement one focused fix, and leave notes for verification. It can also support a writing block where you draft one section without editing every sentence as it appears. The duration is long enough for a project to feel real without becoming an endurance test.",
+          "For language learning, use the block for one complete practice loop: review a small set of vocabulary, listen or read for context, speak or write actively, then mark weak points. For study, the same structure works with retrieval, correction, and summary. The value is the complete arc, not simply the number of minutes.",
+        ],
+      },
+      {
+        title: "Productivity use cases for a forty-five-minute timer",
+        paragraphs: [
+          "Use this timer when a shorter sprint would interrupt the work just as it becomes productive. Coding, writing, design critique, spreadsheet modeling, and serious reading all have setup costs. Forty-five minutes gives those costs a chance to pay off while still leaving a reliable stop before the next hour.",
+          "The interval also works well for collaborative or instructional sessions. A tutor can reserve it for focused practice, a coach can protect the substantive conversation, and a team can use it for silent review before discussion. Naming the expected output at the start prevents the block from becoming a long conversation with no decision.",
+        ],
+      },
+      {
+        title: "How to get the benefit",
+        paragraphs: [
+          "Reduce mode switching inside the session. If you are drafting, leave fact checks as marked notes. If you are analyzing, postpone slide design. Grouping similar cognitive actions allows attention to become more efficient and produces a more coherent result. The countdown protects not only time, but the type of thinking you intended to do.",
+          "Use the final minutes deliberately. Save the branch, write the restart note, summarize the lesson, or identify the next paragraph. A forty-five-minute block is long enough to create loose ends; closure is what turns the session into reusable progress.",
         ],
       },
       {
@@ -703,22 +742,22 @@ const timerProfiles = {
     ],
     faqs: [
       {
-        question: "What work fits a 45 minute timer?",
+        question: "What is a 45 minute timer best for?",
         answer:
-          "It suits sustained study, article drafting, design exploration, tutoring, coaching, therapy-adjacent personal reflection, strength training, and any prepared project milestone requiring continuity.",
+          "It is best for deep work blocks, coding sessions, writing sessions, language learning, design review, focused study, and project milestones that need more continuity than a short sprint.",
+      },
+      {
+        question: "Can I use 45 minutes for coding?",
+        answer:
+          "Yes. Choose one coding objective, such as fixing a bug, implementing one component state, reviewing one module, or writing tests for a specific behavior.",
       },
       {
         question: "Is forty-five minutes long enough for deep work?",
         answer:
-          "Yes. It offers meaningful concentration, particularly when the task and materials are prepared. More experienced practitioners may combine several sessions or move to sixty and ninety minutes.",
+          "Yes. It offers meaningful concentration when the task and materials are prepared, especially for people who find 25 minutes too short and 90 minutes too long.",
       },
       {
-        question: "Should I pause for messages?",
-        answer:
-          "Defer routine communication until the interval ends. Pause only when an interruption is genuinely time-sensitive and cannot be handled during the remaining fifteen minutes of the hour.",
-      },
-      {
-        question: "What break follows a 45 minute session?",
+        question: "What break follows a 45 minute work block?",
         answer:
           "Ten to fifteen minutes is a practical recovery window. Change posture, rest your eyes, and avoid using the entire break for another cognitively dense activity.",
       },
@@ -732,28 +771,37 @@ const timerProfiles = {
   },
   50: {
     description:
-      "Start a free 50 minute timer for extended Pomodoro cycles, deep study, professional focus blocks, and deliberate creative work.",
-    searchTerms: ["50 minute focus timer", "50 10 pomodoro timer", "fifty minute countdown"],
-    intro: [
-      "Fifty minutes is a popular extended focus interval for people who need more continuity than the classic Pomodoro provides. Paired with a ten-minute break, it creates a clean hourly cycle that works well for writing, software development, research, exam preparation, design, and other tasks where frequent alarms can disrupt useful immersion.",
-      "The longer block should not become fifty minutes of mixed activity. Choose one cognitive mode and one result before starting. Research a defined question, draft a specific section, debug one behavior, or solve one problem set. Narrowing the mode reduces the hidden cost of switching and makes the ten-minute recovery period feel earned and complete.",
+      "Start a free 50 minute timer for extended concentration, academic work, project planning, research, and 50/10 focus cycles.",
+    searchTerms: [
+      "50 minute concentration timer",
+      "50 10 study timer",
+      "50 minute project planning timer",
     ],
-    useCases: ["extended Pomodoros", "deep study", "professional focus"],
+    intro: [
+      "Fifty minutes is built for extended concentration when a task has enough complexity to justify a longer runway. It works well for academic reading, problem sets, research notes, project planning, strategic thinking, and other work where a twenty-five-minute alarm can arrive before you have fully engaged with the material.",
+      "This duration pairs naturally with a ten-minute break, creating a 50/10 rhythm that fills an hour without pretending every minute should be spent at peak effort. Use the session for one defined mode of work, then protect the break as recovery rather than letting the hour blur into messages and unfinished thoughts.",
+    ],
+    useCases: [
+      "extended concentration",
+      "academic work",
+      "project planning",
+      "research notes",
+    ],
     benefits: [
       {
-        title: "Stay with complex thinking",
+        title: "Hold academic context longer",
         description:
-          "Fifty uninterrupted minutes gives demanding work time to develop after context and working memory are fully engaged.",
+          "Longer study tasks often need sustained attention before patterns, arguments, and weak points become clear.",
       },
       {
-        title: "Use a clean 50/10 cycle",
+        title: "Plan one substantial deliverable",
         description:
-          "A ten-minute break completes the hour, creating a rhythm that is easy to plan across a morning or afternoon.",
+          "The interval can hold a planning map, research summary, outline, or full review pass rather than only setup.",
       },
       {
-        title: "Reduce alarm overhead",
+        title: "Make the break part of the system",
         description:
-          "Fewer session boundaries mean less time restarting tools, reconstructing ideas, and deciding what to do next.",
+          "A ten-minute recovery period helps preserve quality across multiple 50-minute blocks.",
       },
     ],
     howTo: [
@@ -780,9 +828,23 @@ const timerProfiles = {
     ],
     sections: [
       {
-        title: "The 50/10 focus method",
+        title: "What can you do in fifty minutes?",
         paragraphs: [
-          "A fifty-minute focus period followed by ten minutes of recovery fills one hour without pretending every minute should be productive. The work interval provides a longer runway for complex tasks, while the break creates a predictable moment for movement, messages, and basic needs. This pattern often suits experienced Pomodoro users who find twenty-five-minute alarms too frequent.",
+          "A fifty-minute timer can support a complete academic pass: read a journal section, annotate the argument, extract key claims, and write a short summary. It can also hold a project planning session where you clarify the goal, list constraints, sequence milestones, and identify the next concrete action. The duration is long enough to produce structure, not just intention.",
+          "For research, use the block to answer one question rather than collect unlimited sources. Decide what evidence you need, inspect the best materials, and write what changed in your understanding before the timer ends. Fifty minutes rewards synthesis; drifting across tabs for the entire session usually means the scope was too loose.",
+        ],
+      },
+      {
+        title: "Productivity use cases for a fifty-minute timer",
+        paragraphs: [
+          "The 50-minute interval is useful for extended concentration tasks: academic problem solving, literature review, strategic project planning, exam preparation, and serious documentation. These activities often need more than a quick sprint because the early minutes are spent reconstructing context and testing a direction.",
+          "A 50/10 cycle also works well across a morning. Two focused blocks can create a strong work segment with predictable recovery between them. Instead of squeezing breaks into whatever time remains, the schedule deliberately includes movement, water, and message checks after the main work has a defined boundary.",
+        ],
+      },
+      {
+        title: "How to get the benefit",
+        paragraphs: [
+          "Before pressing Start, write the question this block should answer. For academic work, that might be: can I solve these practice problems without notes? For project planning, it might be: what are the milestones, risks, and first deliverable? A clear question gives the long interval a spine.",
           "Plan the number of cycles rather than assuming you can sustain them all day. Two or three high-quality blocks may produce more valuable work than six increasingly distracted ones. Place the hardest outcome in the first session, use later rounds for related execution or review, and stop when accuracy or judgment begins to decline.",
         ],
       },
@@ -796,24 +858,24 @@ const timerProfiles = {
     ],
     faqs: [
       {
-        question: "What is the 50/10 productivity method?",
+        question: "What is a 50 minute timer best for?",
         answer:
-          "It alternates fifty minutes of focused work with a ten-minute break. The cycle preserves an hourly schedule while allowing longer immersion than a traditional twenty-five-minute Pomodoro.",
+          "It is best for extended concentration, academic work, project planning, research notes, strategic thinking, and focused tasks that need more continuity than a standard Pomodoro.",
       },
       {
-        question: "Who should use a 50 minute timer?",
+        question: "How does the 50/10 method work?",
         answer:
-          "It works well for people with some focus endurance and for tasks such as programming, writing, research, design, and advanced study that have meaningful setup costs.",
+          "Work for fifty minutes, then take a ten-minute break. The pattern fills one hour while giving demanding concentration a protected recovery period.",
       },
       {
-        question: "What if I finish the task early?",
+        question: "Can I use 50 minutes for academic study?",
         answer:
-          "Use the remaining time to review quality, document the result, or prepare the next related action. Avoid filling the interval with an unrelated inbox by default.",
+          "Yes. It works well for problem sets, textbook sections, research articles, exam review, and writing summaries when the goal is defined before the timer starts.",
       },
       {
-        question: "Is a ten-minute break required?",
+        question: "What if I finish before the timer ends?",
         answer:
-          "It is a strong default after concentrated work, though individual needs vary. The essential point is to recover before quality falls, not to obey a number mechanically.",
+          "Use the remaining time to review quality, document decisions, or prepare the next related action. Avoid switching to an unrelated inbox by default.",
       },
       {
         question: "Can the timer notify me when it ends?",
@@ -825,28 +887,37 @@ const timerProfiles = {
   },
   60: {
     description:
-      "Use a free 60 minute timer for full-hour focus blocks, workshops, study sessions, workouts, and substantial project progress.",
-    searchTerms: ["one hour timer", "60 minute countdown", "hour long focus timer"],
-    intro: [
-      "A sixty-minute timer creates a complete hour with a single visible boundary. It is useful for substantial writing, coursework, workshops, training, household projects, and professional work that needs a meaningful stretch of continuity. Because an hour can hold several stages, decide in advance whether the session is one uninterrupted mode or a planned sequence with internal checkpoints.",
-      "The strength of an hour is also its risk: without a specific outcome, the time can dissolve into setup, messages, and loosely related activity. Give the block a name and a finish condition. A clear target turns sixty available minutes into a focused appointment and makes it easier to judge when the timer has done its job.",
+      "Use a free 60 minute timer for one hour focus blocks, strategic work, meeting preparation, study sessions, and substantial planning.",
+    searchTerms: [
+      "one hour focus timer",
+      "60 minute meeting prep timer",
+      "one hour planning timer",
     ],
-    useCases: ["full-hour focus", "workshops", "substantial projects"],
+    intro: [
+      "A sixty-minute timer gives you a full hour for work that deserves a deliberate appointment. It is useful for strategic planning, meeting preparation, proposal review, focused study, budget work, and substantial decisions that need more space than a quick sprint. The hour feels familiar on a calendar, but it still needs a defined outcome to stay productive.",
+      "Use this timer when the work includes multiple related stages: gather context, think through options, produce a recommendation, and capture the next action. The countdown creates the outer boundary while your internal structure keeps the hour from dissolving into open tabs, loose notes, and reactive messages.",
+    ],
+    useCases: [
+      "one hour focus blocks",
+      "strategic work",
+      "meeting preparation",
+      "study sessions",
+    ],
     benefits: [
       {
-        title: "Protect a meaningful appointment",
+        title: "Reserve a serious work window",
         description:
-          "An hour is large enough to place on the calendar and defend as a serious commitment to one priority.",
+          "A full hour is large enough to defend on the calendar for work that affects decisions, plans, or outcomes.",
       },
       {
-        title: "Complete a full work arc",
+        title: "Support strategic thinking",
         description:
-          "The session can include orientation, sustained execution, review, and documentation without rushing every transition.",
+          "Sixty minutes can include context review, option comparison, recommendation drafting, and decision capture.",
       },
       {
-        title: "Coordinate groups clearly",
+        title: "Prepare before collaboration",
         description:
-          "Facilitators can divide workshops, classes, and collaborative exercises into visible segments with a trusted endpoint.",
+          "Use the block to enter meetings with clearer notes, questions, risks, and desired decisions.",
       },
     ],
     howTo: [
@@ -873,10 +944,24 @@ const timerProfiles = {
     ],
     sections: [
       {
-        title: "Structure one focused hour",
+        title: "What can you do in sixty minutes?",
+        paragraphs: [
+          "A one-hour timer can hold a complete strategic pass: review the current state, identify constraints, compare options, choose the most useful direction, and write the next step. It can also prepare you for an important meeting by turning scattered thoughts into an agenda, questions, decision points, and a concise briefing note.",
+          "For study, sixty minutes can contain a lesson-length session with retrieval, correction, and synthesis. For professional work, it can support budget review, roadmap planning, client preparation, or a careful quality pass before sending something important. The common factor is that the session ends with an artifact or decision, not just time spent near the task.",
+        ],
+      },
+      {
+        title: "Productivity use cases for a one-hour timer",
+        paragraphs: [
+          "Use this duration for strategic work that would be weakened by constant interruption. A one-hour block can protect a product review, sales call preparation, hiring scorecard pass, financial plan, or weekly operating review. It is long enough to notice patterns and make tradeoffs, which shorter timers may not allow.",
+          "Meeting preparation is one of the strongest uses for a 60-minute timer. Instead of entering the meeting with vague context, use the hour to read the relevant material, write the outcome you want, identify what must be decided, and prepare the questions that will prevent circular discussion.",
+        ],
+      },
+      {
+        title: "How to get the benefit",
         paragraphs: [
           "For a single-mode session, use the first five minutes to load context and confirm the target, roughly fifty minutes to execute, and the closing five minutes to review and capture. This light structure protects the productive middle without requiring constant clock watching. If you already know the task well, shorten the opening and give more time to production.",
-          "A multi-stage hour needs explicit proportions. A workshop might use ten minutes for framing, thirty minutes for independent work, fifteen minutes for discussion, and five minutes for decisions. A study session might alternate retrieval, correction, and summary. Write the sequence where it remains visible so transitions happen by design rather than impulse.",
+          "A multi-stage hour needs explicit proportions. A planning session might use ten minutes for context, twenty-five for options, fifteen for decisions, and ten for documentation. Write the sequence where it remains visible so transitions happen by design rather than impulse.",
         ],
       },
       {
@@ -889,22 +974,22 @@ const timerProfiles = {
     ],
     faqs: [
       {
-        question: "What is a 60 minute timer good for?",
+        question: "What is a 60 minute timer best for?",
         answer:
-          "It suits deep work, complete study lessons, workshops, training sessions, long-form drafting, home projects, and any activity that benefits from one protected hour.",
+          "It is best for one hour focus blocks, strategic work, meeting preparation, study sessions, planning reviews, and substantial tasks that benefit from a familiar calendar-sized boundary.",
       },
       {
-        question: "How do I stay focused for a full hour?",
+        question: "How should I use one hour for meeting preparation?",
         answer:
-          "Prepare the outcome and materials first, remove communication channels, keep a distraction list, and use internal checkpoints only when the task genuinely has multiple stages.",
+          "Read the context, define the desired outcome, write key questions, identify decisions needed, and prepare a short agenda or briefing note before the timer ends.",
       },
       {
-        question: "Is one hour too long for a Pomodoro?",
+        question: "Is one hour too long for focused work?",
         answer:
-          "It is longer than the classic method, but experienced users often adapt intervals to fifty or sixty minutes. Pair the longer focus period with a proportionate recovery break.",
+          "It depends on the task and your current energy. One hour works well for prepared strategic or study work, but it should be followed by a meaningful recovery break.",
       },
       {
-        question: "How long should I rest after an hour?",
+        question: "How long should I rest after a 60 minute focus block?",
         answer:
           "Ten to twenty minutes is a useful range after demanding concentration. Choose movement and lower stimulation, and extend the break when your accuracy or patience has declined.",
       },
@@ -1011,28 +1096,37 @@ const timerProfiles = {
   },
   120: {
     description:
-      "Use a free 120 minute timer for long creative blocks, mock exams, workshops, complex projects, and carefully planned two-hour sessions.",
-    searchTerms: ["two hour timer", "120 minute countdown", "2 hour focus timer"],
-    intro: [
-      "A 120 minute timer protects a full two-hour block for work with significant setup costs or a naturally long format. It can support a mock exam, extended workshop, studio session, research review, complex build, or a major household project. Two hours should be chosen deliberately: the task needs enough depth to justify the commitment, and the schedule needs room for preparation and recovery.",
-      "Unlike a shorter sprint, a two-hour session usually benefits from an internal plan. Divide the work into related phases, place a low-disruption check near the midpoint, and decide what evidence should exist at the end. The countdown supplies the outer boundary; your plan supplies the structure that prevents a long interval from becoming vague endurance.",
+      "Use a free 120 minute timer for ultra deep work, long study sessions, creative projects, research blocks, and two-hour planning.",
+    searchTerms: [
+      "two hour deep work timer",
+      "120 minute study timer",
+      "2 hour research timer",
     ],
-    useCases: ["mock exams", "studio sessions", "complex projects"],
+    intro: [
+      "A 120 minute timer is for ultra deep work: long study sessions, creative projects, research blocks, complex builds, or other work where setup costs are high and continuity matters. Two hours is not a casual default. It should be reserved for sessions with a clear outcome, a prepared environment, and enough recovery time afterward.",
+      "This timer works best when the two hours are divided into related phases. A research block might move from source review to synthesis to notes. A creative project might move from exploration to development to cleanup. The countdown supplies the boundary, but the internal plan keeps the session from becoming vague endurance.",
+    ],
+    useCases: [
+      "ultra deep work",
+      "long study sessions",
+      "creative projects",
+      "research blocks",
+    ],
     benefits: [
       {
-        title: "Protect high-setup work",
+        title: "Make heavy setup worthwhile",
         description:
-          "A long block makes preparation worthwhile for studio, laboratory, technical, and creative tasks with heavy context.",
+          "Two hours can justify opening complex tools, gathering sources, entering a studio flow, or holding a large system in mind.",
       },
       {
-        title: "Rehearse real constraints",
+        title: "Sustain deep creative momentum",
         description:
-          "Two hours can reproduce exam sections, workshops, interviews, and production environments more faithfully.",
+          "Creative and research work often needs uninterrupted development after the first useful direction appears.",
       },
       {
-        title: "Move a project materially",
+        title: "Finish with a substantial artifact",
         description:
-          "Related phases can progress inside one boundary without scattering the objective across several days.",
+          "A planned session can produce a synthesis memo, draft, study pass, prototype, or cleaned project milestone.",
       },
     ],
     howTo: [
@@ -1059,10 +1153,24 @@ const timerProfiles = {
     ],
     sections: [
       {
-        title: "Design a useful two-hour block",
+        title: "What can you do in 120 minutes?",
         paragraphs: [
-          "Begin by asking whether the task truly benefits from continuity. A mock exam has a fixed format; a studio process may require setup that should not be repeated; a technical build may depend on holding a large system in mind. These are good reasons. Using two hours simply because more time sounds more productive is not. Match the container to the work and to your demonstrated attention capacity.",
-          "Create two to four related phases and assign approximate checkpoints rather than alarms. A creative block might cover exploration, selection, development, and documentation. A workshop might move through framing, individual work, synthesis, and decisions. Keep the transitions visible on paper so the session can advance without checking a planning app every few minutes.",
+          "A 120 minute timer can support a serious research block: review selected sources, extract evidence, compare findings, and write a synthesis note. It can also hold a long study session with chapter review, practice problems, correction, and summary.",
+          "For creative projects, two hours can carry an idea from rough exploration into a more developed artifact. That might mean sketching options, choosing a direction, building a draft, and cleaning up enough that the next session starts clearly. The duration is valuable when the work has a natural arc that shorter timers would keep interrupting.",
+        ],
+      },
+      {
+        title: "Productivity use cases for a two-hour timer",
+        paragraphs: [
+          "Use this duration for ultra deep work with significant context: thesis research, long-form writing, code architecture, video editing, design systems, financial modeling, mock exams, or studio production.",
+          "A two-hour timer can also serve planning and review. Use it to map a quarterly initiative, audit a project, review a complex set of notes, or prepare a major decision. The key is that every phase should connect to one primary outcome rather than becoming a collection of unrelated tasks.",
+        ],
+      },
+      {
+        title: "How to get the benefit",
+        paragraphs: [
+          "Begin by asking whether the task truly benefits from continuity. A research synthesis, studio process, technical build, or mock exam can justify the length. Routine email, shallow admin, or loosely defined catch-up usually cannot. Match the container to the work and to your demonstrated attention capacity.",
+          "Create two to four related phases and assign approximate checkpoints rather than alarms. A creative block might cover exploration, selection, development, and documentation. A research block might move through review, extraction, synthesis, and next questions.",
         ],
       },
       {
@@ -1082,24 +1190,24 @@ const timerProfiles = {
     ],
     faqs: [
       {
-        question: "What should I use a 120 minute timer for?",
+        question: "What is a 120 minute timer best for?",
         answer:
-          "It fits mock exams, extended workshops, studio production, complex technical builds, research reviews, long training sessions, and projects where setup or continuity is unusually important.",
+          "It is best for ultra deep work, long study sessions, creative projects, research blocks, mock exams, complex technical work, and sessions where setup or continuity is unusually important.",
+      },
+      {
+        question: "How should I structure a two-hour study session?",
+        answer:
+          "Use related phases such as review, active recall, problem solving, correction, and summary. Keep the plan visible so the session moves without constant app switching.",
+      },
+      {
+        question: "Can I use 120 minutes for research?",
+        answer:
+          "Yes. It works well for reviewing selected sources, extracting evidence, comparing findings, and writing a synthesis note around one research question.",
       },
       {
         question: "Is two hours too long for focused work?",
         answer:
-          "It can be too long for many people or tasks. Use it after building focus endurance, include necessary movement, and stop when judgment or accuracy clearly deteriorates.",
-      },
-      {
-        question: "Can I pause at the midpoint?",
-        answer:
-          "Yes. The timer can pause and resume, though a brief planned reset may not require stopping it. Choose the approach that keeps the session honest and accessible.",
-      },
-      {
-        question: "How much recovery follows two hours?",
-        answer:
-          "Thirty minutes is a reasonable minimum after intense cognitive work, and some sessions require longer. Recovery should include movement, food or water, and lower stimulation.",
+          "It can be too long for many people or tasks. Use it deliberately, include necessary movement, and stop early if judgment or accuracy clearly deteriorates.",
       },
       {
         question: "Will the timer continue after a page refresh?",

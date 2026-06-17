@@ -80,12 +80,14 @@ type SoftwareApplicationSchemaInput = {
   name: string;
   description: string;
   url: string;
+  keywords?: string[];
 };
 
 export function createSoftwareApplicationSchema({
   name,
   description,
   url,
+  keywords,
 }: SoftwareApplicationSchemaInput): JsonLdObject {
   return {
     "@context": "https://schema.org",
@@ -94,6 +96,7 @@ export function createSoftwareApplicationSchema({
     name,
     description,
     url,
+    ...(keywords ? { keywords: keywords.join(", ") } : {}),
     applicationCategory: "ProductivityApplication",
     operatingSystem: "Any",
     isAccessibleForFree: true,

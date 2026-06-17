@@ -121,8 +121,8 @@ export function createMetadata({
       type: "website",
       siteName: siteConfig.name,
       locale: "en_US",
-      title: siteConfig.title,
-      description: siteConfig.description,
+      title: normalizedTitle,
+      description: normalizedDescription,
       url: canonical,
       images: [
         {
@@ -135,8 +135,8 @@ export function createMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: siteConfig.title,
-      description: siteConfig.description,
+      title: normalizedTitle,
+      description: normalizedDescription,
       images: [socialImage],
     },
   };

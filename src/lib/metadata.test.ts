@@ -10,7 +10,7 @@ import {
   validateMetadataInput,
   type MetadataInput,
 } from "./metadata";
-import { normalizeSiteUrl, siteConfig } from "./site";
+import { normalizeSiteUrl } from "./site";
 
 const pageMetadataInputs: MetadataInput[] = [
   {
@@ -49,6 +49,7 @@ const pageMetadataInputs: MetadataInput[] = [
   })),
   ...timers.map((minutes) => {
     const content = getTimerPageContent(minutes);
+
     return {
       title: `${content.title} - Free Online Countdown`,
       description: content.description,
@@ -108,9 +109,8 @@ describe("metadata validation", () => {
         type: "website",
         url: "https://deepflownow.com/timer/25",
         locale: "en_US",
-        title: "DeepFlow — Focus better. Finish what matters.",
-        description:
-          "Calm focus timers, deep work sessions, Pomodoro, and distraction-free productivity.",
+        title: input!.title,
+        description: input!.description,
         images: [
           {
             url: "https://deepflownow.com/deepflow-og.png",
@@ -121,8 +121,8 @@ describe("metadata validation", () => {
       },
       twitter: {
         card: "summary_large_image",
-        title: siteConfig.title,
-        description: siteConfig.description,
+        title: input!.title,
+        description: input!.description,
         images: ["https://deepflownow.com/deepflow-og.png"],
       },
     });
