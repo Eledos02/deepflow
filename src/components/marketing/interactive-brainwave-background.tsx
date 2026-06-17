@@ -11,7 +11,7 @@ type PointerState = {
   targetStrength: number;
 };
 
-const lineCount = 11;
+const lineCount = 15;
 const maxPixelRatio = 1.5;
 
 function getReducedMotionPreference() {

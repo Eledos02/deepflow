@@ -22,6 +22,7 @@ import {
   requestTimerNotificationPermission,
   showTimerCompletionNotification,
 } from "@/features/timer/timer-notifications";
+import { shouldCountAsFocusSession } from "@/features/timer/timer-session";
 import { useTimer } from "@/features/timer/use-timer";
 import { useTimerAnalytics } from "@/features/timer/use-timer-analytics";
 import { useTimerPreferences } from "@/features/timer/use-timer-preferences";
@@ -114,10 +115,10 @@ export function TimerExperience({
     completedAtMs: number;
     taskName?: string;
   }) => {
-    const countsAsFocus =
-      tool.kind === "focus" ||
-      (tool.kind === "pomodoro" &&
-        completion.durationSeconds === 25 * 60);
+    const countsAsFocus = shouldCountAsFocusSession(
+      tool.kind,
+      completion.durationSeconds,
+    );
     const taskName = completion.taskName?.trim();
     const durationMinutes = Math.max(
       1,
