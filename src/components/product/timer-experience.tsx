@@ -102,10 +102,10 @@ export function TimerExperience({
   } = useAudioPreferences();
   const {
     currentStreak,
-    focusSecondsToday,
+    focusMinutesToday,
     recordSession,
-    sessionsThisWeek,
     sessionsToday,
+    totalSessions,
   } = useTimerAnalytics();
 
   const handleComplete = useCallback((completion: {
@@ -342,15 +342,15 @@ export function TimerExperience({
 
       <div className="timer-metrics" aria-label="Focus statistics">
         <span
-          title={`${sessionsThisWeek} ${
-            sessionsThisWeek === 1 ? "session" : "sessions"
-          } completed this week`}
+          title={`${totalSessions} ${
+            totalSessions === 1 ? "session" : "sessions"
+          } completed all time`}
         >
           <strong>{sessionsToday}</strong>
           <small>Sessions today</small>
         </span>
         <span>
-          <strong>{formatCompactDuration(focusSecondsToday)}</strong>
+          <strong>{formatCompactDuration(focusMinutesToday * 60)}</strong>
           <small>Focus time today</small>
         </span>
         <span>
