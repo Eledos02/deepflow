@@ -28,6 +28,18 @@ const pageMetadataInputs: MetadataInput[] = [
     keywords: ["DeepFlow pricing", "focus app pricing"],
   },
   {
+    title: "DeepFlow Guides — Focus, Pomodoro, Study & Deep Work",
+    description:
+      "Explore practical guides on focus, Pomodoro, study timers, deep work, and building better attention habits with DeepFlow.",
+    path: "/guides",
+    keywords: [
+      "focus guides",
+      "pomodoro guides",
+      "study timer guides",
+      "deep work guides",
+    ],
+  },
+  {
     title: pomodoroPage.title,
     description: pomodoroPage.description,
     path: "/pomodoro-timer",

@@ -11,6 +11,7 @@ export type IndexableRoute = {
 const staticRoutes = [
   { path: "/", changeFrequency: "weekly", priority: 1 },
   { path: "/pomodoro-timer", changeFrequency: "monthly", priority: 0.95 },
+  { path: "/guides", changeFrequency: "weekly", priority: 0.85 },
   { path: "/pricing", changeFrequency: "monthly", priority: 0.7 },
 ] satisfies IndexableRoute[];
 
