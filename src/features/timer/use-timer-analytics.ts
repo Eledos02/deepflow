@@ -23,6 +23,7 @@ const emptyStats: TimerStats = {
   currentStreak: 0,
   bestStreak: 0,
   lastCompletedDate: null,
+  sessionHistory: [],
 };
 
 export function useTimerAnalytics() {
@@ -64,6 +65,8 @@ export function useTimerAnalytics() {
       durationMinutes: Math.max(1, Math.round(session.durationSeconds / 60)),
       completedAtMs: session.completedAtMs,
       countsAsFocus: session.countsAsFocus,
+      path: session.path,
+      timerType: session.timerType,
     });
   }, []);
 

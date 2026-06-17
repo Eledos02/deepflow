@@ -1,6 +1,14 @@
 const TIMER_STATS_KEY = "deepflow:timer-stats:v1";
+const MAX_SESSION_HISTORY = 100;
 
 export const TIMER_STATS_UPDATED_EVENT = "deepflow:timer-stats-updated";
+
+export type TimerSessionHistoryEntry = {
+  completedAt: string;
+  durationMinutes: number;
+  timerType: string;
+  path: string;
+};
 
 export type TimerStats = {
   version: 1;
@@ -11,12 +19,15 @@ export type TimerStats = {
   currentStreak: number;
   bestStreak: number;
   lastCompletedDate: string | null;
+  sessionHistory: TimerSessionHistoryEntry[];
 };
 
 export type CompleteSessionInput = {
   durationMinutes: number;
   completedAtMs?: number;
   countsAsFocus?: boolean;
+  path?: string;
+  timerType?: string;
 };
 
 const emptyStats: TimerStats = {
@@ -28,6 +39,7 @@ const emptyStats: TimerStats = {
   currentStreak: 0,
   bestStreak: 0,
   lastCompletedDate: null,
+  sessionHistory: [],
 };
 
 function canUseStorage() {
@@ -65,6 +77,42 @@ function isDateKey(value: unknown): value is string {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+function isHistoryEntry(value: unknown): value is TimerSessionHistoryEntry {
+  if (!value || typeof value !== "object") return false;
+
+  const entry = value as Partial<TimerSessionHistoryEntry>;
+  return (
+    typeof entry.completedAt === "string" &&
+    !Number.isNaN(Date.parse(entry.completedAt)) &&
+    isFiniteNonNegative(entry.durationMinutes) &&
+    entry.durationMinutes > 0 &&
+    typeof entry.timerType === "string" &&
+    entry.timerType.trim().length > 0 &&
+    typeof entry.path === "string" &&
+    entry.path.startsWith("/")
+  );
+}
+
+function normalizeHistory(
+  history: TimerSessionHistoryEntry[] | undefined,
+): TimerSessionHistoryEntry[] {
+  if (!history) return [];
+
+  return history
+    .filter(isHistoryEntry)
+    .map((entry) => ({
+      completedAt: entry.completedAt,
+      durationMinutes: Math.max(1, Math.round(entry.durationMinutes)),
+      timerType: entry.timerType.trim().slice(0, 80),
+      path: entry.path,
+    }))
+    .sort(
+      (a, b) =>
+        Date.parse(b.completedAt) - Date.parse(a.completedAt),
+    )
+    .slice(0, MAX_SESSION_HISTORY);
+}
+
 function normalizeStats(stats: TimerStats, nowMs = Date.now()): TimerStats {
   const today = localDateKey(nowMs);
   const dayGap = stats.lastCompletedDate
@@ -80,6 +128,7 @@ function normalizeStats(stats: TimerStats, nowMs = Date.now()): TimerStats {
     sessionsToday: shouldResetToday ? 0 : stats.sessionsToday,
     focusMinutesToday: shouldResetToday ? 0 : stats.focusMinutesToday,
     currentStreak,
+    sessionHistory: normalizeHistory(stats.sessionHistory),
   };
 }
 
@@ -111,6 +160,7 @@ function parseStats(value: unknown): TimerStats | null {
     currentStreak: Math.floor(stats.currentStreak),
     bestStreak: Math.floor(stats.bestStreak),
     lastCompletedDate: stats.lastCompletedDate ?? null,
+    sessionHistory: normalizeHistory(stats.sessionHistory),
   };
 }
 
@@ -176,11 +226,19 @@ export function completeSession({
   durationMinutes,
   completedAtMs = Date.now(),
   countsAsFocus = true,
+  path = "/",
+  timerType = "Timer",
 }: CompleteSessionInput): TimerStats {
   const completedDate = localDateKey(completedAtMs);
   const currentStats = loadStats(completedAtMs);
   const isFirstSessionToday = currentStats.lastCompletedDate !== completedDate;
   const normalizedDuration = Math.max(0, Math.round(durationMinutes));
+  const historyEntry: TimerSessionHistoryEntry = {
+    completedAt: new Date(completedAtMs).toISOString(),
+    durationMinutes: Math.max(1, normalizedDuration),
+    timerType: timerType.trim().slice(0, 80) || "Timer",
+    path,
+  };
   const nextStatsBase: TimerStats = {
     ...currentStats,
     sessionsToday: currentStats.sessionsToday + 1,
@@ -192,6 +250,10 @@ export function completeSession({
       ? currentStats.totalFocusMinutes + normalizedDuration
       : currentStats.totalFocusMinutes,
     lastCompletedDate: currentStats.lastCompletedDate,
+    sessionHistory: [
+      historyEntry,
+      ...currentStats.sessionHistory,
+    ].slice(0, MAX_SESSION_HISTORY),
   };
   const nextStats = isFirstSessionToday
     ? updateStreak(nextStatsBase, completedAtMs)

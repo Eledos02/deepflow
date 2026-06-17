@@ -44,6 +44,8 @@ export type CompletedTimerSession = {
   durationSeconds: number;
   timerKind: "focus" | "pomodoro" | "countdown";
   countsAsFocus: boolean;
+  timerType?: string;
+  path?: string;
   taskName?: string;
   category?: FocusCategory;
   /** Kept for records created before taskName was introduced. */
@@ -277,6 +279,8 @@ function isCompletedTimerSession(
     (session.completedDate === undefined ||
       typeof session.completedDate === "string") &&
     (session.taskName === undefined || typeof session.taskName === "string") &&
+    (session.timerType === undefined || typeof session.timerType === "string") &&
+    (session.path === undefined || typeof session.path === "string") &&
     (session.category === undefined || isFocusCategory(session.category)) &&
     (session.intention === undefined || typeof session.intention === "string")
   );

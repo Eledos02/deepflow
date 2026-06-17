@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
-import { useCallback, useEffect, useId, useMemo } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import { AudioSettings } from "@/components/product/audio-settings";
 import {
@@ -23,6 +23,7 @@ import {
   showTimerCompletionNotification,
 } from "@/features/timer/timer-notifications";
 import { shouldCountAsFocusSession } from "@/features/timer/timer-session";
+import type { TimerSessionHistoryEntry } from "@/features/timer/timer-stats";
 import { useTimer } from "@/features/timer/use-timer";
 import { useTimerAnalytics } from "@/features/timer/use-timer-analytics";
 import { useTimerPreferences } from "@/features/timer/use-timer-preferences";
@@ -41,6 +42,11 @@ type TimerExperienceProps = {
 type TimerOption = {
   label: string;
   minutes: number;
+};
+
+type RecentSessionGroup = {
+  label: string;
+  entries: TimerSessionHistoryEntry[];
 };
 
 function getOptions(tool: TimerTool, initialMinutes?: number): TimerOption[] {
@@ -63,6 +69,75 @@ function getOptions(tool: TimerTool, initialMinutes?: number): TimerOption[] {
   }));
 }
 
+function getLocalDateKeyFromIso(value: string) {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatHistoryGroupLabel(dateKey: string, nowMs: number) {
+  const todayKey = getLocalDateKeyFromIso(new Date(nowMs).toISOString());
+  const yesterday = new Date(nowMs);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = getLocalDateKeyFromIso(yesterday.toISOString());
+
+  if (dateKey === todayKey) return "Today";
+  if (dateKey === yesterdayKey) return "Yesterday";
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(`${dateKey}T00:00:00`));
+}
+
+function groupRecentSessions(
+  sessionHistory: TimerSessionHistoryEntry[],
+  nowMs: number,
+): RecentSessionGroup[] {
+  const groups = new Map<string, TimerSessionHistoryEntry[]>();
+
+  for (const entry of sessionHistory.slice(0, 8)) {
+    const dateKey = getLocalDateKeyFromIso(entry.completedAt);
+    groups.set(dateKey, [...(groups.get(dateKey) ?? []), entry]);
+  }
+
+  return [...groups.entries()].map(([dateKey, entries]) => ({
+    label: formatHistoryGroupLabel(dateKey, nowMs),
+    entries,
+  }));
+}
+
+function getTimerTypeLabel(
+  timerKind: TimerTool["kind"],
+  shortTitle: string,
+  activeMinutes: number,
+) {
+  if (timerKind === "countdown") {
+    if (activeMinutes >= 60) return "Deep Work Timer";
+    return "Focus Timer";
+  }
+  if (timerKind === "pomodoro" && activeMinutes !== 25) {
+    return "Pomodoro";
+  }
+  if (timerKind === "pomodoro") return "Pomodoro";
+
+  if (shortTitle.toLowerCase().includes("study")) return "Study Timer";
+  if (activeMinutes >= 60) return "Deep Work Timer";
+  return "Focus Timer";
+}
+
+function getFriendlyTimerTypeLabel(entry: TimerSessionHistoryEntry) {
+  const label = entry.timerType.trim().toLowerCase();
+
+  if (label.includes("study")) return "Study Timer";
+  if (label.includes("pomodoro") || label.includes("break")) return "Pomodoro";
+  if (label.includes("deep work")) return "Deep Work Timer";
+  if (entry.durationMinutes >= 60) return "Deep Work Timer";
+  return "Focus Timer";
+}
+
 export function TimerExperience({
   tool,
   initialMinutes,
@@ -71,6 +146,8 @@ export function TimerExperience({
   showUpgradePrompt = false,
 }: TimerExperienceProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const [historyNowMs, setHistoryNowMs] = useState(() => Date.now());
   const options = useMemo(
     () => getOptions(tool, initialMinutes),
     [initialMinutes, tool],
@@ -105,6 +182,7 @@ export function TimerExperience({
     currentStreak,
     focusMinutesToday,
     recordSession,
+    sessionHistory,
     sessionsToday,
     totalSessions,
   } = useTimerAnalytics();
@@ -137,7 +215,13 @@ export function TimerExperience({
       durationSeconds: completion.durationSeconds,
       timerKind: tool.kind,
       countsAsFocus,
+      path: pathname,
       taskName,
+      timerType: getTimerTypeLabel(
+        tool.kind,
+        tool.shortTitle,
+        durationMinutes,
+      ),
       category: countsAsFocus ? inferFocusCategory(taskName) : undefined,
     });
 
@@ -151,7 +235,9 @@ export function TimerExperience({
     setIntention,
     stopBackground,
     stopPreview,
+    pathname,
     tool.kind,
+    tool.shortTitle,
   ]);
 
   const timer = useTimer({
@@ -163,6 +249,10 @@ export function TimerExperience({
   const activeMinutes = timer.hydrated
     ? Math.max(1, Math.round(timer.totalSeconds / 60))
     : startingMinutes;
+  const recentSessionGroups = useMemo(
+    () => groupRecentSessions(sessionHistory, historyNowMs),
+    [historyNowMs, sessionHistory],
+  );
   const progress = getProgress(timer.remainingSeconds, timer.totalSeconds);
   const isRunning = timer.status === "running";
   const defaultLabel =
@@ -182,6 +272,14 @@ export function TimerExperience({
       document.title = pageTitle;
     };
   }, [compactHeading, isRunning, timer.remainingSeconds, tool.shortTitle]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setHistoryNowMs(Date.now());
+    }, 60_000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const selectDuration = (minutes: number) => {
     if (
@@ -358,6 +456,34 @@ export function TimerExperience({
           <strong>{currentStreak}</strong>
           <small>Day streak</small>
         </span>
+      </div>
+      <div className="recent-sessions" aria-labelledby="recent-sessions-title">
+        <h3 id="recent-sessions-title">Recent Sessions</h3>
+        {recentSessionGroups.length === 0 ? (
+          <p className="recent-sessions__empty">
+            Completed timers will appear here.
+          </p>
+        ) : (
+          <div className="recent-sessions__groups">
+            {recentSessionGroups.map((group) => (
+              <section className="recent-sessions__group" key={group.label}>
+                <h4>{group.label}</h4>
+                <ul>
+                  {group.entries.map((entry) => (
+                    <li key={`${entry.completedAt}-${entry.path}`}>
+                      <span aria-hidden="true">✓</span>
+                      <Link href={entry.path}>
+                        {formatCompactDuration(entry.durationMinutes * 60)}
+                        {" • "}
+                        {getFriendlyTimerTypeLabel(entry)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        )}
       </div>
       {showUpgradePrompt ? (
         <div className="session-footer">

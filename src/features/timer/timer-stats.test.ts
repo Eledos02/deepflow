@@ -37,6 +37,7 @@ function stats(overrides: Partial<TimerStats> = {}): TimerStats {
     currentStreak: 0,
     bestStreak: 0,
     lastCompletedDate: null,
+    sessionHistory: [],
     ...overrides,
   };
 }
@@ -60,6 +61,14 @@ describe("timer stats persistence", () => {
       currentStreak: 3,
       bestStreak: 4,
       lastCompletedDate: "2026-06-16",
+      sessionHistory: [
+        {
+          completedAt: new Date(2026, 5, 16, 11).toISOString(),
+          durationMinutes: 50,
+          timerType: "Study Timer",
+          path: "/tools/study-timer",
+        },
+      ],
     });
 
     saveStats(saved);
@@ -141,6 +150,42 @@ describe("completeSession", () => {
       currentStreak: 1,
       bestStreak: 1,
       lastCompletedDate: "2026-06-16",
+      sessionHistory: [
+        {
+          completedAt: new Date(2026, 5, 16, 9).toISOString(),
+          durationMinutes: 25,
+          timerType: "Timer",
+          path: "/",
+        },
+      ],
+    });
+  });
+
+  it("stores completed timer history with duration, type, path, and a 100 item limit", () => {
+    stubLocalStorage();
+
+    for (let index = 0; index < 105; index += 1) {
+      completeSession({
+        durationMinutes: 5,
+        completedAtMs: new Date(2026, 5, 16, 9, index).getTime(),
+        countsAsFocus: true,
+        timerType: "5 Minute Timer",
+        path: "/timer/5",
+      });
+    }
+
+    const nextStats = loadStats(new Date(2026, 5, 16, 12).getTime());
+
+    expect(nextStats.sessionHistory).toHaveLength(100);
+    expect(nextStats.sessionHistory[0]).toMatchObject({
+      durationMinutes: 5,
+      timerType: "5 Minute Timer",
+      path: "/timer/5",
+    });
+    expect(nextStats.sessionHistory.at(-1)).toMatchObject({
+      durationMinutes: 5,
+      timerType: "5 Minute Timer",
+      path: "/timer/5",
     });
   });
 

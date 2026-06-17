@@ -1005,6 +1005,71 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+.recent-sessions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.recent-sessions h3 {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.recent-sessions__empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.recent-sessions__groups {
+  display: grid;
+  gap: 13px;
+}
+
+.recent-sessions__group h4 {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.recent-sessions__group ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recent-sessions__group li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.recent-sessions__group li > span {
+  color: #78914f;
+  font-weight: 900;
+}
+
+.recent-sessions__group a {
+  color: inherit;
+}
+
+.recent-sessions__group a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .session-empty,
 .session-counter {
   display: inline-flex;
