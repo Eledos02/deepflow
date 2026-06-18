@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
 
 import {
   PauseIcon,
@@ -38,12 +38,42 @@ export function AudioSettings({
   volume,
 }: AudioSettingsProps) {
   const fieldId = useId();
+  const detailsRef = useRef<HTMLDetailsElement | null>(null);
   const alarmId = `${fieldId}-alarm`;
   const backgroundId = `${fieldId}-background`;
   const volumeId = `${fieldId}-volume`;
 
+  useEffect(() => {
+    const closeSettings = () => {
+      if (detailsRef.current) detailsRef.current.open = false;
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const details = detailsRef.current;
+      if (!details?.open) return;
+      if (event.target instanceof Node && details.contains(event.target)) {
+        return;
+      }
+
+      closeSettings();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || !detailsRef.current?.open) return;
+      closeSettings();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
-    <details className="audio-settings">
+    <details className="audio-settings" ref={detailsRef}>
       <summary>
         <VolumeIcon width={16} height={16} />
         Audio settings
