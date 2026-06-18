@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { FoundingMemberWaitlist } from "@/components/marketing/founding-member-waitlist";
 import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import {
   CheckIcon,
@@ -8,7 +9,6 @@ import {
   TimerIcon,
 } from "@/components/ui/icons";
 import { createMetadata } from "@/lib/metadata";
-import { siteConfig } from "@/lib/site";
 
 export const metadata = createMetadata({
   title: "Pricing",
@@ -33,7 +33,62 @@ const proFeatures = [
   "Distraction blocking",
 ];
 
-const earlyAccessUrl = `mailto:${siteConfig.email}?subject=DeepFlow%20Pro%20early%20access`;
+const premiumAudioFeatures = [
+  "Rain Window",
+  "Fireplace",
+  "Forest Cabin",
+  "Ocean Waves",
+  "Coffee Shop",
+  "Deep Focus Brown Noise",
+  "Night Crickets",
+  "Soft Wind",
+  "Thunderstorm",
+  "Library Ambience",
+];
+
+const focusEnvironments = [
+  {
+    title: "Rain Window Environment",
+    description:
+      "Animated rain on a virtual window with subtle weather effects.",
+  },
+  {
+    title: "Fireplace Environment",
+    description:
+      "A warm fireplace with gentle animated flames and ambient glow.",
+  },
+  {
+    title: "Forest Cabin Environment",
+    description:
+      "A peaceful cabin overlooking a forest with subtle motion.",
+  },
+  {
+    title: "Ocean View Environment",
+    description:
+      "Relaxing ocean scenery with slow-moving waves.",
+  },
+  {
+    title: "Night Studio Environment",
+    description:
+      "A calm night workspace with city lights and atmospheric ambience.",
+  },
+  {
+    title: "Mountain Sunrise Environment",
+    description:
+      "A beautiful sunrise scene with gradual lighting changes.",
+  },
+];
+
+const productivityFeatures = [
+  "Cloud Sync Across Devices",
+  "Unlimited Focus History",
+  "Advanced Focus Analytics",
+  "Weekly Insights & Reports",
+  "Focus Goals & Milestones",
+  "Priority Access To New Features",
+  "Founding Member Badge",
+  "Lock In Your Price Forever",
+];
 
 export default function PricingPage() {
   return (
@@ -67,17 +122,19 @@ export default function PricingPage() {
             </ul>
           </article>
           <article className="price-card price-card--featured">
-            <span className="price-card__badge">Early access</span>
-            <span className="price-card__eyebrow">Build a practice</span>
-            <span className="price-card__label">Pro</span>
+            <span className="price-card__badge">Future Pro</span>
+            <span className="price-card__eyebrow">Coming soon</span>
+            <span className="price-card__label">Pro plan</span>
             <h2>
               $8 <small>/ month</small>
             </h2>
-            <p>Founding pricing for people ready to make focus repeatable.</p>
-            <a className="button button--light button--full" href={earlyAccessUrl}>
-              Request early access
+            <p>Planned subscription for people ready to make focus repeatable.</p>
+            <a className="button button--light button--full" href="#founding-member">
+              Join lifetime waitlist
             </a>
-            <small className="price-card__note">No charge today. We will email you before launch.</small>
+            <small className="price-card__note">
+              Payments are not active yet. Founding Member access opens first.
+            </small>
             <ul>
               {proFeatures.map((feature) => (
                 <li key={feature}>
@@ -88,6 +145,70 @@ export default function PricingPage() {
             </ul>
           </article>
         </div>
+        <section
+          aria-labelledby="founding-member-title"
+          className="founding-waitlist"
+          id="founding-member"
+        >
+          <div className="founding-waitlist__hero">
+            <div>
+              <span className="founding-waitlist__badge">
+                Limited early access
+              </span>
+              <h2 id="founding-member-title">Become a Founding Member</h2>
+              <p className="founding-waitlist__price">$19 Lifetime Access</p>
+              <p className="founding-waitlist__description">
+                Support the development of DeepFlow and lock in lifetime access
+                to all future Pro features.
+              </p>
+              <p className="founding-waitlist__subtext">
+                DeepFlow is currently in active development. Founding Members
+                help shape the product and secure the lowest price DeepFlow will
+                ever offer.
+              </p>
+            </div>
+            <FoundingMemberWaitlist />
+          </div>
+
+          <div className="founding-feature-grid">
+            <article className="founding-feature-card founding-feature-card--audio">
+              <span className="eyebrow">Premium Audio Library</span>
+              <ul>
+                {premiumAudioFeatures.map((feature) => (
+                  <li key={feature}>
+                    <CheckIcon />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </article>
+
+            <article className="founding-feature-card founding-feature-card--wide">
+              <span className="eyebrow">Focus Environments</span>
+              <h3>Transform your timer into a calm environment designed for deep work.</h3>
+              <div className="founding-environment-grid">
+                {focusEnvironments.map((environment) => (
+                  <div key={environment.title}>
+                    <strong>{environment.title}</strong>
+                    <p>{environment.description}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            <article className="founding-feature-card founding-feature-card--productivity">
+              <span className="eyebrow">Productivity Features</span>
+              <ul>
+                {productivityFeatures.map((feature) => (
+                  <li key={feature}>
+                    <CheckIcon />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          </div>
+        </section>
         <div className="pricing-assurance">
           <article>
             <TimerIcon />

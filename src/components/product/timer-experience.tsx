@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { AudioSettings } from "@/components/product/audio-settings";
 import {
@@ -11,7 +18,7 @@ import {
   PlayIcon,
   ResetIcon,
 } from "@/components/ui/icons";
-import { getTimerPath, isConfiguredTimer } from "@/config/timers";
+import { getTimerPath, isConfiguredTimer, timers } from "@/config/timers";
 import type { TimerTool } from "@/content/timer-tools";
 import {
   getLocalDateKey,
@@ -56,6 +63,13 @@ function getOptions(tool: TimerTool, initialMinutes?: number): TimerOption[] {
       { label: "Short break", minutes: 5 },
       { label: "Long break", minutes: 15 },
     ];
+  }
+
+  if (tool.kind === "countdown" && initialMinutes !== undefined) {
+    return timers.map((minutes) => ({
+      label: `${minutes} min`,
+      minutes,
+    }));
   }
 
   const presets =
@@ -148,6 +162,10 @@ export function TimerExperience({
   const router = useRouter();
   const pathname = usePathname();
   const [historyNowMs, setHistoryNowMs] = useState(() => Date.now());
+  const [scrollIndicatorStyle, setScrollIndicatorStyle] =
+    useState<CSSProperties>({});
+  const optionsRef = useRef<HTMLDivElement | null>(null);
+  const activeOptionRef = useRef<HTMLButtonElement | null>(null);
   const options = useMemo(
     () => getOptions(tool, initialMinutes),
     [initialMinutes, tool],
@@ -260,6 +278,8 @@ export function TimerExperience({
   );
   const progress = getProgress(timer.remainingSeconds, timer.totalSeconds);
   const isRunning = timer.status === "running";
+  const isDurationLandingSelector =
+    tool.kind === "countdown" && initialMinutes !== undefined;
   const defaultLabel =
     tool.kind === "pomodoro" && activeMinutes !== 25
       ? "Take a breath"
@@ -285,6 +305,61 @@ export function TimerExperience({
 
     return () => window.clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    if (!isDurationLandingSelector) return;
+    const activeOption = activeOptionRef.current;
+    if (!activeOption) return;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    activeOption.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [activeMinutes, isDurationLandingSelector]);
+
+  useEffect(() => {
+    if (!isDurationLandingSelector) return;
+
+    const updateIndicator = () => {
+      const activeOption = activeOptionRef.current;
+      if (!activeOption) return;
+
+      setScrollIndicatorStyle({
+        "--timer-indicator-width": `${activeOption.offsetWidth}px`,
+        "--timer-indicator-x": `${activeOption.offsetLeft}px`,
+      } as CSSProperties);
+    };
+
+    const animationFrameId = window.requestAnimationFrame(updateIndicator);
+    window.addEventListener("resize", updateIndicator);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [activeMinutes, isDurationLandingSelector]);
+
+  useEffect(() => {
+    if (!isDurationLandingSelector) return;
+    const optionsElement = optionsRef.current;
+    if (!optionsElement) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      event.preventDefault();
+      optionsElement.scrollLeft += event.deltaY;
+    };
+
+    optionsElement.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      optionsElement.removeEventListener("wheel", handleWheel);
+    };
+  }, [isDurationLandingSelector]);
 
   const selectDuration = (minutes: number) => {
     if (
@@ -331,6 +406,7 @@ export function TimerExperience({
   const optionsStyle = {
     "--timer-option-count": options.length,
     "--timer-option-index": activeOptionIndex,
+    ...scrollIndicatorStyle,
   } as CSSProperties;
 
   return (
@@ -363,8 +439,13 @@ export function TimerExperience({
       </div>
 
       <div
-        className="timer-options"
+        className={
+          isDurationLandingSelector
+            ? "timer-options timer-options--scroll"
+            : "timer-options"
+        }
         aria-label="Timer duration"
+        ref={optionsRef}
         style={optionsStyle}
       >
         <span className="timer-options__indicator" aria-hidden="true" />
@@ -374,7 +455,15 @@ export function TimerExperience({
             data-active={activeMinutes === option.minutes}
             disabled={isRunning}
             key={option.label}
+            ref={
+              activeMinutes === option.minutes
+                ? activeOptionRef
+                : undefined
+            }
             onClick={() => selectDuration(option.minutes)}
+            aria-current={
+              activeMinutes === option.minutes ? "page" : undefined
+            }
             aria-pressed={activeMinutes === option.minutes}
             type="button"
           >

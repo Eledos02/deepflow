@@ -7,7 +7,8 @@ export type DeepFlowAnalyticsEvent =
   | "timer_pause"
   | "timer_reset"
   | "timer_complete"
-  | "focus_session_complete";
+  | "focus_session_complete"
+  | "founding_member_waitlist_joined";
 
 const googleAnalyticsId = process.env.NEXT_PUBLIC_GA_ID?.trim();
 
@@ -24,5 +25,19 @@ export function trackTimerEvent(
     });
   } catch {
     // Analytics must never interrupt timer controls or session completion.
+  }
+}
+
+export function trackFoundingMemberWaitlistJoined() {
+  if (!googleAnalyticsId || typeof window === "undefined") return;
+
+  try {
+    sendGAEvent("event", "founding_member_waitlist_joined", {
+      page_path: window.location.pathname,
+      plan: "founding_member",
+      price: 19,
+    });
+  } catch {
+    // Analytics must never interrupt waitlist signups.
   }
 }
