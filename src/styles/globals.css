@@ -999,8 +999,9 @@ a:focus-visible {
   border-radius: 999px;
   background: var(--white);
   box-shadow: 0 2px 8px rgba(23, 35, 30, 0.08);
-  transform: translateX(calc(var(--timer-option-index) * 100%));
+  transform: translate3d(calc(var(--timer-option-index) * 100%), 0, 0);
   transition: transform 220ms ease-out;
+  will-change: transform;
   pointer-events: none;
 }
 
@@ -4378,6 +4379,11 @@ a:focus-visible {
 
   .floating-mini-player[data-visible="true"] {
     opacity: 1;
+  }
+
+  .timer-options__indicator {
+    transition: none;
+    will-change: auto;
   }
 
   @keyframes audio-settings-reduced-in {
