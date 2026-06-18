@@ -1,12 +1,13 @@
 import type { TimerStatus } from "@/features/timer/use-timer";
 
-const TIMER_STATE_PREFIX = "deepflow:timer-state:v1";
+export const TIMER_STATE_PREFIX = "deepflow:timer-state:v1";
 const TIMER_PREFERENCES_PREFIX = "deepflow:timer-preferences:v1";
 const COMPLETED_SESSIONS_KEY = "deepflow:completed-sessions:v1";
 const AUDIO_PREFERENCES_KEY = "deepflow:audio-preferences:v1";
 const MAX_COMPLETED_SESSIONS = 2_000;
 
 export const TIMER_ANALYTICS_UPDATED_EVENT = "deepflow:timer-analytics-updated";
+export const TIMER_STATE_UPDATED_EVENT = "deepflow:timer-state-updated";
 
 export type PersistedTimerState = {
   version: 1;
@@ -15,8 +16,17 @@ export type PersistedTimerState = {
   status: TimerStatus;
   deadlineMs: number | null;
   sessionId: string | null;
+  sourcePath?: string;
   taskName: string | null;
   updatedAtMs: number;
+};
+
+export type TimerStateSnapshot = PersistedTimerState & {
+  storageKey: string;
+};
+
+export type TimerStateWriteOptions = {
+  source?: string;
 };
 
 export type TimerPreferences = {
@@ -86,7 +96,7 @@ function isTimerStatus(value: unknown): value is TimerStatus {
   );
 }
 
-function timerStateKey(storageKey: string) {
+export function getTimerStateStorageKey(storageKey: string) {
   return `${TIMER_STATE_PREFIX}:${storageKey}`;
 }
 
@@ -98,7 +108,7 @@ export function readTimerState(storageKey: string): PersistedTimerState | null {
   if (!canUseStorage()) return null;
 
   try {
-    const raw = window.localStorage.getItem(timerStateKey(storageKey));
+    const raw = window.localStorage.getItem(getTimerStateStorageKey(storageKey));
     if (!raw) return null;
 
     const value: unknown = JSON.parse(raw);
@@ -118,6 +128,9 @@ export function readTimerState(storageKey: string): PersistedTimerState | null {
       (state.sessionId !== null &&
         state.sessionId !== undefined &&
         typeof state.sessionId !== "string") ||
+      (state.sourcePath !== undefined &&
+        (typeof state.sourcePath !== "string" ||
+          !state.sourcePath.startsWith("/"))) ||
       (state.taskName !== null &&
         state.taskName !== undefined &&
         typeof state.taskName !== "string")
@@ -135,6 +148,7 @@ export function readTimerState(storageKey: string): PersistedTimerState | null {
       status: state.status,
       deadlineMs: state.deadlineMs ?? null,
       sessionId: state.sessionId ?? null,
+      sourcePath: state.sourcePath?.slice(0, 160),
       taskName: state.taskName?.slice(0, 80) ?? null,
       updatedAtMs: state.updatedAtMs,
     };
@@ -146,14 +160,49 @@ export function readTimerState(storageKey: string): PersistedTimerState | null {
 export function writeTimerState(
   storageKey: string,
   state: PersistedTimerState,
+  options: TimerStateWriteOptions = {},
 ) {
   if (!canUseStorage()) return;
 
   try {
-    window.localStorage.setItem(timerStateKey(storageKey), JSON.stringify(state));
+    window.localStorage.setItem(
+      getTimerStateStorageKey(storageKey),
+      JSON.stringify(state),
+    );
+    window.dispatchEvent(
+      new CustomEvent(TIMER_STATE_UPDATED_EVENT, {
+        detail: {
+          source: options.source ?? "timer",
+          storageKey,
+        },
+      }),
+    );
   } catch {
     // The timer remains functional when storage is unavailable or full.
   }
+}
+
+export function readAllTimerStates(): TimerStateSnapshot[] {
+  if (!canUseStorage()) return [];
+
+  const snapshots: TimerStateSnapshot[] = [];
+  const prefix = `${TIMER_STATE_PREFIX}:`;
+
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+    if (!key?.startsWith(prefix)) continue;
+
+    const storageKey = key.slice(prefix.length);
+    const state = readTimerState(storageKey);
+    if (!state) continue;
+
+    snapshots.push({
+      ...state,
+      storageKey,
+    });
+  }
+
+  return snapshots.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
 }
 
 export function readTimerPreferences(

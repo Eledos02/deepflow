@@ -4,6 +4,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { FloatingMiniPlayer } from "@/components/product/floating-mini-player";
 import { JsonLd } from "@/components/seo/json-ld";
 import { siteConfig } from "@/lib/site";
 import { createGlobalStructuredData } from "@/lib/structured-data";
@@ -104,6 +105,7 @@ export default function RootLayout({
         </a>
         <SiteHeader />
         <main id="main-content">{children}</main>
+        <FloatingMiniPlayer />
         <SiteFooter />
       </body>
       {googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}

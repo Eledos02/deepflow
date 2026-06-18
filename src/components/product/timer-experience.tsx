@@ -243,12 +243,17 @@ export function TimerExperience({
   const timer = useTimer({
     initialSeconds: startingMinutes * 60,
     storageKey,
+    sourcePath: pathname,
     onComplete: handleComplete,
   });
 
   const activeMinutes = timer.hydrated
     ? Math.max(1, Math.round(timer.totalSeconds / 60))
     : startingMinutes;
+  const activeOptionIndex = Math.max(
+    0,
+    options.findIndex((option) => option.minutes === activeMinutes),
+  );
   const recentSessionGroups = useMemo(
     () => groupRecentSessions(sessionHistory, historyNowMs),
     [historyNowMs, sessionHistory],
@@ -323,6 +328,10 @@ export function TimerExperience({
   const ringStyle = {
     "--timer-progress": `${progress * 360}deg`,
   } as CSSProperties;
+  const optionsStyle = {
+    "--timer-option-count": options.length,
+    "--timer-option-index": activeOptionIndex,
+  } as CSSProperties;
 
   return (
     <section
@@ -345,7 +354,7 @@ export function TimerExperience({
           audioError={audioError}
           backgroundSoundId={backgroundSoundId}
           onAlarmChange={selectAlarmSound}
-          onBackgroundChange={selectBackgroundSound}
+          onBackgroundChange={(id) => selectBackgroundSound(id, isRunning)}
           onPreview={(kind) => void togglePreview(kind)}
           onVolumeChange={setVolume}
           previewing={previewing}
@@ -353,7 +362,12 @@ export function TimerExperience({
         />
       </div>
 
-      <div className="timer-options" aria-label="Timer duration">
+      <div
+        className="timer-options"
+        aria-label="Timer duration"
+        style={optionsStyle}
+      >
+        <span className="timer-options__indicator" aria-hidden="true" />
         {options.map((option) => (
           <button
             className="timer-option"

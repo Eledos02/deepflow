@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { BenefitGrid } from "@/components/marketing/benefit-grid";
 import { ConversionCard } from "@/components/marketing/conversion-card";
+import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import { ToolLinks } from "@/components/marketing/tool-links";
 import { TimerExperience } from "@/components/product/timer-experience";
 import { FaqSection } from "@/components/seo/faq-section";
@@ -51,6 +52,7 @@ export default function PomodoroTimerPage() {
       />
 
       <section className="tool-hero">
+        <InteractiveBrainwaveBackground />
         <div className="shell tool-hero__grid">
           <div className="tool-hero__copy">
             <span className="eyebrow">Free online Pomodoro timer</span>

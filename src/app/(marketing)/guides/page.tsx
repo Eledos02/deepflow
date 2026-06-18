@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ArrowIcon } from "@/components/ui/icons";
 import { guides } from "@/content/guides";
@@ -73,6 +74,7 @@ export default function GuidesPage() {
       />
       <main>
         <section className="guide-hero guide-hub-hero">
+          <InteractiveBrainwaveBackground />
           <div className="shell shell--article">
             <span className="eyebrow">DeepFlow guides</span>
             <h1>Focus, study, Pomodoro, and deep work guides.</h1>

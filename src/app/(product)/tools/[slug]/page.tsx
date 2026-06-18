@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 
 import { BenefitGrid } from "@/components/marketing/benefit-grid";
 import { ConversionCard } from "@/components/marketing/conversion-card";
+import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import { ToolLinks } from "@/components/marketing/tool-links";
 import { SessionHistoryCard } from "@/components/product/session-history-card";
 import { TimerExperience } from "@/components/product/timer-experience";
@@ -70,6 +71,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
         ]}
       />
       <section className="tool-hero">
+        <InteractiveBrainwaveBackground />
         <div className="shell tool-hero__grid">
           <div className="tool-hero__copy">
             <span className="eyebrow">{tool.eyebrow}</span>

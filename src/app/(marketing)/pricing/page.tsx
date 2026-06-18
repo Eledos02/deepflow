@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import {
   CheckIcon,
   ShieldIcon,
@@ -37,6 +38,7 @@ const earlyAccessUrl = `mailto:${siteConfig.email}?subject=DeepFlow%20Pro%20earl
 export default function PricingPage() {
   return (
     <section className="pricing-page">
+      <InteractiveBrainwaveBackground />
       <div className="shell">
         <div className="pricing-heading">
           <span className="eyebrow">Simple pricing</span>

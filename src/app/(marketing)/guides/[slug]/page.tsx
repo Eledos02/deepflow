@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ConversionCard } from "@/components/marketing/conversion-card";
+import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import { FaqSection } from "@/components/seo/faq-section";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ArrowIcon } from "@/components/ui/icons";
@@ -62,6 +63,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
       />
       <article>
         <header className="guide-hero">
+          <InteractiveBrainwaveBackground />
           <div className="shell shell--article">
             <span className="eyebrow">{guide.eyebrow}</span>
             <h1>{guide.title}</h1>

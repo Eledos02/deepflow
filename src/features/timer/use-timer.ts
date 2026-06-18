@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getRemainingSeconds } from "@/features/timer/timer-engine";
 import {
+  getTimerStateStorageKey,
   readTimerState,
+  TIMER_STATE_UPDATED_EVENT,
   writeTimerState,
   type PersistedTimerState,
 } from "@/features/timer/timer-storage";
@@ -22,6 +24,7 @@ type UseTimerOptions = {
   initialSeconds: number;
   storageKey: string;
   onComplete?: (completion: TimerCompletion) => void;
+  sourcePath: string;
 };
 
 function createSessionId() {
@@ -36,6 +39,7 @@ export function useTimer({
   initialSeconds,
   storageKey,
   onComplete,
+  sourcePath,
 }: UseTimerOptions) {
   const [totalSeconds, setTotalSeconds] = useState(initialSeconds);
   const [remainingSeconds, setRemainingSeconds] = useState(initialSeconds);
@@ -46,6 +50,7 @@ export function useTimer({
   const statusRef = useRef<TimerStatus>("idle");
   const deadlineRef = useRef<number | null>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const sourcePathRef = useRef(sourcePath);
   const taskNameRef = useRef<string | null>(null);
   const completedSessionRef = useRef<string | null>(null);
   const onCompleteRef = useRef(onComplete);
@@ -54,6 +59,10 @@ export function useTimer({
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
+  useEffect(() => {
+    sourcePathRef.current = sourcePath;
+  }, [sourcePath]);
+
   const applyState = useCallback(
     (nextState: PersistedTimerState) => {
       totalSecondsRef.current = nextState.totalSeconds;
@@ -61,14 +70,36 @@ export function useTimer({
       statusRef.current = nextState.status;
       deadlineRef.current = nextState.deadlineMs;
       sessionIdRef.current = nextState.sessionId;
+      sourcePathRef.current = nextState.sourcePath ?? sourcePathRef.current;
       taskNameRef.current = nextState.taskName;
 
       setTotalSeconds(nextState.totalSeconds);
       setRemainingSeconds(nextState.remainingSeconds);
       setStatus(nextState.status);
-      writeTimerState(storageKey, nextState);
+      writeTimerState(storageKey, nextState, { source: "use-timer" });
     },
     [storageKey],
+  );
+
+  const syncFromStoredState = useCallback(
+    (nextState: PersistedTimerState) => {
+      totalSecondsRef.current = nextState.totalSeconds;
+      remainingSecondsRef.current = nextState.remainingSeconds;
+      statusRef.current = nextState.status;
+      deadlineRef.current = nextState.deadlineMs;
+      sessionIdRef.current = nextState.sessionId;
+      sourcePathRef.current = nextState.sourcePath ?? sourcePathRef.current;
+      taskNameRef.current = nextState.taskName;
+
+      if (nextState.status !== "completed") {
+        completedSessionRef.current = null;
+      }
+
+      setTotalSeconds(nextState.totalSeconds);
+      setRemainingSeconds(nextState.remainingSeconds);
+      setStatus(nextState.status);
+    },
+    [],
   );
 
   const completeSession = useCallback(
@@ -83,6 +114,7 @@ export function useTimer({
         status: "completed",
         deadlineMs: null,
         sessionId,
+        sourcePath: sourcePathRef.current,
         taskName: taskNameRef.current,
         updatedAtMs: completedAtMs,
       });
@@ -111,6 +143,7 @@ export function useTimer({
           status: "idle",
           deadlineMs: null,
           sessionId: null,
+          sourcePath,
           taskName: null,
           updatedAtMs: Date.now(),
         };
@@ -143,7 +176,53 @@ export function useTimer({
     }, 0);
 
     return () => window.clearTimeout(hydrationId);
-  }, [applyState, completeSession, initialSeconds, storageKey]);
+  }, [applyState, completeSession, initialSeconds, sourcePath, storageKey]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const refreshFromStorage = () => {
+      const savedState = readTimerState(storageKey);
+      if (!savedState) return;
+
+      if (savedState.status === "running" && savedState.deadlineMs !== null) {
+        const remaining = getRemainingSeconds({
+          deadlineMs: savedState.deadlineMs,
+          nowMs: Date.now(),
+        });
+
+        syncFromStoredState({
+          ...savedState,
+          remainingSeconds: remaining,
+        });
+        return;
+      }
+
+      syncFromStoredState(savedState);
+    };
+
+    const handleTimerStateUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ storageKey?: string }>).detail;
+      if (detail?.storageKey && detail.storageKey !== storageKey) return;
+      refreshFromStorage();
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== getTimerStateStorageKey(storageKey)) return;
+      refreshFromStorage();
+    };
+
+    window.addEventListener(TIMER_STATE_UPDATED_EVENT, handleTimerStateUpdated);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(
+        TIMER_STATE_UPDATED_EVENT,
+        handleTimerStateUpdated,
+      );
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [hydrated, storageKey, syncFromStoredState]);
 
   useEffect(() => {
     if (
@@ -198,6 +277,7 @@ export function useTimer({
       status: "running",
       deadlineMs: nowMs + nextRemaining * 1000,
       sessionId,
+      sourcePath: sourcePathRef.current,
       taskName: nextTaskName,
       updatedAtMs: nowMs,
     });
@@ -224,6 +304,7 @@ export function useTimer({
       status: "paused",
       deadlineMs: null,
       sessionId: sessionIdRef.current,
+      sourcePath: sourcePathRef.current,
       taskName: taskNameRef.current,
       updatedAtMs: nowMs,
     });
@@ -238,6 +319,7 @@ export function useTimer({
       status: "idle",
       deadlineMs: null,
       sessionId: null,
+      sourcePath: sourcePathRef.current,
       taskName: null,
       updatedAtMs: Date.now(),
     });
@@ -253,6 +335,7 @@ export function useTimer({
         status: "idle",
         deadlineMs: null,
         sessionId: null,
+        sourcePath: sourcePathRef.current,
         taskName: null,
         updatedAtMs: Date.now(),
       });

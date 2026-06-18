@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  readCompletedSessions,
   saveCompletedSession,
   TIMER_ANALYTICS_UPDATED_EVENT,
   type CompletedTimerSession,
@@ -60,7 +61,13 @@ export function useTimerAnalytics() {
   }, [refresh]);
 
   const recordSession = useCallback((session: CompletedTimerSession) => {
+    const alreadyRecorded = readCompletedSessions().some(
+      (existingSession) => existingSession.id === session.id,
+    );
+
     saveCompletedSession(session);
+    if (alreadyRecorded) return;
+
     completeSession({
       durationMinutes: Math.max(1, Math.round(session.durationSeconds / 60)),
       completedAtMs: session.completedAtMs,

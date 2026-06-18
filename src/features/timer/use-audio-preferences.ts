@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   getAlarmSound,
@@ -12,6 +12,7 @@ import {
   readAudioPreferences,
   writeAudioPreferences,
 } from "./timer-storage";
+import { shouldStartSelectedBackground } from "./timer-audio-behavior";
 
 type PreviewKind = "alarm" | "background";
 
@@ -20,6 +21,11 @@ const defaultPreferences = {
   backgroundSoundId: null as BackgroundSoundId | null,
   volume: 0.55,
 };
+
+let sharedPreviewAudio: HTMLAudioElement | null = null;
+let sharedBackgroundAudio: HTMLAudioElement | null = null;
+let sharedAlarmAudio: HTMLAudioElement | null = null;
+let sharedBackgroundPlaying = false;
 
 function stopAudio(audio: HTMLAudioElement | null, reset = true) {
   if (!audio) return;
@@ -39,9 +45,6 @@ export function useAudioPreferences() {
   const [hydrated, setHydrated] = useState(false);
   const [previewing, setPreviewing] = useState<PreviewKind | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
-  const previewRef = useRef<HTMLAudioElement | null>(null);
-  const backgroundRef = useRef<HTMLAudioElement | null>(null);
-  const alarmRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const hydrationId = window.setTimeout(() => {
@@ -69,9 +72,9 @@ export function useAudioPreferences() {
 
   useEffect(() => {
     for (const audio of [
-      previewRef.current,
-      backgroundRef.current,
-      alarmRef.current,
+      sharedPreviewAudio,
+      sharedBackgroundAudio,
+      sharedAlarmAudio,
     ]) {
       if (audio) audio.volume = volume;
     }
@@ -79,9 +82,10 @@ export function useAudioPreferences() {
 
   useEffect(
     () => () => {
-      stopAudio(previewRef.current);
-      stopAudio(backgroundRef.current);
-      stopAudio(alarmRef.current);
+      stopAudio(sharedPreviewAudio);
+      stopAudio(sharedAlarmAudio);
+      sharedPreviewAudio = null;
+      sharedAlarmAudio = null;
     },
     [],
   );
@@ -106,8 +110,8 @@ export function useAudioPreferences() {
   );
 
   const stopPreview = useCallback(() => {
-    stopAudio(previewRef.current);
-    previewRef.current = null;
+    stopAudio(sharedPreviewAudio);
+    sharedPreviewAudio = null;
     setPreviewing(null);
   }, []);
 
@@ -127,11 +131,13 @@ export function useAudioPreferences() {
 
       const audio = new Audio(sound.src);
       audio.loop = kind === "background";
-      previewRef.current = audio;
+      sharedPreviewAudio = audio;
       audio.addEventListener(
         "ended",
         () => {
-          previewRef.current = null;
+          if (sharedPreviewAudio === audio) {
+            sharedPreviewAudio = null;
+          }
           setPreviewing(null);
         },
         { once: true },
@@ -155,40 +161,49 @@ export function useAudioPreferences() {
     ],
   );
 
-  const playBackground = useCallback(async () => {
-    const sound = getBackgroundSound(backgroundSoundId);
+  const playBackgroundSound = useCallback(async (
+    soundId: BackgroundSoundId | null,
+  ) => {
+    const sound = getBackgroundSound(soundId);
+    sharedBackgroundPlaying = false;
     if (!sound) return;
 
     if (
-      !backgroundRef.current ||
-      backgroundRef.current.src !== new URL(sound.src, window.location.href).href
+      !sharedBackgroundAudio ||
+      sharedBackgroundAudio.src !== new URL(sound.src, window.location.href).href
     ) {
-      stopAudio(backgroundRef.current);
-      backgroundRef.current = new Audio(sound.src);
-      backgroundRef.current.loop = true;
+      stopAudio(sharedBackgroundAudio);
+      sharedBackgroundAudio = new Audio(sound.src);
+      sharedBackgroundAudio.loop = true;
     }
 
-    await playAudio(
-      backgroundRef.current,
+    sharedBackgroundPlaying = await playAudio(
+      sharedBackgroundAudio,
       `${sound.label} is unavailable. The timer will continue silently.`,
     );
-  }, [backgroundSoundId, playAudio]);
+  }, [playAudio]);
+
+  const playBackground = useCallback(async () => {
+    await playBackgroundSound(backgroundSoundId);
+  }, [backgroundSoundId, playBackgroundSound]);
 
   const pauseBackground = useCallback(() => {
-    stopAudio(backgroundRef.current, false);
+    stopAudio(sharedBackgroundAudio, false);
+    sharedBackgroundPlaying = false;
   }, []);
 
   const stopBackground = useCallback(() => {
-    stopAudio(backgroundRef.current);
+    stopAudio(sharedBackgroundAudio);
+    sharedBackgroundPlaying = false;
   }, []);
 
   const playAlarm = useCallback(async () => {
     const sound = getAlarmSound(alarmSoundId);
     if (!sound) return;
 
-    stopAudio(alarmRef.current);
+    stopAudio(sharedAlarmAudio);
     const audio = new Audio(sound.src);
-    alarmRef.current = audio;
+    sharedAlarmAudio = audio;
     await playAudio(
       audio,
       `${sound.label} is unavailable. Your session still completed.`,
@@ -204,12 +219,21 @@ export function useAudioPreferences() {
   );
 
   const selectBackgroundSound = useCallback(
-    (id: BackgroundSoundId | null) => {
+    (id: BackgroundSoundId | null, playWhenSelected = false) => {
+      const shouldPlayNextBackground = shouldStartSelectedBackground({
+        isTimerRunning: playWhenSelected,
+        nextBackgroundSoundId: id,
+        wasBackgroundPlaying: sharedBackgroundPlaying,
+      });
       stopPreview();
       stopBackground();
       setBackgroundSoundId(id);
+
+      if (shouldPlayNextBackground) {
+        void playBackgroundSound(id);
+      }
     },
-    [stopBackground, stopPreview],
+    [playBackgroundSound, stopBackground, stopPreview],
   );
 
   return {
