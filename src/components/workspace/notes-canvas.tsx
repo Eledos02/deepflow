@@ -6,12 +6,14 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { CheckIcon } from "@/components/ui/icons";
 import {
   MAX_FREE_WORKSPACE_NOTES,
+  WORKSPACE_NOTE_COLORS,
   canCreateWorkspaceNote,
   createWorkspaceNote,
   deleteWorkspaceNote,
   readWorkspaceNotes,
   updateWorkspaceNote,
   writeWorkspaceNotes,
+  type WorkspaceNoteColor,
   type WorkspaceNote,
 } from "@/features/workspace/workspace-notes";
 
@@ -83,6 +85,12 @@ export function NotesCanvas() {
   const updateNoteText = (id: string, text: string) => {
     setNotes((currentNotes) =>
       updateWorkspaceNote(currentNotes, id, { text }),
+    );
+  };
+
+  const updateNoteColor = (id: string, color: WorkspaceNoteColor) => {
+    setNotes((currentNotes) =>
+      updateWorkspaceNote(currentNotes, id, { color }),
     );
   };
 
@@ -170,6 +178,7 @@ export function NotesCanvas() {
           {notes.map((note) => (
             <article
               className="workspace-note"
+              data-color={note.color}
               key={note.id}
               style={{
                 transform: `translate3d(${note.x}px, ${note.y}px, 0)`,
@@ -186,6 +195,23 @@ export function NotesCanvas() {
                 <span className="workspace-note__grip">
                   <span aria-hidden="true" className="workspace-note__grip-icon" />
                 </span>
+                <div
+                  aria-label="Note color"
+                  className="workspace-note__colors"
+                  onPointerDown={(event) => event.stopPropagation()}
+                >
+                  {WORKSPACE_NOTE_COLORS.map((color) => (
+                    <button
+                      aria-label={`Use ${color.label}`}
+                      aria-pressed={note.color === color.id}
+                      className="workspace-note__color"
+                      data-color={color.id}
+                      key={color.id}
+                      onClick={() => updateNoteColor(note.id, color.id)}
+                      type="button"
+                    />
+                  ))}
+                </div>
                 <button
                   aria-label="Delete note"
                   onClick={() => removeNote(note.id)}

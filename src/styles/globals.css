@@ -4031,7 +4031,7 @@ a:focus-visible {
   background:
     linear-gradient(180deg, #fffefa 0%, #fbf5d9 100%);
   box-shadow:
-    0 8px 18px rgba(23, 35, 25, 0.04),
+    0 4px 10px rgba(23, 35, 25, 0.032),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
   transition:
     box-shadow 180ms ease,
@@ -4039,10 +4039,35 @@ a:focus-visible {
   will-change: transform;
 }
 
+.workspace-note[data-color="warm-cream"] {
+  background:
+    linear-gradient(180deg, #fffefa 0%, #fbf5d9 100%);
+}
+
+.workspace-note[data-color="soft-lime"] {
+  background:
+    linear-gradient(180deg, #fbffe9 0%, #edf7bf 100%);
+}
+
+.workspace-note[data-color="mist-green"] {
+  background:
+    linear-gradient(180deg, #f5fffb 0%, #dcefe7 100%);
+}
+
+.workspace-note[data-color="pale-sage"] {
+  background:
+    linear-gradient(180deg, #fbfff7 0%, #e4ead6 100%);
+}
+
+.workspace-note[data-color="soft-sand"] {
+  background:
+    linear-gradient(180deg, #fffaf0 0%, #f1dfbd 100%);
+}
+
 .workspace-note:focus-within {
   box-shadow:
     0 0 0 3px rgba(184, 228, 94, 0.15),
-    0 10px 22px rgba(23, 35, 25, 0.052),
+    0 5px 12px rgba(23, 35, 25, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
@@ -4082,6 +4107,57 @@ a:focus-visible {
   background-image: radial-gradient(circle, rgba(19, 32, 25, 0.48) 1.3px, transparent 1.5px);
   background-size: 5px 5px;
   opacity: 0.46;
+}
+
+.workspace-note__colors {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 5px;
+  border-radius: 999px;
+  background: rgba(255, 254, 250, 0.42);
+  user-select: none;
+}
+
+.workspace-note__color {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid rgba(19, 32, 25, 0.08);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.workspace-note__color[data-color="warm-cream"] {
+  background: #fbf5d9;
+}
+
+.workspace-note__color[data-color="soft-lime"] {
+  background: #edf7bf;
+}
+
+.workspace-note__color[data-color="mist-green"] {
+  background: #dcefe7;
+}
+
+.workspace-note__color[data-color="pale-sage"] {
+  background: #e4ead6;
+}
+
+.workspace-note__color[data-color="soft-sand"] {
+  background: #f1dfbd;
+}
+
+.workspace-note__color[aria-pressed="true"] {
+  border-color: rgba(19, 32, 25, 0.38);
+  box-shadow:
+    0 0 0 2px rgba(255, 254, 250, 0.82),
+    0 0 0 3px rgba(19, 32, 25, 0.13);
+}
+
+.workspace-note__color:focus-visible {
+  outline: 2px solid rgba(107, 130, 72, 0.72);
+  outline-offset: 2px;
 }
 
 .workspace-note__handle button {

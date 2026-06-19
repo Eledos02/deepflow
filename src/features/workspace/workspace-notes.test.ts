@@ -22,6 +22,7 @@ describe("workspace notes", () => {
       id: "note-1",
       title: "Untitled note",
       text: "Plan launch",
+      color: "warm-cream",
       x: 20,
       y: 41,
       createdAt: "2026-06-18T12:00:00.000Z",
@@ -29,7 +30,7 @@ describe("workspace notes", () => {
     });
   });
 
-  it("migrates legacy notes without a title", () => {
+  it("migrates legacy notes without a title or color", () => {
     const parsed = parseWorkspaceNotes([
       {
         id: "legacy-note",
@@ -45,7 +46,25 @@ describe("workspace notes", () => {
       id: "legacy-note",
       title: "Untitled note",
       text: "Old local note",
+      color: "warm-cream",
     });
+  });
+
+  it("keeps persisted note colors when they match the palette", () => {
+    const parsed = parseWorkspaceNotes([
+      {
+        id: "colored-note",
+        title: "Research",
+        text: "Supplier notes",
+        color: "mist-green",
+        x: 12,
+        y: 18,
+        createdAt: "2026-06-18T12:00:00.000Z",
+        updatedAt: "2026-06-18T12:00:00.000Z",
+      },
+    ]);
+
+    expect(parsed[0].color).toBe("mist-green");
   });
 
   it("filters invalid notes and caps imported notes at the free limit", () => {
@@ -78,7 +97,7 @@ describe("workspace notes", () => {
     expect(canCreateWorkspaceNote(notes.slice(1))).toBe(true);
   });
 
-  it("updates title, text, and position without mutating other notes", () => {
+  it("updates title, text, color, and position without mutating other notes", () => {
     const notes = [
       createWorkspaceNote({
         id: "note-1",
@@ -95,7 +114,13 @@ describe("workspace notes", () => {
     const updated = updateWorkspaceNote(
       notes,
       "note-2",
-      { title: "Launch plan", text: "Updated", x: 42.6, y: -10 },
+      {
+        title: "Launch plan",
+        text: "Updated",
+        color: "soft-lime",
+        x: 42.6,
+        y: -10,
+      },
       "2026-06-18T13:00:00.000Z",
     );
 
@@ -103,6 +128,7 @@ describe("workspace notes", () => {
     expect(updated[1]).toMatchObject({
       title: "Launch plan",
       text: "Updated",
+      color: "soft-lime",
       x: 43,
       y: 0,
       updatedAt: "2026-06-18T13:00:00.000Z",

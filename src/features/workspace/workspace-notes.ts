@@ -1,19 +1,32 @@
 export const WORKSPACE_NOTES_STORAGE_KEY = "deepflow:workspace-notes:v1";
 export const MAX_FREE_WORKSPACE_NOTES = 10;
 export const DEFAULT_WORKSPACE_NOTE_TITLE = "Untitled note";
+export const DEFAULT_WORKSPACE_NOTE_COLOR = "warm-cream";
+
+export const WORKSPACE_NOTE_COLORS = [
+  { id: "warm-cream", label: "Warm Cream" },
+  { id: "soft-lime", label: "Soft Lime" },
+  { id: "mist-green", label: "Mist Green" },
+  { id: "pale-sage", label: "Pale Sage" },
+  { id: "soft-sand", label: "Soft Sand" },
+] as const;
+
+export type WorkspaceNoteColor = (typeof WORKSPACE_NOTE_COLORS)[number]["id"];
 
 export type WorkspaceNote = {
   id: string;
   title: string;
   text: string;
+  color: WorkspaceNoteColor;
   x: number;
   y: number;
   createdAt: string;
   updatedAt: string;
 };
 
-type StoredWorkspaceNote = Omit<WorkspaceNote, "title"> & {
+type StoredWorkspaceNote = Omit<WorkspaceNote, "title" | "color"> & {
   title?: string;
+  color?: string;
 };
 
 type NotePosition = {
@@ -35,6 +48,13 @@ function createId() {
 
 function isFiniteCoordinate(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function isWorkspaceNoteColor(value: unknown): value is WorkspaceNoteColor {
+  return (
+    typeof value === "string" &&
+    WORKSPACE_NOTE_COLORS.some((color) => color.id === value)
+  );
 }
 
 export function isWorkspaceNote(value: unknown): value is WorkspaceNote {
@@ -65,6 +85,9 @@ export function parseWorkspaceNotes(value: unknown): WorkspaceNote[] {
           ? note.title.slice(0, 80)
           : DEFAULT_WORKSPACE_NOTE_TITLE,
       text: note.text.slice(0, 1_000),
+      color: isWorkspaceNoteColor(note.color)
+        ? note.color
+        : DEFAULT_WORKSPACE_NOTE_COLOR,
       x: Math.max(0, Math.round(note.x)),
       y: Math.max(0, Math.round(note.y)),
     }))
@@ -81,17 +104,20 @@ export function createWorkspaceNote({
   position,
   title = DEFAULT_WORKSPACE_NOTE_TITLE,
   text = "New note",
+  color = DEFAULT_WORKSPACE_NOTE_COLOR,
 }: {
   id?: string;
   now?: string;
   position: NotePosition;
   title?: string;
   text?: string;
+  color?: WorkspaceNoteColor;
 }): WorkspaceNote {
   return {
     id,
     title: title.trim() ? title.slice(0, 80) : DEFAULT_WORKSPACE_NOTE_TITLE,
     text,
+    color,
     x: Math.max(0, Math.round(position.x)),
     y: Math.max(0, Math.round(position.y)),
     createdAt: now,
@@ -102,7 +128,7 @@ export function createWorkspaceNote({
 export function updateWorkspaceNote(
   notes: WorkspaceNote[],
   id: string,
-  updates: Partial<Pick<WorkspaceNote, "title" | "text" | "x" | "y">>,
+  updates: Partial<Pick<WorkspaceNote, "title" | "text" | "color" | "x" | "y">>,
   now = new Date().toISOString(),
 ) {
   return notes.map((note) => {
@@ -118,6 +144,7 @@ export function updateWorkspaceNote(
             ? updates.title.slice(0, 80)
             : DEFAULT_WORKSPACE_NOTE_TITLE,
       text: updates.text?.slice(0, 1_000) ?? note.text,
+      color: updates.color ?? note.color,
       x:
         updates.x === undefined
           ? note.x
