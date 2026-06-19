@@ -33,6 +33,7 @@ export const siteConfig = {
   email: "hello@deepflownow.com",
   navigation: [
     { label: "Product", href: "/#product" },
+    { label: "Workspace", href: "/workspace" },
     { label: "Focus timer", href: "/tools/focus-timer" },
     { label: "Pomodoro", href: "/pomodoro-timer" },
     { label: "Guides", href: "/guides" },
