@@ -88,8 +88,8 @@ export function parseWorkspaceNotes(value: unknown): WorkspaceNote[] {
       color: isWorkspaceNoteColor(note.color)
         ? note.color
         : DEFAULT_WORKSPACE_NOTE_COLOR,
-      x: Math.max(0, Math.round(note.x)),
-      y: Math.max(0, Math.round(note.y)),
+      x: Math.round(note.x),
+      y: Math.round(note.y),
     }))
     .slice(0, MAX_FREE_WORKSPACE_NOTES);
 }
@@ -118,8 +118,8 @@ export function createWorkspaceNote({
     title: title.slice(0, 80),
     text,
     color,
-    x: Math.max(0, Math.round(position.x)),
-    y: Math.max(0, Math.round(position.y)),
+    x: Math.round(position.x),
+    y: Math.round(position.y),
     createdAt: now,
     updatedAt: now,
   };
@@ -146,11 +146,11 @@ export function updateWorkspaceNote(
       x:
         updates.x === undefined
           ? note.x
-          : Math.max(0, Math.round(updates.x)),
+          : Math.round(updates.x),
       y:
         updates.y === undefined
           ? note.y
-          : Math.max(0, Math.round(updates.y)),
+          : Math.round(updates.y),
       updatedAt: now,
     };
   });

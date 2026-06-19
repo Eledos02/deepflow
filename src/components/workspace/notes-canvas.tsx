@@ -35,6 +35,12 @@ import {
   type WorkspaceNoteColor,
   type WorkspaceNote,
 } from "@/features/workspace/workspace-notes";
+import {
+  DEFAULT_WORKSPACE_VIEWPORT,
+  readWorkspaceViewport,
+  writeWorkspaceViewport,
+  type WorkspaceViewport,
+} from "@/features/workspace/workspace-viewport";
 
 const NOTE_WIDTH = 280;
 const NOTE_HEIGHT = 220;
@@ -63,6 +69,14 @@ type DragState = {
 type ConnectionSource = {
   noteId: string;
   side: WorkspaceConnectionSide;
+};
+
+type PanState = {
+  pointerId: number;
+  startPointerX: number;
+  startPointerY: number;
+  startViewportX: number;
+  startViewportY: number;
 };
 
 function getNewNotePosition(count: number) {
@@ -151,20 +165,40 @@ function getConnectionPath(
 export function NotesCanvas() {
   const [notes, setNotes] = useState<WorkspaceNote[]>([]);
   const [connections, setConnections] = useState<WorkspaceConnection[]>([]);
+  const [viewport, setViewport] = useState<WorkspaceViewport>(
+    DEFAULT_WORKSPACE_VIEWPORT,
+  );
   const [connectionSource, setConnectionSource] =
     useState<ConnectionSource | null>(null);
   const [selectedConnectionId, setSelectedConnectionId] = useState<
     string | null
   >(null);
   const [hydrated, setHydrated] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const worldRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef<DragState | null>(null);
+  const panStateRef = useRef<PanState | null>(null);
+  const viewportRef = useRef<WorkspaceViewport>(DEFAULT_WORKSPACE_VIEWPORT);
+  const spacePressedRef = useRef(false);
   const canCreateNote = canCreateWorkspaceNote(notes);
   const canCreateConnection = canCreateWorkspaceConnection(connections);
+
+  const applyViewport = (nextViewport: WorkspaceViewport) => {
+    viewportRef.current = nextViewport;
+
+    if (worldRef.current) {
+      worldRef.current.style.transform = `translate3d(${nextViewport.x}px, ${nextViewport.y}px, 0)`;
+    }
+  };
 
   useEffect(() => {
     const hydrationId = window.setTimeout(() => {
       setNotes(readWorkspaceNotes());
       setConnections(readWorkspaceConnections());
+      const storedViewport = readWorkspaceViewport();
+      viewportRef.current = storedViewport;
+      setViewport(storedViewport);
       setHydrated(true);
     }, 0);
 
@@ -180,6 +214,47 @@ export function NotesCanvas() {
     if (!hydrated) return;
     writeWorkspaceConnections(connections);
   }, [connections, hydrated]);
+
+  useEffect(() => {
+    applyViewport(viewport);
+  }, [viewport]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    writeWorkspaceViewport(viewport);
+  }, [hydrated, viewport]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== " ") return;
+
+      const target = event.target;
+      const isEditing =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable);
+
+      if (isEditing) return;
+      spacePressedRef.current = true;
+    };
+    const handleKeyUp = (event: globalThis.KeyboardEvent) => {
+      if (event.key === " ") spacePressedRef.current = false;
+    };
+    const releaseSpace = () => {
+      spacePressedRef.current = false;
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", releaseSpace);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", releaseSpace);
+    };
+  }, []);
 
   useEffect(() => {
     if (!selectedConnectionId) return;
@@ -369,6 +444,52 @@ export function NotesCanvas() {
     dragStateRef.current = null;
   };
 
+  const startPan = (event: PointerEvent<HTMLDivElement>) => {
+    const shouldPanWithSpace = event.button === 0 && spacePressedRef.current;
+    const shouldPanWithMiddleButton = event.button === 1;
+
+    if (!shouldPanWithSpace && !shouldPanWithMiddleButton) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    canvasRef.current?.setPointerCapture(event.pointerId);
+    panStateRef.current = {
+      pointerId: event.pointerId,
+      startPointerX: event.clientX,
+      startPointerY: event.clientY,
+      startViewportX: viewportRef.current.x,
+      startViewportY: viewportRef.current.y,
+    };
+    setIsPanning(true);
+  };
+
+  const panCanvas = (event: PointerEvent<HTMLDivElement>) => {
+    const panState = panStateRef.current;
+    if (!panState || panState.pointerId !== event.pointerId) return;
+
+    event.preventDefault();
+    applyViewport({
+      x: Math.round(
+        panState.startViewportX + event.clientX - panState.startPointerX,
+      ),
+      y: Math.round(
+        panState.startViewportY + event.clientY - panState.startPointerY,
+      ),
+    });
+  };
+
+  const endPan = (event: PointerEvent<HTMLDivElement>) => {
+    const panState = panStateRef.current;
+    if (!panState || panState.pointerId !== event.pointerId) return;
+
+    if (canvasRef.current?.hasPointerCapture(event.pointerId)) {
+      canvasRef.current.releasePointerCapture(event.pointerId);
+    }
+    panStateRef.current = null;
+    setViewport(viewportRef.current);
+    setIsPanning(false);
+  };
+
   return (
     <section className="workspace-canvas-card" aria-labelledby="notes-canvas-title">
       <div className="workspace-canvas-card__header">
@@ -392,65 +513,62 @@ export function NotesCanvas() {
 
       <div className="workspace-canvas-shell">
         <div
-          aria-label="Draggable notes canvas"
+          aria-label="Infinite notes canvas. Hold Space and drag, or use the middle mouse button, to pan."
           className="workspace-canvas"
+          data-panning={isPanning}
           data-empty={notes.length === 0}
+          onPointerCancel={endPan}
+          onPointerDownCapture={startPan}
+          onPointerMove={panCanvas}
+          onPointerUp={endPan}
+          ref={canvasRef}
         >
-          {visibleConnections.length > 0 ? (
-            <svg
-              aria-label="Note connections"
-              className="workspace-connections"
-            >
-              {visibleConnections.map((connection) => (
-                <path
-                  aria-label="Select note connection"
-                  d={connection.path}
-                  data-selected={selectedConnectionId === connection.id}
-                  key={connection.id}
-                  onClick={() => setSelectedConnectionId(connection.id)}
-                  onKeyDown={(event) =>
-                    handleConnectionKeyDown(event, connection.id)
-                  }
-                  role="button"
-                  tabIndex={0}
-                />
-              ))}
-            </svg>
-          ) : null}
+          <div className="workspace-canvas__world" ref={worldRef}>
+            {visibleConnections.length > 0 ? (
+              <svg
+                aria-label="Note connections"
+                className="workspace-connections"
+              >
+                {visibleConnections.map((connection) => (
+                  <path
+                    aria-label="Select note connection"
+                    d={connection.path}
+                    data-selected={selectedConnectionId === connection.id}
+                    key={connection.id}
+                    onClick={() => setSelectedConnectionId(connection.id)}
+                    onKeyDown={(event) =>
+                      handleConnectionKeyDown(event, connection.id)
+                    }
+                    role="button"
+                    tabIndex={0}
+                  />
+                ))}
+              </svg>
+            ) : null}
 
-          {selectedConnection ? (
-            <button
-              aria-label="Delete selected connection"
-              className="workspace-connection-delete"
-              onClick={deleteSelectedConnection}
-              style={{
-                transform: `translate3d(${selectedConnection.midpoint.x}px, ${selectedConnection.midpoint.y}px, 0) translate(-50%, -50%)`,
-              }}
-              type="button"
-            >
-              Delete
-            </button>
-          ) : null}
+            {selectedConnection ? (
+              <button
+                aria-label="Delete selected connection"
+                className="workspace-connection-delete"
+                onClick={deleteSelectedConnection}
+                style={{
+                  transform: `translate3d(${selectedConnection.midpoint.x}px, ${selectedConnection.midpoint.y}px, 0) translate(-50%, -50%)`,
+                }}
+                type="button"
+              >
+                Delete
+              </button>
+            ) : null}
 
-          {notes.length === 0 ? (
-            <div className="workspace-canvas__empty">
-              <strong>Start with one note.</strong>
-              <p>
-                Add a note for a task, idea, research thread, or next action.
-                Drag it anywhere on the canvas.
-              </p>
-            </div>
-          ) : null}
-
-          {notes.map((note) => (
-            <article
-              className="workspace-note"
-              data-color={note.color}
-              key={note.id}
-              style={{
-                transform: `translate3d(${note.x}px, ${note.y}px, 0)`,
-              }}
-            >
+            {notes.map((note) => (
+              <article
+                className="workspace-note"
+                data-color={note.color}
+                key={note.id}
+                style={{
+                  transform: `translate3d(${note.x}px, ${note.y}px, 0)`,
+                }}
+              >
               <div className="workspace-note__connection-nodes" aria-label="Note connection handles">
                 {WORKSPACE_CONNECTION_SIDES.map((side) => (
                   <button
@@ -520,8 +638,19 @@ export function NotesCanvas() {
                 placeholder="Write your thought..."
                 value={note.text}
               />
-            </article>
-          ))}
+              </article>
+            ))}
+          </div>
+
+          {notes.length === 0 ? (
+            <div className="workspace-canvas__empty">
+              <strong>Start with one note.</strong>
+              <p>
+                Add a note for a task, idea, research thread, or next action.
+                Drag it anywhere on the canvas.
+              </p>
+            </div>
+          ) : null}
         </div>
       </div>
 

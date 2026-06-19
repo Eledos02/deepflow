@@ -3988,7 +3988,7 @@ a:focus-visible {
 .workspace-canvas {
   position: relative;
   min-height: clamp(680px, calc(100vh - 248px), 900px);
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid rgba(255, 254, 250, 0.64);
   border-radius: 26px;
   background:
@@ -4001,6 +4001,19 @@ a:focus-visible {
     inset 0 0 36px rgba(255, 254, 250, 0.32);
   backdrop-filter: blur(16px) saturate(1.05);
   -webkit-backdrop-filter: blur(16px) saturate(1.05);
+}
+
+.workspace-canvas[data-panning="true"] {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.workspace-canvas__world {
+  position: absolute;
+  inset: 0;
+  min-width: 100%;
+  min-height: 100%;
+  will-change: transform;
 }
 
 .workspace-connections {

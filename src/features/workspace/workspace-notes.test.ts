@@ -160,7 +160,7 @@ describe("workspace notes", () => {
       text: "Updated",
       color: "soft-lime",
       x: 43,
-      y: 0,
+      y: -10,
       updatedAt: "2026-06-18T13:00:00.000Z",
     });
   });
