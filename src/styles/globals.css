@@ -3992,8 +3992,73 @@ a:focus-visible {
   -webkit-backdrop-filter: blur(16px) saturate(1.05);
 }
 
+.workspace-connections {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.workspace-connections path {
+  fill: none;
+  cursor: pointer;
+  opacity: 0.58;
+  pointer-events: stroke;
+  stroke: rgba(107, 130, 72, 0.3);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.45;
+  transition:
+    opacity 160ms ease,
+    stroke 160ms ease,
+    stroke-width 160ms ease;
+  vector-effect: non-scaling-stroke;
+}
+
+.workspace-connections path:hover,
+.workspace-connections path:focus-visible {
+  opacity: 0.86;
+  stroke: rgba(107, 130, 72, 0.48);
+  stroke-width: 1.75;
+  outline: none;
+}
+
+.workspace-connections path[data-selected="true"] {
+  opacity: 0.96;
+  stroke: rgba(96, 130, 58, 0.62);
+  stroke-width: 2;
+}
+
+.workspace-connection-delete {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  padding: 6px 9px;
+  border: 1px solid rgba(107, 130, 72, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 254, 250, 0.9);
+  box-shadow: 0 6px 16px rgba(23, 35, 25, 0.08);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 800;
+  user-select: none;
+}
+
+.workspace-connection-delete:hover,
+.workspace-connection-delete:focus-visible {
+  border-color: rgba(107, 130, 72, 0.34);
+  color: var(--ink);
+  outline: none;
+}
+
 .workspace-canvas__empty {
   position: absolute;
+  z-index: 2;
   top: 50%;
   left: 50%;
   width: min(360px, calc(100% - 40px));
@@ -4022,6 +4087,7 @@ a:focus-visible {
 
 .workspace-note {
   position: absolute;
+  z-index: 2;
   top: 0;
   left: 0;
   width: min(280px, calc(100% - 28px));
@@ -4082,6 +4148,93 @@ a:focus-visible {
   cursor: grab;
   touch-action: none;
   user-select: none;
+}
+
+.workspace-note__connection-node {
+  position: absolute;
+  z-index: 4;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid rgba(107, 130, 72, 0.4);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(223, 255, 145, 0.92) 0 36%, rgba(107, 130, 72, 0.38) 38% 100%);
+  box-shadow: 0 2px 8px rgba(23, 35, 25, 0.08);
+  cursor: crosshair;
+  opacity: 0.14;
+  transform: translate(50%, -50%) scale(0.82);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+  user-select: none;
+}
+
+.workspace-note__connection-node[data-side="top"] {
+  top: -7px;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.82);
+}
+
+.workspace-note__connection-node[data-side="right"] {
+  top: 50%;
+  right: -7px;
+  transform: translate(50%, -50%) scale(0.82);
+}
+
+.workspace-note__connection-node[data-side="bottom"] {
+  bottom: -7px;
+  left: 50%;
+  transform: translate(-50%, 50%) scale(0.82);
+}
+
+.workspace-note__connection-node[data-side="left"] {
+  top: 50%;
+  left: -7px;
+  transform: translate(-50%, -50%) scale(0.82);
+}
+
+.workspace-note:hover .workspace-note__connection-node,
+.workspace-note:focus-within .workspace-note__connection-node,
+.workspace-note__connection-node[aria-pressed="true"] {
+  opacity: 0.92;
+}
+
+.workspace-note:hover .workspace-note__connection-node[data-side="top"],
+.workspace-note:focus-within .workspace-note__connection-node[data-side="top"],
+.workspace-note__connection-node[data-side="top"][aria-pressed="true"] {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.workspace-note:hover .workspace-note__connection-node[data-side="right"],
+.workspace-note:focus-within .workspace-note__connection-node[data-side="right"],
+.workspace-note__connection-node[data-side="right"][aria-pressed="true"] {
+  transform: translate(50%, -50%) scale(1);
+}
+
+.workspace-note:hover .workspace-note__connection-node[data-side="bottom"],
+.workspace-note:focus-within .workspace-note__connection-node[data-side="bottom"],
+.workspace-note__connection-node[data-side="bottom"][aria-pressed="true"] {
+  transform: translate(-50%, 50%) scale(1);
+}
+
+.workspace-note:hover .workspace-note__connection-node[data-side="left"],
+.workspace-note:focus-within .workspace-note__connection-node[data-side="left"],
+.workspace-note__connection-node[data-side="left"][aria-pressed="true"] {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.workspace-note__connection-node[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 4px rgba(184, 228, 94, 0.18),
+    0 3px 10px rgba(23, 35, 25, 0.1);
+}
+
+.workspace-note__connection-node:focus-visible {
+  outline: 2px solid rgba(107, 130, 72, 0.72);
+  outline-offset: 3px;
+  opacity: 1;
 }
 
 .workspace-note__handle:active {
@@ -4192,8 +4345,18 @@ a:focus-visible {
   font-family: var(--font-display);
   font-size: 1.45rem;
   font-weight: 400;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
   line-height: 1.05;
+}
+
+.workspace-note__title::placeholder,
+.workspace-note textarea::placeholder {
+  color: rgba(74, 86, 78, 0.48);
+  opacity: 1;
+}
+
+.workspace-note__title::placeholder {
+  letter-spacing: -0.01em;
 }
 
 .workspace-note textarea {

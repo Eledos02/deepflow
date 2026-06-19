@@ -20,7 +20,7 @@ describe("workspace notes", () => {
 
     expect(note).toEqual({
       id: "note-1",
-      title: "Untitled note",
+      title: "",
       text: "Plan launch",
       color: "warm-cream",
       x: 20,
@@ -28,6 +28,17 @@ describe("workspace notes", () => {
       createdAt: "2026-06-18T12:00:00.000Z",
       updatedAt: "2026-06-18T12:00:00.000Z",
     });
+  });
+
+  it("creates blank title and body content by default", () => {
+    const note = createWorkspaceNote({
+      id: "note-1",
+      now: "2026-06-18T12:00:00.000Z",
+      position: { x: 0, y: 0 },
+    });
+
+    expect(note.title).toBe("");
+    expect(note.text).toBe("");
   });
 
   it("migrates legacy notes without a title or color", () => {
@@ -48,6 +59,25 @@ describe("workspace notes", () => {
       text: "Old local note",
       color: "warm-cream",
     });
+  });
+
+  it("preserves intentionally empty note titles", () => {
+    const note = createWorkspaceNote({
+      id: "note-1",
+      now: "2026-06-18T12:00:00.000Z",
+      position: { x: 0, y: 0 },
+      title: "Custom title",
+    });
+    const updated = updateWorkspaceNote(
+      [note],
+      "note-1",
+      { title: "" },
+      "2026-06-18T13:00:00.000Z",
+    );
+    const parsed = parseWorkspaceNotes(updated);
+
+    expect(updated[0].title).toBe("");
+    expect(parsed[0].title).toBe("");
   });
 
   it("keeps persisted note colors when they match the palette", () => {

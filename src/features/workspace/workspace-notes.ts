@@ -81,7 +81,7 @@ export function parseWorkspaceNotes(value: unknown): WorkspaceNote[] {
     .map((note) => ({
       ...note,
       title:
-        typeof note.title === "string" && note.title.trim()
+        typeof note.title === "string"
           ? note.title.slice(0, 80)
           : DEFAULT_WORKSPACE_NOTE_TITLE,
       text: note.text.slice(0, 1_000),
@@ -102,8 +102,8 @@ export function createWorkspaceNote({
   id = createId(),
   now = new Date().toISOString(),
   position,
-  title = DEFAULT_WORKSPACE_NOTE_TITLE,
-  text = "New note",
+  title = "",
+  text = "",
   color = DEFAULT_WORKSPACE_NOTE_COLOR,
 }: {
   id?: string;
@@ -115,7 +115,7 @@ export function createWorkspaceNote({
 }): WorkspaceNote {
   return {
     id,
-    title: title.trim() ? title.slice(0, 80) : DEFAULT_WORKSPACE_NOTE_TITLE,
+    title: title.slice(0, 80),
     text,
     color,
     x: Math.max(0, Math.round(position.x)),
@@ -140,9 +140,7 @@ export function updateWorkspaceNote(
       title:
         updates.title === undefined
           ? note.title
-          : updates.title.trim()
-            ? updates.title.slice(0, 80)
-            : DEFAULT_WORKSPACE_NOTE_TITLE,
+          : updates.title.slice(0, 80),
       text: updates.text?.slice(0, 1_000) ?? note.text,
       color: updates.color ?? note.color,
       x:
