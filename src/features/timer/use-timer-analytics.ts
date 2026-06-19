@@ -14,6 +14,10 @@ import {
   TIMER_STATS_UPDATED_EVENT,
   type TimerStats,
 } from "@/features/timer/timer-stats";
+import {
+  createFocusJournalEntry,
+  saveFocusJournalEntry,
+} from "@/features/timer/focus-journal";
 
 const emptyStats: TimerStats = {
   version: 1,
@@ -75,6 +79,19 @@ export function useTimerAnalytics() {
       path: session.path,
       timerType: session.timerType,
     });
+
+    if (!session.countsAsFocus) return;
+
+    saveFocusJournalEntry(
+      createFocusJournalEntry({
+        id: session.id,
+        intention: session.taskName ?? session.intention ?? "",
+        durationMinutes: Math.max(1, Math.round(session.durationSeconds / 60)),
+        timerType: session.timerType ?? "Focus Timer",
+        completedAt: new Date(session.completedAtMs).toISOString(),
+        sourcePath: session.path ?? "/",
+      }),
+    );
   }, []);
 
   return {
