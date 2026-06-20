@@ -3818,23 +3818,24 @@ a:focus-visible {
   display: grid;
   align-items: start;
   grid-template-columns: 228px minmax(0, 1fr);
-  gap: 18px;
+  gap: 16px;
 }
 
 .workspace-sidebar {
   position: sticky;
   top: 96px;
-  padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: 28px;
-  background: rgba(255, 254, 250, 0.78);
-  box-shadow: var(--shadow-soft);
+  padding: 24px 16px 18px;
+  border: 1px solid rgba(19, 32, 25, 0.18);
+  border-radius: 26px;
+  background: var(--ink);
+  box-shadow: 0 36px 100px rgba(25, 42, 33, 0.16);
+  color: white;
 }
 
 .workspace-sidebar__header {
-  margin-bottom: 22px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--line);
+  margin: 0 8px 18px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .workspace-sidebar__header .eyebrow {
@@ -3844,52 +3845,55 @@ a:focus-visible {
 .workspace-sidebar__header strong {
   display: block;
   font-family: var(--font-display);
-  font-size: 2rem;
+  color: white;
+  font-size: 1.5rem;
   font-weight: 400;
   letter-spacing: -0.045em;
 }
 
 .workspace-sidebar nav {
   display: grid;
-  gap: 8px;
 }
 
 .workspace-sidebar nav a,
 .workspace-sidebar nav button {
   display: flex;
-  min-height: 44px;
+  min-height: 42px;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 13px;
-  border: 1px solid transparent;
-  border-radius: 14px;
+  gap: 10px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
   background: transparent;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.56);
   cursor: pointer;
-  font-size: 0.86rem;
-  font-weight: 750;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-align: left;
 }
 
 .workspace-sidebar nav a[data-active="true"],
 .workspace-sidebar nav button[data-active="true"] {
-  border-color: rgba(184, 228, 94, 0.55);
-  background: rgba(223, 255, 145, 0.28);
-  color: var(--ink);
-  box-shadow: 0 10px 26px rgba(74, 95, 55, 0.08);
+  background: rgba(223, 255, 145, 0.1);
+  color: var(--lime);
+}
+
+.workspace-sidebar nav a:hover,
+.workspace-sidebar nav button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .workspace-sidebar nav a span,
 .workspace-sidebar nav button span {
-  color: #7b857f;
+  color: rgba(255, 255, 255, 0.42);
   font-size: 0.68rem;
   font-weight: 700;
 }
 
 .workspace-sidebar nav button:focus-visible {
-  outline: 2px solid rgba(107, 130, 72, 0.72);
-  outline-offset: 2px;
+  outline: 2px solid var(--lime);
+  outline-offset: -2px;
 }
 
 .workspace-main {
@@ -3897,15 +3901,15 @@ a:focus-visible {
 }
 
 .workspace-hero {
-  max-width: 1120px;
-  margin-bottom: 18px;
+  max-width: 920px;
+  margin-bottom: 22px;
 }
 
 .workspace-hero h1 {
-  max-width: 840px;
-  margin-bottom: 14px;
+  max-width: 760px;
+  margin-bottom: 12px;
   font-family: var(--font-display);
-  font-size: clamp(2.75rem, 5vw, 4.95rem);
+  font-size: clamp(2.5rem, 4.2vw, 4rem);
   font-weight: 400;
   letter-spacing: -0.065em;
   line-height: 0.94;
@@ -3914,20 +3918,20 @@ a:focus-visible {
 .workspace-hero p {
   max-width: 680px;
   color: var(--ink-soft);
-  font-size: 1rem;
-  line-height: 1.75;
+  font-size: 0.96rem;
+  line-height: 1.7;
 }
 
 .workspace-canvas-card {
   position: relative;
   z-index: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 254, 250, 0.72);
-  border-radius: 34px;
+  border: 1px solid rgba(19, 32, 25, 0.18);
+  border-radius: 28px;
   background:
-    linear-gradient(180deg, rgba(255, 254, 250, 0.76), rgba(248, 243, 231, 0.58));
+    linear-gradient(180deg, rgba(255, 254, 250, 0.84), rgba(248, 243, 231, 0.68));
   box-shadow:
-    0 24px 70px rgba(23, 35, 25, 0.08),
+    0 36px 100px rgba(25, 42, 33, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -3952,7 +3956,7 @@ a:focus-visible {
   align-items: flex-end;
   justify-content: space-between;
   gap: 22px;
-  padding: 26px 30px 22px;
+  padding: 24px 28px 21px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -3963,7 +3967,7 @@ a:focus-visible {
 .workspace-canvas-card__header h2 {
   max-width: 600px;
   margin-bottom: 9px;
-  font-size: clamp(2rem, 3.5vw, 3.1rem);
+  font-size: clamp(1.9rem, 3.1vw, 2.65rem);
   line-height: 1;
 }
 
@@ -3977,20 +3981,20 @@ a:focus-visible {
 .workspace-canvas-shell {
   position: relative;
   z-index: 1;
-  padding: 14px;
+  padding: 12px;
   border-top: 1px solid rgba(255, 254, 250, 0.58);
   background:
     radial-gradient(circle at 12% 0%, rgba(223, 255, 145, 0.12), transparent 26%),
     linear-gradient(180deg, rgba(255, 254, 250, 0.3), rgba(245, 241, 231, 0.28)),
-    rgba(245, 241, 231, 0.38);
+    rgba(245, 241, 231, 0.32);
 }
 
 .workspace-canvas {
   position: relative;
   min-height: clamp(680px, calc(100vh - 248px), 900px);
   overflow: hidden;
-  border: 1px solid rgba(255, 254, 250, 0.64);
-  border-radius: 26px;
+  border: 1px solid rgba(19, 32, 25, 0.08);
+  border-radius: 22px;
   background:
     radial-gradient(circle at 18% 8%, rgba(223, 255, 145, 0.16), transparent 24%),
     radial-gradient(circle at 86% 18%, rgba(216, 238, 229, 0.28), transparent 26%),
@@ -4739,15 +4743,10 @@ a:focus-visible {
 .workspace-journal-card,
 .workspace-dashboard-card {
   overflow: hidden;
-  border: 1px solid rgba(255, 254, 250, 0.72);
-  border-radius: 34px;
-  background:
-    linear-gradient(180deg, rgba(255, 254, 250, 0.78), rgba(248, 243, 231, 0.62));
-  box-shadow:
-    0 24px 70px rgba(23, 35, 25, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(19, 32, 25, 0.18);
+  border-radius: 26px;
+  background: var(--white);
+  box-shadow: 0 36px 100px rgba(25, 42, 33, 0.16);
 }
 
 .workspace-journal-card__header,
@@ -4756,8 +4755,8 @@ a:focus-visible {
   align-items: flex-start;
   justify-content: space-between;
   gap: 22px;
-  padding: 30px 32px 24px;
-  border-bottom: 1px solid rgba(19, 32, 25, 0.08);
+  padding: 25px 28px 21px;
+  border-bottom: 1px solid var(--line);
 }
 
 .workspace-journal-card__header .eyebrow,
@@ -4769,7 +4768,7 @@ a:focus-visible {
 .workspace-dashboard-card__header h2 {
   max-width: 660px;
   margin-bottom: 9px;
-  font-size: clamp(2rem, 3.5vw, 3.1rem);
+  font-size: clamp(1.9rem, 3.1vw, 2.65rem);
   line-height: 1;
 }
 
@@ -4804,9 +4803,9 @@ a:focus-visible {
 .workspace-dashboard-empty {
   margin: 24px;
   padding: 28px;
-  border: 1px dashed rgba(19, 32, 25, 0.16);
-  border-radius: 26px;
-  background: rgba(255, 254, 250, 0.56);
+  border: 1px dashed var(--line);
+  border-radius: 17px;
+  background: rgba(255, 254, 250, 0.86);
   color: var(--muted);
   text-align: center;
 }
@@ -4841,16 +4840,15 @@ a:focus-visible {
 .workspace-metric-tile,
 .workspace-insights-grid article,
 .workspace-goal-progress-card {
-  border: 1px solid rgba(19, 32, 25, 0.06);
-  border-radius: 24px;
-  background: rgba(255, 254, 250, 0.58);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: rgba(255, 254, 250, 0.86);
 }
 
 .workspace-metric-tile,
 .workspace-insights-grid article {
-  min-height: 132px;
-  padding: 20px;
+  min-height: 120px;
+  padding: 19px;
 }
 
 .workspace-metric-tile span,
@@ -4872,7 +4870,7 @@ a:focus-visible {
   margin-top: 12px;
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: clamp(2rem, 3vw, 3rem);
+  font-size: 1.45rem;
   font-weight: 400;
   letter-spacing: -0.055em;
   line-height: 0.95;
@@ -4946,9 +4944,9 @@ a:focus-visible {
   align-content: start;
   gap: 14px;
   padding: 20px;
-  border: 1px solid rgba(19, 32, 25, 0.06);
-  border-radius: 24px;
-  background: rgba(255, 254, 250, 0.46);
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: rgba(255, 254, 250, 0.86);
 }
 
 .workspace-goal-form label {
@@ -5036,9 +5034,9 @@ a:focus-visible {
 
 .workspace-journal-day {
   padding: 22px;
-  border: 1px solid rgba(19, 32, 25, 0.07);
-  border-radius: 26px;
-  background: rgba(255, 254, 250, 0.5);
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: rgba(255, 254, 250, 0.86);
 }
 
 .workspace-journal-day h3 {
