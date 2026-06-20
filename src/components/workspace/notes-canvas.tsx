@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
   type KeyboardEvent,
+  type MouseEvent,
   type PointerEvent,
 } from "react";
 
@@ -18,7 +20,6 @@ import {
   canCreateWorkspaceConnection,
   deleteWorkspaceConnection,
   readWorkspaceConnections,
-  removeConnectionsForNote,
   writeWorkspaceConnections,
   type WorkspaceConnectionSide,
   type WorkspaceConnection,
@@ -28,7 +29,6 @@ import {
   WORKSPACE_NOTE_COLORS,
   canCreateWorkspaceNote,
   createWorkspaceNote,
-  deleteWorkspaceNote,
   readWorkspaceNotes,
   updateWorkspaceNote,
   writeWorkspaceNotes,
@@ -37,13 +37,32 @@ import {
 } from "@/features/workspace/workspace-notes";
 import {
   DEFAULT_WORKSPACE_VIEWPORT,
+  MAX_WORKSPACE_ZOOM,
+  MIN_WORKSPACE_ZOOM,
   readWorkspaceViewport,
+  resetWorkspaceViewport,
   writeWorkspaceViewport,
+  zoomWorkspaceViewport,
   type WorkspaceViewport,
 } from "@/features/workspace/workspace-viewport";
-
-const NOTE_WIDTH = 280;
-const NOTE_HEIGHT = 220;
+import {
+  WORKSPACE_NOTE_HEIGHT,
+  WORKSPACE_NOTE_WIDTH,
+  colorSelectedWorkspaceNotes,
+  deleteSelectedWorkspaceNotes,
+  moveSelectedWorkspaceNotes,
+  normalizeWorkspaceSelectionRect,
+  removeConnectionsForSelectedWorkspaceNotes,
+  selectWorkspaceNotesInRect,
+  toggleWorkspaceNoteSelection,
+  type WorkspacePoint,
+  type WorkspaceSelectionRect,
+} from "@/features/workspace/workspace-selection";
+import {
+  canCreateWorkspaceNoteFromShortcut,
+  canvasPointToWorkspacePoint,
+  getWorkspaceViewportCenterPosition,
+} from "@/features/workspace/workspace-canvas-utils";
 
 const foundingMemberFeatures = [
   "Unlimited Notes",
@@ -58,17 +77,25 @@ const foundingMemberFeatures = [
 ] as const;
 
 type DragState = {
-  id: string;
+  noteIds: string[];
+  notes: WorkspaceNote[];
   pointerId: number;
   startPointerX: number;
   startPointerY: number;
-  startX: number;
-  startY: number;
+};
+
+type SelectionBoxState = WorkspaceSelectionRect & {
+  pointerId: number;
 };
 
 type ConnectionSource = {
   noteId: string;
   side: WorkspaceConnectionSide;
+};
+
+type ConnectionDragState = {
+  pointerId: number;
+  source: ConnectionSource;
 };
 
 type PanState = {
@@ -91,12 +118,12 @@ function getAutoConnectionSide(
   otherNote: WorkspaceNote,
 ): WorkspaceConnectionSide {
   const noteCenter = {
-    x: note.x + NOTE_WIDTH / 2,
-    y: note.y + NOTE_HEIGHT / 2,
+    x: note.x + WORKSPACE_NOTE_WIDTH / 2,
+    y: note.y + WORKSPACE_NOTE_HEIGHT / 2,
   };
   const otherCenter = {
-    x: otherNote.x + NOTE_WIDTH / 2,
-    y: otherNote.y + NOTE_HEIGHT / 2,
+    x: otherNote.x + WORKSPACE_NOTE_WIDTH / 2,
+    y: otherNote.y + WORKSPACE_NOTE_HEIGHT / 2,
   };
   const deltaX = otherCenter.x - noteCenter.x;
   const deltaY = otherCenter.y - noteCenter.y;
@@ -113,18 +140,24 @@ function getConnectionAnchor(
   side: WorkspaceConnectionSide,
 ) {
   if (side === "top") {
-    return { x: note.x + NOTE_WIDTH / 2, y: note.y };
+    return { x: note.x + WORKSPACE_NOTE_WIDTH / 2, y: note.y };
   }
 
   if (side === "right") {
-    return { x: note.x + NOTE_WIDTH, y: note.y + NOTE_HEIGHT / 2 };
+    return {
+      x: note.x + WORKSPACE_NOTE_WIDTH,
+      y: note.y + WORKSPACE_NOTE_HEIGHT / 2,
+    };
   }
 
   if (side === "bottom") {
-    return { x: note.x + NOTE_WIDTH / 2, y: note.y + NOTE_HEIGHT };
+    return {
+      x: note.x + WORKSPACE_NOTE_WIDTH / 2,
+      y: note.y + WORKSPACE_NOTE_HEIGHT,
+    };
   }
 
-  return { x: note.x, y: note.y + NOTE_HEIGHT / 2 };
+  return { x: note.x, y: note.y + WORKSPACE_NOTE_HEIGHT / 2 };
 }
 
 function getConnectionPath(
@@ -138,12 +171,12 @@ function getConnectionPath(
   const start = getConnectionAnchor(fromNote, resolvedFromSide);
   const end = getConnectionAnchor(toNote, resolvedToSide);
   const fromCenter = {
-    x: fromNote.x + NOTE_WIDTH / 2,
-    y: fromNote.y + NOTE_HEIGHT / 2,
+    x: fromNote.x + WORKSPACE_NOTE_WIDTH / 2,
+    y: fromNote.y + WORKSPACE_NOTE_HEIGHT / 2,
   };
   const toCenter = {
-    x: toNote.x + NOTE_WIDTH / 2,
-    y: toNote.y + NOTE_HEIGHT / 2,
+    x: toNote.x + WORKSPACE_NOTE_WIDTH / 2,
+    y: toNote.y + WORKSPACE_NOTE_HEIGHT / 2,
   };
   const distanceX = Math.abs(end.x - start.x);
   const distanceY = Math.abs(end.y - start.y);
@@ -162,9 +195,25 @@ function getConnectionPath(
   };
 }
 
+function getConnectionPreviewPath(
+  note: WorkspaceNote,
+  side: WorkspaceConnectionSide,
+  end: WorkspacePoint,
+) {
+  const start = getConnectionAnchor(note, side);
+  const distanceX = Math.abs(end.x - start.x);
+  const distanceY = Math.abs(end.y - start.y);
+  const lift = Math.min(90, Math.max(28, distanceX * 0.12 + distanceY * 0.08));
+  const controlX = start.x + (end.x - start.x) * 0.5;
+  const controlY = start.y + (end.y - start.y) * 0.5 - lift;
+
+  return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`;
+}
+
 export function NotesCanvas() {
   const [notes, setNotes] = useState<WorkspaceNote[]>([]);
   const [connections, setConnections] = useState<WorkspaceConnection[]>([]);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
   const [viewport, setViewport] = useState<WorkspaceViewport>(
     DEFAULT_WORKSPACE_VIEWPORT,
   );
@@ -175,22 +224,46 @@ export function NotesCanvas() {
   >(null);
   const [hydrated, setHydrated] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
+  const [isMultiColorPaletteOpen, setIsMultiColorPaletteOpen] =
+    useState(false);
+  const [enteringNoteIds, setEnteringNoteIds] = useState<string[]>([]);
+  const [connectionPreviewEnd, setConnectionPreviewEnd] =
+    useState<WorkspacePoint | null>(null);
+  const [selectionBox, setSelectionBox] = useState<SelectionBoxState | null>(
+    null,
+  );
   const canvasRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef<DragState | null>(null);
   const panStateRef = useRef<PanState | null>(null);
+  const connectionDragRef = useRef<ConnectionDragState | null>(null);
+  const selectionBoxRef = useRef<SelectionBoxState | null>(null);
+  const selectedNoteIdsRef = useRef<string[]>([]);
+  const noteTitleRefs = useRef(new Map<string, HTMLInputElement>());
+  const pendingFocusNoteIdRef = useRef<string | null>(null);
   const viewportRef = useRef<WorkspaceViewport>(DEFAULT_WORKSPACE_VIEWPORT);
   const spacePressedRef = useRef(false);
   const canCreateNote = canCreateWorkspaceNote(notes);
   const canCreateConnection = canCreateWorkspaceConnection(connections);
+  const hasMultiSelection = selectedNoteIds.length >= 2;
+  const canDuplicateSelection =
+    hasMultiSelection &&
+    notes.length + selectedNoteIds.length <= MAX_FREE_WORKSPACE_NOTES;
 
-  const applyViewport = (nextViewport: WorkspaceViewport) => {
+  const setNoteSelection = useCallback((noteIds: string[]) => {
+    const nextSelection = [...new Set(noteIds)];
+    selectedNoteIdsRef.current = nextSelection;
+    setSelectedNoteIds(nextSelection);
+    if (nextSelection.length < 2) setIsMultiColorPaletteOpen(false);
+  }, []);
+
+  const applyViewport = useCallback((nextViewport: WorkspaceViewport) => {
     viewportRef.current = nextViewport;
 
     if (worldRef.current) {
-      worldRef.current.style.transform = `translate3d(${nextViewport.x}px, ${nextViewport.y}px, 0)`;
+      worldRef.current.style.transform = `translate3d(${nextViewport.x}px, ${nextViewport.y}px, 0) scale(${nextViewport.zoom})`;
     }
-  };
+  }, []);
 
   useEffect(() => {
     const hydrationId = window.setTimeout(() => {
@@ -217,12 +290,24 @@ export function NotesCanvas() {
 
   useEffect(() => {
     applyViewport(viewport);
-  }, [viewport]);
+  }, [applyViewport, viewport]);
 
   useEffect(() => {
     if (!hydrated) return;
     writeWorkspaceViewport(viewport);
   }, [hydrated, viewport]);
+
+  useEffect(() => {
+    const noteId = pendingFocusNoteIdRef.current;
+    if (!noteId) return;
+
+    const frameId = window.requestAnimationFrame(() => {
+      noteTitleRefs.current.get(noteId)?.focus();
+      pendingFocusNoteIdRef.current = null;
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [notes]);
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -256,32 +341,6 @@ export function NotesCanvas() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!selectedConnectionId) return;
-
-    const handleDeleteKey = (event: globalThis.KeyboardEvent) => {
-      const target = event.target;
-      const isEditing =
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        (target instanceof HTMLElement && target.isContentEditable);
-
-      if (isEditing) return;
-      if (event.key !== "Backspace" && event.key !== "Delete") return;
-
-      event.preventDefault();
-      setConnections((currentConnections) =>
-        deleteWorkspaceConnection(currentConnections, selectedConnectionId),
-      );
-      setSelectedConnectionId(null);
-    };
-
-    window.addEventListener("keydown", handleDeleteKey);
-
-    return () => window.removeEventListener("keydown", handleDeleteKey);
-  }, [selectedConnectionId]);
-
   const visibleConnections = useMemo(() => {
     const notesById = new Map(notes.map((note) => [note.id, note]));
 
@@ -311,17 +370,23 @@ export function NotesCanvas() {
   const selectedConnection = visibleConnections.find(
     (connection) => connection.id === selectedConnectionId,
   );
+  const selectionBounds = selectionBox
+    ? normalizeWorkspaceSelectionRect(selectionBox)
+    : null;
+  const connectionPreviewPath = useMemo(() => {
+    if (!connectionSource || !connectionPreviewEnd) return null;
 
-  const addNote = () => {
-    if (!canCreateWorkspaceNote(notes)) return;
+    const sourceNote = notes.find(
+      (note) => note.id === connectionSource.noteId,
+    );
+    if (!sourceNote) return null;
 
-    setNotes((currentNotes) => [
-      ...currentNotes,
-      createWorkspaceNote({
-        position: getNewNotePosition(currentNotes.length),
-      }),
-    ]);
-  };
+    return getConnectionPreviewPath(
+      sourceNote,
+      connectionSource.side,
+      connectionPreviewEnd,
+    );
+  }, [connectionPreviewEnd, connectionSource, notes]);
 
   const updateNoteTitle = (id: string, title: string) => {
     setNotes((currentNotes) =>
@@ -336,28 +401,192 @@ export function NotesCanvas() {
   };
 
   const updateNoteColor = (id: string, color: WorkspaceNoteColor) => {
+    const noteIds = selectedNoteIdsRef.current.includes(id)
+      ? selectedNoteIdsRef.current
+      : [id];
+
     setNotes((currentNotes) =>
-      updateWorkspaceNote(currentNotes, id, { color }),
+      colorSelectedWorkspaceNotes(currentNotes, noteIds, color),
     );
   };
 
-  const removeNote = (id: string) => {
-    setNotes((currentNotes) => deleteWorkspaceNote(currentNotes, id));
+  const updateSelectedNoteColor = (color: WorkspaceNoteColor) => {
+    const noteIds = selectedNoteIdsRef.current;
+    if (noteIds.length < 2) return;
+
+    setNotes((currentNotes) =>
+      colorSelectedWorkspaceNotes(currentNotes, noteIds, color),
+    );
+    setIsMultiColorPaletteOpen(false);
+  };
+
+  const duplicateSelectedNotes = () => {
+    const noteIds = selectedNoteIdsRef.current;
+    if (
+      noteIds.length < 2 ||
+      notes.length + noteIds.length > MAX_FREE_WORKSPACE_NOTES
+    ) {
+      return;
+    }
+
+    const selectedIds = new Set(noteIds);
+    const copies = notes
+      .filter((note) => selectedIds.has(note.id))
+      .map((note) =>
+        createWorkspaceNote({
+          color: note.color,
+          position: { x: note.x + 28, y: note.y + 28 },
+          text: note.text,
+          title: note.title,
+        }),
+      );
+
+    setNotes((currentNotes) => [...currentNotes, ...copies]);
+    pendingFocusNoteIdRef.current = copies[0]?.id ?? null;
+    setEnteringNoteIds((currentIds) => [
+      ...new Set([...currentIds, ...copies.map((note) => note.id)]),
+    ]);
+    setNoteSelection(copies.map((note) => note.id));
+  };
+
+  const removeNotes = useCallback((noteIds: string[]) => {
+    if (noteIds.length === 0) return;
+
+    setNotes((currentNotes) =>
+      deleteSelectedWorkspaceNotes(currentNotes, noteIds),
+    );
     setConnections((currentConnections) =>
-      removeConnectionsForNote(currentConnections, id),
+      removeConnectionsForSelectedWorkspaceNotes(currentConnections, noteIds),
     );
     setConnectionSource((currentSource) =>
-      currentSource?.noteId === id ? null : currentSource,
-    );
-    setSelectedConnectionId((currentConnectionId) =>
-      connections.some(
-        (connection) =>
-          connection.id === currentConnectionId &&
-          (connection.fromNoteId === id || connection.toNoteId === id),
-      )
+      currentSource && noteIds.includes(currentSource.noteId)
         ? null
-        : currentConnectionId,
+        : currentSource,
     );
+    setSelectedConnectionId(null);
+    setNoteSelection([]);
+  }, [setNoteSelection]);
+
+  const removeNote = (id: string) => {
+    removeNotes([id]);
+  };
+
+  const selectNote = (noteId: string, shiftKey: boolean) => {
+    const currentSelection = selectedNoteIdsRef.current;
+
+    if (shiftKey) {
+      setNoteSelection(toggleWorkspaceNoteSelection(currentSelection, noteId));
+      return;
+    }
+
+    if (!currentSelection.includes(noteId)) {
+      setNoteSelection([noteId]);
+    }
+  };
+
+  const handleNotePointerDown = (
+    event: PointerEvent<HTMLElement>,
+    noteId: string,
+  ) => {
+    const target = event.target;
+    const startedOnControl =
+      target instanceof Element &&
+      target.closest("button, input, textarea, select, a");
+
+    if (startedOnControl) return;
+    selectNote(noteId, event.shiftKey);
+  };
+
+  const completeConnection = (
+    source: ConnectionSource,
+    noteId: string,
+    side: WorkspaceConnectionSide,
+  ) => {
+    if (source.noteId === noteId) return;
+
+    setConnections((currentConnections) =>
+      addWorkspaceConnection(
+        currentConnections,
+        source.noteId,
+        noteId,
+        source.side,
+        side,
+      ),
+    );
+    setConnectionSource(null);
+    setConnectionPreviewEnd(null);
+  };
+
+  const startConnectionDrag = (
+    event: PointerEvent<HTMLButtonElement>,
+    noteId: string,
+    side: WorkspaceConnectionSide,
+  ) => {
+    if (event.button !== 0) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const currentSource = connectionSource;
+
+    if (currentSource && currentSource.noteId !== noteId) {
+      completeConnection(currentSource, noteId, side);
+      return;
+    }
+
+    if (!currentSource && !canCreateWorkspaceConnection(connections)) return;
+
+    const source = { noteId, side };
+    const previewPoint = getWorldPointFromClient(event.clientX, event.clientY);
+    setConnectionSource(source);
+    setConnectionPreviewEnd(previewPoint);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    connectionDragRef.current = { pointerId: event.pointerId, source };
+  };
+
+  const moveConnectionDrag = (event: PointerEvent<HTMLButtonElement>) => {
+    const connectionDrag = connectionDragRef.current;
+    if (!connectionDrag || connectionDrag.pointerId !== event.pointerId) return;
+
+    setConnectionPreviewEnd(
+      getWorldPointFromClient(event.clientX, event.clientY),
+    );
+  };
+
+  const endConnectionDrag = (event: PointerEvent<HTMLButtonElement>) => {
+    const connectionDrag = connectionDragRef.current;
+    if (!connectionDrag || connectionDrag.pointerId !== event.pointerId) return;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    connectionDragRef.current = null;
+    setConnectionPreviewEnd(null);
+
+    const target = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLButtonElement>("[data-connection-note-id][data-connection-side]");
+    const noteId = target?.dataset.connectionNoteId;
+    const side = target?.dataset.connectionSide;
+
+    if (
+      noteId &&
+      side &&
+      WORKSPACE_CONNECTION_SIDES.includes(side as WorkspaceConnectionSide)
+    ) {
+      completeConnection(
+        connectionDrag.source,
+        noteId,
+        side as WorkspaceConnectionSide,
+      );
+    }
+  };
+
+  const cancelConnectionDrag = (event: PointerEvent<HTMLButtonElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    connectionDragRef.current = null;
+    setConnectionPreviewEnd(null);
   };
 
   const connectNote = (noteId: string, side: WorkspaceConnectionSide) => {
@@ -394,6 +623,47 @@ export function NotesCanvas() {
     setSelectedConnectionId(null);
   };
 
+  useEffect(() => {
+    const handleSelectionKeyDown = (event: globalThis.KeyboardEvent) => {
+      const target = event.target;
+      const isEditing =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable);
+
+      if (isEditing) return;
+
+      if (event.key === "Escape") {
+        setNoteSelection([]);
+        selectionBoxRef.current = null;
+        setSelectionBox(null);
+        return;
+      }
+
+      if (event.key !== "Backspace" && event.key !== "Delete") return;
+
+      const currentSelection = selectedNoteIdsRef.current;
+      if (currentSelection.length > 0) {
+        event.preventDefault();
+        removeNotes(currentSelection);
+        return;
+      }
+
+      if (!selectedConnectionId) return;
+
+      event.preventDefault();
+      setConnections((currentConnections) =>
+        deleteWorkspaceConnection(currentConnections, selectedConnectionId),
+      );
+      setSelectedConnectionId(null);
+    };
+
+    window.addEventListener("keydown", handleSelectionKeyDown);
+
+    return () => window.removeEventListener("keydown", handleSelectionKeyDown);
+  }, [removeNotes, selectedConnectionId, setNoteSelection]);
+
   const handleConnectionKeyDown = (
     event: KeyboardEvent<SVGPathElement>,
     id: string,
@@ -408,16 +678,19 @@ export function NotesCanvas() {
     event: PointerEvent<HTMLDivElement>,
     note: WorkspaceNote,
   ) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || event.shiftKey) return;
+
+    const noteIds = selectedNoteIdsRef.current.includes(note.id)
+      ? selectedNoteIdsRef.current
+      : [note.id];
 
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStateRef.current = {
-      id: note.id,
+      noteIds,
+      notes,
       pointerId: event.pointerId,
       startPointerX: event.clientX,
       startPointerY: event.clientY,
-      startX: note.x,
-      startY: note.y,
     };
   };
 
@@ -425,13 +698,11 @@ export function NotesCanvas() {
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId) return;
 
-    const nextX = dragState.startX + event.clientX - dragState.startPointerX;
-    const nextY = dragState.startY + event.clientY - dragState.startPointerY;
-
-    setNotes((currentNotes) =>
-      updateWorkspaceNote(currentNotes, dragState.id, {
-        x: nextX,
-        y: nextY,
+    const zoom = viewportRef.current.zoom;
+    setNotes(
+      moveSelectedWorkspaceNotes(dragState.notes, dragState.noteIds, {
+        x: (event.clientX - dragState.startPointerX) / zoom,
+        y: (event.clientY - dragState.startPointerY) / zoom,
       }),
     );
   };
@@ -444,11 +715,163 @@ export function NotesCanvas() {
     dragStateRef.current = null;
   };
 
+  const getWorldPointFromClient = useCallback((
+    clientX: number,
+    clientY: number,
+  ): WorkspacePoint | null => {
+    const bounds = canvasRef.current?.getBoundingClientRect();
+    if (!bounds) return null;
+
+    return canvasPointToWorkspacePoint(
+      { x: clientX - bounds.left, y: clientY - bounds.top },
+      viewportRef.current,
+    );
+  }, []);
+
+  const getWorldPoint = (
+    event: PointerEvent<HTMLDivElement>,
+  ): WorkspacePoint | null =>
+    getWorldPointFromClient(event.clientX, event.clientY);
+
+  const createNoteAtPosition = useCallback((position: WorkspacePoint) => {
+    if (!canCreateWorkspaceNote(notes)) return;
+
+    const note = createWorkspaceNote({ position });
+    pendingFocusNoteIdRef.current = note.id;
+    setEnteringNoteIds((currentIds) => [...new Set([...currentIds, note.id])]);
+    setNotes((currentNotes) => [...currentNotes, note]);
+    setNoteSelection([note.id]);
+  }, [notes, setNoteSelection]);
+
+  const createNoteAtViewportCenter = useCallback(() => {
+    const bounds = canvasRef.current?.getBoundingClientRect();
+    if (!bounds) return;
+
+    createNoteAtPosition(
+      getWorkspaceViewportCenterPosition(
+        { width: bounds.width, height: bounds.height },
+        viewportRef.current,
+      ),
+    );
+  }, [createNoteAtPosition]);
+
+  const addNote = () => {
+    createNoteAtPosition(getNewNotePosition(notes.length));
+  };
+
+  const handleCanvasDoubleClick = (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target;
+    const startedOnCanvasSurface =
+      target === canvasRef.current || target === worldRef.current;
+    if (!startedOnCanvasSurface) return;
+
+    const position = getWorldPointFromClient(event.clientX, event.clientY);
+    if (!position) return;
+
+    event.preventDefault();
+    createNoteAtPosition(position);
+  };
+
+  useEffect(() => {
+    const handleNewNoteShortcut = (event: globalThis.KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "n" || event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      const target = event.target;
+      const shortcutTarget =
+        target instanceof HTMLElement
+          ? {
+              isContentEditable: target.isContentEditable,
+              role: target.getAttribute("role"),
+              tagName: target.tagName,
+            }
+          : null;
+
+      if (!canCreateWorkspaceNoteFromShortcut(shortcutTarget)) return;
+
+      event.preventDefault();
+      createNoteAtViewportCenter();
+    };
+
+    window.addEventListener("keydown", handleNewNoteShortcut);
+
+    return () => window.removeEventListener("keydown", handleNewNoteShortcut);
+  }, [createNoteAtViewportCenter]);
+
+  const startSelectionBox = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+
+    const target = event.target;
+    const startedOnCanvasSurface =
+      target === canvasRef.current || target === worldRef.current;
+    if (!startedOnCanvasSurface) return;
+
+    const start = getWorldPoint(event);
+    if (!start) return;
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const nextSelectionBox = {
+      pointerId: event.pointerId,
+      start,
+      end: start,
+    };
+    selectionBoxRef.current = nextSelectionBox;
+    setSelectionBox(nextSelectionBox);
+    setNoteSelection([]);
+  };
+
+  const moveSelectionBox = (event: PointerEvent<HTMLDivElement>) => {
+    const currentSelectionBox = selectionBoxRef.current;
+    if (
+      !currentSelectionBox ||
+      currentSelectionBox.pointerId !== event.pointerId
+    ) {
+      return;
+    }
+
+    const end = getWorldPoint(event);
+    if (!end) return;
+
+    const nextSelectionBox = { ...currentSelectionBox, end };
+    selectionBoxRef.current = nextSelectionBox;
+    setSelectionBox(nextSelectionBox);
+  };
+
+  const endSelectionBox = (event: PointerEvent<HTMLDivElement>) => {
+    const currentSelectionBox = selectionBoxRef.current;
+    if (
+      !currentSelectionBox ||
+      currentSelectionBox.pointerId !== event.pointerId
+    ) {
+      return;
+    }
+
+    if (canvasRef.current?.hasPointerCapture(event.pointerId)) {
+      canvasRef.current.releasePointerCapture(event.pointerId);
+    }
+    const end = getWorldPoint(event) ?? currentSelectionBox.end;
+    setNoteSelection(
+      selectWorkspaceNotesInRect(notes, { ...currentSelectionBox, end }),
+    );
+    selectionBoxRef.current = null;
+    setSelectionBox(null);
+  };
+
   const startPan = (event: PointerEvent<HTMLDivElement>) => {
     const shouldPanWithSpace = event.button === 0 && spacePressedRef.current;
     const shouldPanWithMiddleButton = event.button === 1;
+    const target = event.target;
+    const startedOnControl =
+      target instanceof Element &&
+      target.closest("button, input, textarea, select, a");
 
-    if (!shouldPanWithSpace && !shouldPanWithMiddleButton) return;
+    if (
+      (!shouldPanWithSpace && !shouldPanWithMiddleButton) ||
+      startedOnControl
+    ) {
+      return;
+    }
 
     event.preventDefault();
     event.stopPropagation();
@@ -475,6 +898,7 @@ export function NotesCanvas() {
       y: Math.round(
         panState.startViewportY + event.clientY - panState.startPointerY,
       ),
+      zoom: viewportRef.current.zoom,
     });
   };
 
@@ -489,6 +913,58 @@ export function NotesCanvas() {
     setViewport(viewportRef.current);
     setIsPanning(false);
   };
+
+  const getCanvasCenter = useCallback(() => {
+    const bounds = canvasRef.current?.getBoundingClientRect();
+
+    return {
+      x: bounds ? bounds.width / 2 : 0,
+      y: bounds ? bounds.height / 2 : 0,
+    };
+  }, []);
+
+  const setZoom = useCallback((
+    requestedZoom: number,
+    focalPoint = getCanvasCenter(),
+  ) => {
+    const nextViewport = zoomWorkspaceViewport(
+      viewportRef.current,
+      requestedZoom,
+      focalPoint,
+    );
+
+    applyViewport(nextViewport);
+    setViewport(nextViewport);
+  }, [applyViewport, getCanvasCenter]);
+
+  const resetViewport = () => {
+    const defaultViewport = resetWorkspaceViewport();
+    applyViewport(defaultViewport);
+    setViewport(defaultViewport);
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleCanvasWheel = (event: globalThis.WheelEvent) => {
+      if (!event.ctrlKey) return;
+
+      event.preventDefault();
+      const bounds = canvas.getBoundingClientRect();
+      const requestedZoom =
+        viewportRef.current.zoom * Math.exp(-event.deltaY * 0.001);
+
+      setZoom(requestedZoom, {
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      });
+    };
+
+    canvas.addEventListener("wheel", handleCanvasWheel, { passive: false });
+
+    return () => canvas.removeEventListener("wheel", handleCanvasWheel);
+  }, [setZoom]);
 
   return (
     <section className="workspace-canvas-card" aria-labelledby="notes-canvas-title">
@@ -517,10 +993,21 @@ export function NotesCanvas() {
           className="workspace-canvas"
           data-panning={isPanning}
           data-empty={notes.length === 0}
-          onPointerCancel={endPan}
+          onPointerCancel={(event) => {
+            endPan(event);
+            endSelectionBox(event);
+          }}
+          onDoubleClick={handleCanvasDoubleClick}
           onPointerDownCapture={startPan}
-          onPointerMove={panCanvas}
-          onPointerUp={endPan}
+          onPointerDown={startSelectionBox}
+          onPointerMove={(event) => {
+            panCanvas(event);
+            moveSelectionBox(event);
+          }}
+          onPointerUp={(event) => {
+            endPan(event);
+            endSelectionBox(event);
+          }}
           ref={canvasRef}
         >
           <div className="workspace-canvas__world" ref={worldRef}>
@@ -546,6 +1033,15 @@ export function NotesCanvas() {
               </svg>
             ) : null}
 
+            {connectionPreviewPath ? (
+              <svg
+                aria-hidden="true"
+                className="workspace-connection-preview"
+              >
+                <path d={connectionPreviewPath} />
+              </svg>
+            ) : null}
+
             {selectedConnection ? (
               <button
                 aria-label="Delete selected connection"
@@ -560,15 +1056,31 @@ export function NotesCanvas() {
               </button>
             ) : null}
 
+            {selectionBounds ? (
+              <div
+                aria-hidden="true"
+                className="workspace-selection-box"
+                style={{
+                  height: `${selectionBounds.bottom - selectionBounds.top}px`,
+                  transform: `translate3d(${selectionBounds.left}px, ${selectionBounds.top}px, 0)`,
+                  width: `${selectionBounds.right - selectionBounds.left}px`,
+                }}
+              />
+            ) : null}
+
             {notes.map((note) => (
               <article
                 className="workspace-note"
                 data-color={note.color}
+                data-entering={enteringNoteIds.includes(note.id)}
+                data-selected={selectedNoteIds.includes(note.id)}
                 key={note.id}
+                onPointerDown={(event) => handleNotePointerDown(event, note.id)}
                 style={{
                   transform: `translate3d(${note.x}px, ${note.y}px, 0)`,
                 }}
               >
+              <div className="workspace-note__surface">
               <div className="workspace-note__connection-nodes" aria-label="Note connection handles">
                 {WORKSPACE_CONNECTION_SIDES.map((side) => (
                   <button
@@ -578,10 +1090,19 @@ export function NotesCanvas() {
                       connectionSource.side === side
                     }
                     className="workspace-note__connection-node"
+                    data-connection-note-id={note.id}
+                    data-connection-side={side}
                     data-side={side}
                     key={side}
-                    onClick={() => connectNote(note.id, side)}
-                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      if (event.detail === 0) connectNote(note.id, side);
+                    }}
+                    onPointerCancel={cancelConnectionDrag}
+                    onPointerDown={(event) =>
+                      startConnectionDrag(event, note.id, side)
+                    }
+                    onPointerMove={moveConnectionDrag}
+                    onPointerUp={endConnectionDrag}
                     type="button"
                   />
                 ))}
@@ -629,6 +1150,10 @@ export function NotesCanvas() {
                 maxLength={80}
                 onChange={(event) => updateNoteTitle(note.id, event.target.value)}
                 placeholder="Name this idea"
+                ref={(element) => {
+                  if (element) noteTitleRefs.current.set(note.id, element);
+                  else noteTitleRefs.current.delete(note.id);
+                }}
                 value={note.title}
               />
               <textarea
@@ -638,8 +1163,100 @@ export function NotesCanvas() {
                 placeholder="Write your thought..."
                 value={note.text}
               />
+              </div>
               </article>
             ))}
+          </div>
+
+          <div
+            aria-hidden={!hasMultiSelection}
+            className="workspace-multiselect-bar"
+            data-visible={hasMultiSelection}
+          >
+            <span>{selectedNoteIds.length} notes selected</span>
+            <div className="workspace-multiselect-bar__actions">
+              <button
+                aria-expanded={isMultiColorPaletteOpen}
+                aria-label="Change selected note colors"
+                onClick={() =>
+                  setIsMultiColorPaletteOpen((isOpen) => !isOpen)
+                }
+                type="button"
+              >
+                Color
+              </button>
+              <button
+                aria-label="Duplicate selected notes"
+                disabled={!canDuplicateSelection}
+                onClick={duplicateSelectedNotes}
+                title={
+                  canDuplicateSelection
+                    ? undefined
+                    : "Duplicating this selection would exceed the 10-note free limit."
+                }
+                type="button"
+              >
+                Duplicate
+              </button>
+              <button
+                aria-label="Delete selected notes"
+                className="workspace-multiselect-bar__delete"
+                onClick={() => removeNotes(selectedNoteIdsRef.current)}
+                type="button"
+              >
+                Delete
+              </button>
+            </div>
+
+            {isMultiColorPaletteOpen && hasMultiSelection ? (
+              <div
+                aria-label="Selected note color options"
+                className="workspace-multiselect-bar__palette"
+              >
+                {WORKSPACE_NOTE_COLORS.map((color) => (
+                  <button
+                    aria-label={`Use ${color.label} for selected notes`}
+                    className="workspace-note__color"
+                    data-color={color.id}
+                    key={color.id}
+                    onClick={() => updateSelectedNoteColor(color.id)}
+                    type="button"
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="workspace-canvas__zoom-controls" aria-label="Canvas zoom controls">
+            <button
+              aria-label="Zoom out"
+              disabled={viewport.zoom <= MIN_WORKSPACE_ZOOM}
+              onClick={() => setZoom(viewportRef.current.zoom - 0.1)}
+              type="button"
+            >
+              <span aria-hidden="true">-</span>
+            </button>
+            <output aria-live="polite">{Math.round(viewport.zoom * 100)}%</output>
+            <button
+              aria-label="Zoom in"
+              disabled={viewport.zoom >= MAX_WORKSPACE_ZOOM}
+              onClick={() => setZoom(viewportRef.current.zoom + 0.1)}
+              type="button"
+            >
+              <span aria-hidden="true">+</span>
+            </button>
+            <button
+              className="workspace-canvas__reset-view"
+              disabled={
+                viewport.x === DEFAULT_WORKSPACE_VIEWPORT.x &&
+                viewport.y === DEFAULT_WORKSPACE_VIEWPORT.y &&
+                viewport.zoom === DEFAULT_WORKSPACE_VIEWPORT.zoom
+              }
+              onClick={resetViewport}
+              type="button"
+            >
+              Reset view
+            </button>
           </div>
 
           {notes.length === 0 ? (
