@@ -17,11 +17,14 @@ import {
   WORKSPACE_WEEKLY_GOAL_STORAGE_KEY,
   WORKSPACE_WEEKLY_GOAL_UPDATED_EVENT,
   calculateWorkspaceGoalProgress,
-  calculateWorkspaceMetrics,
   readWorkspaceWeeklyGoal,
   saveWorkspaceWeeklyGoal,
   type WorkspaceWeeklyGoal,
 } from "@/features/workspace/workspace-metrics";
+import {
+  calculateWorkspaceAnalytics,
+  type WeeklyFocusActivity,
+} from "@/features/workspace/workspace-analytics";
 
 function formatMinutes(minutes: number) {
   if (minutes < 60) return `${minutes}m`;
@@ -42,6 +45,58 @@ function normalizeGoalField(value: unknown, fallback: number) {
   return Number.isFinite(numericValue)
     ? Math.max(1, Math.round(numericValue))
     : fallback;
+}
+
+function formatMomentum(percentChange: number) {
+  return `${percentChange > 0 ? "+" : ""}${percentChange}%`;
+}
+
+function WeeklyActivityChart({ activity }: { activity: WeeklyFocusActivity[] }) {
+  const highestMinutes = Math.max(...activity.map((day) => day.minutes), 1);
+  const totalMinutes = activity.reduce((total, day) => total + day.minutes, 0);
+
+  return (
+    <section
+      aria-labelledby="weekly-activity-title"
+      className="workspace-weekly-activity"
+    >
+      <div className="workspace-weekly-activity__header">
+        <div>
+          <span className="eyebrow">Weekly activity</span>
+          <h3 id="weekly-activity-title">Your focus rhythm this week.</h3>
+        </div>
+        <strong>{formatMinutes(totalMinutes)}</strong>
+      </div>
+      <div
+        aria-label={`Focus minutes by day this week. ${activity
+          .map((day) => `${day.label}: ${day.minutes} minutes`)
+          .join(", ")}.`}
+        className="workspace-weekly-activity__chart"
+        role="img"
+      >
+        {activity.map((day) => (
+          <div className="workspace-weekly-activity__day" key={day.dateKey}>
+            <span className="workspace-weekly-activity__value">
+              {day.minutes > 0 ? `${day.minutes}m` : "0"}
+            </span>
+            <div className="workspace-weekly-activity__track">
+              <span
+                aria-hidden="true"
+                className="workspace-weekly-activity__bar"
+                data-empty={day.minutes === 0}
+                style={{
+                  height: `${Math.max((day.minutes / highestMinutes) * 100, 4)}%`,
+                }}
+              />
+            </div>
+            <span className="workspace-weekly-activity__label">
+              {day.label.slice(0, 3)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 function useWorkspaceDashboardData() {
@@ -93,8 +148,8 @@ function useWorkspaceDashboardData() {
     return () => window.clearInterval(intervalId);
   }, []);
 
-  const metrics = useMemo(
-    () => calculateWorkspaceMetrics(entries, stats, nowMs),
+  const analytics = useMemo(
+    () => calculateWorkspaceAnalytics(entries, stats, nowMs),
     [entries, nowMs, stats],
   );
   const goalProgress = useMemo(
@@ -107,7 +162,7 @@ function useWorkspaceDashboardData() {
     goal,
     goalProgress,
     hydrated,
-    metrics,
+    analytics,
     setGoal,
   };
 }
@@ -128,11 +183,11 @@ function WorkspaceEmptyState({
 }
 
 export function WorkspaceOverviewView() {
-  const { hydrated, metrics } = useWorkspaceDashboardData();
+  const { analytics, hydrated } = useWorkspaceDashboardData();
   const hasData =
-    metrics.totalFocusSessions > 0 ||
-    metrics.totalFocusMinutes > 0 ||
-    metrics.sessionsToday > 0;
+    analytics.totalSessions > 0 ||
+    analytics.totalFocusMinutes > 0 ||
+    analytics.sessionsToday > 0;
 
   return (
     <section className="workspace-dashboard-card" aria-labelledby="workspace-overview-title">
@@ -149,39 +204,55 @@ export function WorkspaceOverviewView() {
 
       {!hydrated || !hasData ? (
         <WorkspaceEmptyState
-          title="Your workspace metrics will appear here."
-          description="Complete a focus session to start building your local dashboard."
+          title="Start your first focus session to build your focus profile."
+          description="DeepFlow will turn your completed sessions into a calm, private view of your focus habits."
         />
       ) : (
-        <div className="workspace-metrics-grid">
-          <article className="workspace-metric-tile">
-            <span>Total focus sessions</span>
-            <strong>{metricValue(metrics.totalFocusSessions)}</strong>
-          </article>
-          <article className="workspace-metric-tile">
-            <span>Total focus time</span>
-            <strong>{formatMinutes(metrics.totalFocusMinutes)}</strong>
-          </article>
-          <article className="workspace-metric-tile">
-            <span>Sessions today</span>
-            <strong>{metricValue(metrics.sessionsToday)}</strong>
-          </article>
-          <article className="workspace-metric-tile">
-            <span>Current streak</span>
-            <strong>{metricValue(metrics.currentStreak, "d")}</strong>
-          </article>
-          <article className="workspace-metric-tile">
-            <span>Best streak</span>
-            <strong>{metricValue(metrics.bestStreak, "d")}</strong>
-          </article>
-          <article className="workspace-metric-tile">
-            <span>This week focus time</span>
-            <strong>{formatMinutes(metrics.focusMinutesThisWeek)}</strong>
-          </article>
-          <article className="workspace-metric-tile">
-            <span>Average session</span>
-            <strong>{formatMinutes(metrics.averageSessionLength)}</strong>
-          </article>
+        <div className="workspace-overview-dashboard">
+          <div className="workspace-overview-primary-metrics">
+            <article className="workspace-metric-tile">
+              <span>Focused time</span>
+              <strong>{formatMinutes(analytics.totalFocusMinutes)}</strong>
+            </article>
+            <article className="workspace-metric-tile">
+              <span>Sessions completed</span>
+              <strong>{metricValue(analytics.totalSessions)}</strong>
+            </article>
+            <article className="workspace-metric-tile">
+              <span>Current streak</span>
+              <strong>{metricValue(analytics.currentStreak, "d")}</strong>
+            </article>
+            <article className="workspace-metric-tile">
+              <span>Best streak</span>
+              <strong>{metricValue(analytics.bestStreak, "d")}</strong>
+            </article>
+            <article className="workspace-metric-tile">
+              <span>Sessions today</span>
+              <strong>{metricValue(analytics.sessionsToday)}</strong>
+            </article>
+          </div>
+
+          <WeeklyActivityChart activity={analytics.weeklyActivity} />
+
+          <div className="workspace-overview-secondary-metrics">
+            <article className="workspace-metric-tile">
+              <span>Focus momentum</span>
+              <strong>{analytics.momentum.state}</strong>
+              <small>{formatMomentum(analytics.momentum.percentChange)}</small>
+            </article>
+            <article className="workspace-metric-tile">
+              <span>Best day</span>
+              <strong>{analytics.bestFocusDay ?? "No data"}</strong>
+            </article>
+            <article className="workspace-metric-tile">
+              <span>Best hour</span>
+              <strong>{analytics.bestFocusHour ?? "No data"}</strong>
+            </article>
+            <article className="workspace-metric-tile">
+              <span>Average session</span>
+              <strong>{formatMinutes(analytics.averageSessionLength)}</strong>
+            </article>
+          </div>
         </div>
       )}
     </section>
@@ -314,7 +385,7 @@ export function WorkspaceGoalsView() {
 }
 
 export function WorkspaceInsightsView() {
-  const { entries, hydrated, metrics } = useWorkspaceDashboardData();
+  const { analytics, entries, hydrated } = useWorkspaceDashboardData();
   const hasInsights = hydrated && entries.length > 0;
 
   return (
@@ -339,23 +410,23 @@ export function WorkspaceInsightsView() {
         <div className="workspace-insights-grid">
           <article>
             <span>Most productive day this week</span>
-            <strong>{metrics.mostProductiveDay ?? "No data yet"}</strong>
+            <strong>{analytics.bestFocusDay ?? "No data yet"}</strong>
           </article>
           <article>
             <span>Longest session</span>
-            <strong>{formatMinutes(metrics.longestSessionMinutes)}</strong>
+            <strong>{formatMinutes(analytics.longestSessionLength)}</strong>
           </article>
           <article>
             <span>Average session</span>
-            <strong>{formatMinutes(metrics.averageSessionLength)}</strong>
+            <strong>{formatMinutes(analytics.averageSessionLength)}</strong>
           </article>
           <article>
             <span>Total focus time this week</span>
-            <strong>{formatMinutes(metrics.focusMinutesThisWeek)}</strong>
+            <strong>{formatMinutes(analytics.focusMinutesThisWeek)}</strong>
           </article>
           <article>
             <span>Best streak</span>
-            <strong>{metricValue(metrics.bestStreak, " days")}</strong>
+            <strong>{metricValue(analytics.bestStreak, " days")}</strong>
           </article>
         </div>
       )}
