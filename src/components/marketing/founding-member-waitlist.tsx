@@ -110,8 +110,11 @@ export function FoundingMemberWaitlist() {
 
       if (!response.ok) {
         const message =
-          payload && typeof payload === "object" && "error" in payload
-            ? String(payload.error)
+          payload &&
+          typeof payload === "object" &&
+          "detail" in payload &&
+          typeof payload.detail === "string"
+            ? payload.detail
             : "We could not save your place on the waitlist. Please try again.";
         setError(message);
         return;

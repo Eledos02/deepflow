@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { parseWaitlistSubmission } from "@/features/waitlist/waitlist";
 import {
   getSupabaseConfig,
+  isDuplicateWaitlistError,
   saveWaitlistSubmission,
 } from "@/features/waitlist/waitlist-server";
 
@@ -11,6 +12,17 @@ export const runtime = "nodejs";
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1_000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
 const requestBuckets = new Map<string, number[]>();
+
+function waitlistError(detail: string, status = 502) {
+  return NextResponse.json(
+    {
+      ok: false,
+      error: "waitlist_insert_failed",
+      detail,
+    },
+    { status },
+  );
+}
 
 function isRateLimited(identifier: string, nowMs = Date.now()) {
   const recentRequests = (requestBuckets.get(identifier) ?? []).filter(
@@ -33,14 +45,25 @@ export async function POST(request: Request) {
     body = await request.json();
   } catch {
     return NextResponse.json(
-      { error: "Enter your email address to join the waitlist." },
+      {
+        ok: false,
+        error: "invalid_waitlist_submission",
+        detail: "Enter your email address to join the waitlist.",
+      },
       { status: 400 },
     );
   }
 
   const parsed = parseWaitlistSubmission(body);
   if (!parsed.ok) {
-    return NextResponse.json({ error: parsed.error }, { status: 400 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "invalid_waitlist_submission",
+        detail: parsed.error,
+      },
+      { status: 400 },
+    );
   }
 
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -48,30 +71,53 @@ export async function POST(request: Request) {
 
   if (isRateLimited(identifier)) {
     return NextResponse.json(
-      { error: "Please wait a moment before trying again." },
+      {
+        ok: false,
+        error: "waitlist_rate_limited",
+        detail: "Please wait a moment before trying again.",
+      },
       { status: 429 },
     );
   }
 
   const config = getSupabaseConfig();
   if (!config) {
-    return NextResponse.json(
-      { error: "Waitlist signups are not configured yet. Please try again soon." },
-      { status: 503 },
+    console.error("[waitlist] Supabase configuration is missing or invalid", {
+      hasSupabaseUrl: Boolean(process.env.SUPABASE_URL?.trim()),
+      hasServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
+    });
+    return waitlistError(
+      "Waitlist signups are not configured yet. Please try again soon.",
+      503,
     );
   }
 
   try {
     const result = await saveWaitlistSubmission(parsed.value, config);
     if (result.ok) {
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ ok: true, success: true });
     }
-  } catch {
-    // Keep database transport details private from the client.
+
+    if (isDuplicateWaitlistError(result.status, result.responseBody)) {
+      console.info("[waitlist] Duplicate email accepted", {
+        supabaseStatus: result.status,
+      });
+      return NextResponse.json({ ok: true, success: true });
+    }
+
+    console.error("[waitlist] Supabase insert failed", {
+      normalizedSupabaseUrl: config.url,
+      supabaseStatus: result.status,
+      supabaseResponseBody: result.responseBody.slice(0, 2_000),
+    });
+  } catch (error) {
+    console.error("[waitlist] Supabase request threw before a response", {
+      normalizedSupabaseUrl: config.url,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
-  return NextResponse.json(
-    { error: "We could not save your place on the waitlist. Please try again." },
-    { status: 502 },
+  return waitlistError(
+    "We could not save your place on the waitlist. Please try again.",
   );
 }
