@@ -90,6 +90,8 @@ export function useTimerAnalytics() {
         timerType: session.timerType ?? "Focus Timer",
         completedAt: new Date(session.completedAtMs).toISOString(),
         sourcePath: session.path ?? "/",
+        routineId: session.routineId,
+        routineName: session.routineName,
       }),
     );
   }, []);

@@ -31,6 +31,11 @@ import {
 } from "@/features/timer/timer-notifications";
 import { shouldCountAsFocusSession } from "@/features/timer/timer-session";
 import type { TimerSessionHistoryEntry } from "@/features/timer/timer-stats";
+import {
+  clearRoutineSessionHandoff,
+  readRoutineSessionHandoff,
+  type RoutineSessionHandoff,
+} from "@/features/timer/routine-session-handoff";
 import { useTimer } from "@/features/timer/use-timer";
 import { useTimerAnalytics } from "@/features/timer/use-timer-analytics";
 import { useTimerPreferences } from "@/features/timer/use-timer-preferences";
@@ -180,6 +185,8 @@ export function TimerExperience({
     [initialMinutes, tool.slug],
   );
   const { intention, setIntention } = useTimerPreferences(storageKey);
+  const routineHandoffRef = useRef<RoutineSessionHandoff | null>(null);
+  const appliedRoutineHandoffRef = useRef<string | null>(null);
   const {
     alarmSoundId,
     audioError,
@@ -211,6 +218,7 @@ export function TimerExperience({
     completedAtMs: number;
     taskName?: string;
   }) => {
+    const routineHandoff = routineHandoffRef.current;
     const countsAsFocus = shouldCountAsFocusSession(
       tool.kind,
       completion.durationSeconds,
@@ -241,7 +249,14 @@ export function TimerExperience({
         durationMinutes,
       ),
       category: countsAsFocus ? inferFocusCategory(taskName) : undefined,
+      routineId: routineHandoff?.routineId,
+      routineName: routineHandoff?.routineName,
     });
+
+    if (routineHandoff) {
+      clearRoutineSessionHandoff(routineHandoff.routineId);
+      routineHandoffRef.current = null;
+    }
 
     if (countsAsFocus) {
       trackTimerEvent("focus_session_complete", durationMinutes);
@@ -264,6 +279,40 @@ export function TimerExperience({
     sourcePath: pathname,
     onComplete: handleComplete,
   });
+
+  useEffect(() => {
+    if (!timer.hydrated || appliedRoutineHandoffRef.current) return;
+
+    const handoff = readRoutineSessionHandoff();
+    if (!handoff) return;
+
+    const isMatchingDurationPage =
+      initialMinutes !== undefined &&
+      handoff.durationMinutes === startingMinutes &&
+      timer.status !== "running" &&
+      timer.status !== "paused";
+    const canConfigureFocusTimer =
+      initialMinutes === undefined &&
+      tool.kind === "focus" &&
+      timer.status !== "running" &&
+      timer.status !== "paused";
+
+    if (!isMatchingDurationPage && !canConfigureFocusTimer) return;
+
+    if (canConfigureFocusTimer) {
+      timer.configure(handoff.durationMinutes * 60);
+    }
+
+    setIntention(handoff.intention);
+    routineHandoffRef.current = handoff;
+    appliedRoutineHandoffRef.current = handoff.routineId;
+  }, [
+    initialMinutes,
+    setIntention,
+    startingMinutes,
+    timer,
+    tool.kind,
+  ]);
 
   const activeMinutes = timer.hydrated
     ? Math.max(1, Math.round(timer.totalSeconds / 60))

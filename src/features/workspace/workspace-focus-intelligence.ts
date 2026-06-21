@@ -1,0 +1,165 @@
+import type {
+  FocusMomentum,
+  WorkspaceAnalytics,
+} from "./workspace-analytics";
+
+export type SessionQuality = {
+  label: "Deep sessions" | "Steady sessions" | "Quick focus";
+  description: string;
+};
+
+export type FocusPersonality = {
+  label:
+    | "Morning Builder"
+    | "Night Creator"
+    | "Consistent Performer"
+    | "Weekend Explorer"
+    | "Deep Worker";
+  description: string;
+};
+
+export type WeeklyReflection = {
+  title: string;
+  description: string;
+};
+
+export type WorkspaceFocusIntelligence = {
+  hasRecentFocus: boolean;
+  bestFocusTime: string | null;
+  mostProductiveDay: string | null;
+  momentum: FocusMomentum;
+  sessionQuality: SessionQuality | null;
+  personality: FocusPersonality | null;
+  reflection: WeeklyReflection | null;
+};
+
+function formatMinutes(minutes: number) {
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+}
+
+export function getSessionQuality(
+  analytics: WorkspaceAnalytics,
+): SessionQuality | null {
+  if (analytics.sessionsLastSevenDays === 0) return null;
+
+  if (analytics.averageSessionLength >= 60) {
+    return {
+      label: "Deep sessions",
+      description: `Your ${formatMinutes(analytics.averageSessionLength)} average leaves room for meaningful, uninterrupted work.`,
+    };
+  }
+
+  if (analytics.averageSessionLength >= 30) {
+    return {
+      label: "Steady sessions",
+      description: `Your ${formatMinutes(analytics.averageSessionLength)} average is a dependable rhythm for focused progress.`,
+    };
+  }
+
+  return {
+    label: "Quick focus",
+    description: `Your ${formatMinutes(analytics.averageSessionLength)} average makes it easy to build momentum in small blocks.`,
+  };
+}
+
+export function getFocusPersonality(
+  analytics: WorkspaceAnalytics,
+): FocusPersonality | null {
+  if (analytics.sessionsLastSevenDays === 0) return null;
+
+  if (
+    analytics.weekendFocusMinutesLastSevenDays > 0 &&
+    analytics.weekendFocusMinutesLastSevenDays >
+      analytics.weekdayFocusMinutesLastSevenDays / 2
+  ) {
+    return {
+      label: "Weekend Explorer",
+      description: "More open days are becoming an important source of focus energy for you.",
+    };
+  }
+
+  if (analytics.averageSessionLength >= 60) {
+    return {
+      label: "Deep Worker",
+      description: "Longer, uninterrupted blocks are becoming the place where your best attention gathers.",
+    };
+  }
+
+  if (
+    analytics.activeFocusDaysLastSevenDays >= 4 ||
+    analytics.currentStreak >= 4
+  ) {
+    return {
+      label: "Consistent Performer",
+      description: "Consistency is becoming a stronger advantage than intensity.",
+    };
+  }
+
+  if ((analytics.bestFocusHourIndexLastSevenDays ?? 12) >= 18) {
+    return {
+      label: "Night Creator",
+      description: "Your clearest attention seems to emerge as the day becomes quieter.",
+    };
+  }
+
+  return {
+    label: "Morning Builder",
+    description: "Fresh morning energy is becoming a reliable part of your focus rhythm.",
+  };
+}
+
+export function getWeeklyReflection(
+  analytics: WorkspaceAnalytics,
+): WeeklyReflection | null {
+  if (analytics.sessionsLastSevenDays === 0) return null;
+
+  const focusObservation =
+    analytics.bestFocusDayLastSevenDays && analytics.bestFocusHourLastSevenDays
+      ? `${analytics.bestFocusDayLastSevenDays} emerged as your strongest focus day, while your sharpest attention window appeared around ${analytics.bestFocusHourLastSevenDays}.`
+      : analytics.bestFocusDayLastSevenDays
+        ? `${analytics.bestFocusDayLastSevenDays} emerged as your strongest focus day.`
+        : analytics.bestFocusHourLastSevenDays
+          ? `Your sharpest attention window appeared around ${analytics.bestFocusHourLastSevenDays}.`
+          : "A clearer focus pattern is beginning to emerge.";
+
+  if (analytics.momentum.state === "rising") {
+    return {
+      title: "Your rhythm is building.",
+      description: `Your attention found a steadier rhythm this week. Momentum is beginning to build naturally from repeated focus sessions. ${focusObservation}`,
+    };
+  }
+
+  if (analytics.momentum.state === "slowing") {
+    return {
+      title: "A gentle reset is enough.",
+      description: `Your attention met a quieter rhythm this week. A small, clear focus block can help momentum gather again. ${focusObservation}`,
+    };
+  }
+
+  return {
+    title: "Steady progress.",
+    description: `Your attention held a steady rhythm this week. Repeated focus sessions are giving your momentum a durable shape. ${focusObservation}`,
+  };
+}
+
+export function buildWorkspaceFocusIntelligence(
+  analytics: WorkspaceAnalytics,
+): WorkspaceFocusIntelligence {
+  const hasRecentFocus = analytics.sessionsLastSevenDays > 0;
+  const sessionQuality = getSessionQuality(analytics);
+  const personality = getFocusPersonality(analytics);
+
+  return {
+    hasRecentFocus,
+    bestFocusTime: analytics.bestFocusHourLastSevenDays,
+    mostProductiveDay: analytics.bestFocusDayLastSevenDays,
+    momentum: analytics.momentum,
+    sessionQuality,
+    personality,
+    reflection: getWeeklyReflection(analytics),
+  };
+}

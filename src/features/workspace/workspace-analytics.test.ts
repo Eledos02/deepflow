@@ -142,6 +142,9 @@ describe("workspace analytics", () => {
       bestStreak: 6,
       averageSessionLength: 25,
       focusMinutesThisWeek: 25,
+      sessionsLastSevenDays: 1,
+      focusMinutesLastSevenDays: 25,
+      activeFocusDaysLastSevenDays: 1,
     });
   });
 

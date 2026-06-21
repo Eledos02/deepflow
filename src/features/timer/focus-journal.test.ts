@@ -46,6 +46,24 @@ describe("focus journal", () => {
     expect(journalEntry.intention).toBe("");
   });
 
+  it("preserves optional routine context while keeping legacy fields intact", () => {
+    const journalEntry = createFocusJournalEntry({
+      id: "routine-session",
+      intention: "Draft the outline.",
+      durationMinutes: 60,
+      timerType: "Deep Work Timer",
+      completedAt: new Date(2026, 5, 18, 10).toISOString(),
+      sourcePath: "/timer/60",
+      routineId: "morning-deep-work",
+      routineName: "Morning Deep Work",
+    });
+
+    expect(journalEntry).toMatchObject({
+      routineId: "morning-deep-work",
+      routineName: "Morning Deep Work",
+    });
+  });
+
   it("keeps the most recent 100 stored entries", () => {
     const entries = Array.from(
       { length: MAX_FOCUS_JOURNAL_ENTRIES + 5 },

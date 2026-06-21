@@ -25,6 +25,9 @@ import {
   calculateWorkspaceAnalytics,
   type WeeklyFocusActivity,
 } from "@/features/workspace/workspace-analytics";
+import { buildWorkspaceFocusIntelligence } from "@/features/workspace/workspace-focus-intelligence";
+
+import { splitReflectionNarrative } from "./reflection-presentation";
 
 function formatMinutes(minutes: number) {
   if (minutes < 60) return `${minutes}m`;
@@ -49,6 +52,12 @@ function normalizeGoalField(value: unknown, fallback: number) {
 
 function formatMomentum(percentChange: number) {
   return `${percentChange > 0 ? "+" : ""}${percentChange}%`;
+}
+
+function formatMomentumLabel(state: "rising" | "stable" | "slowing") {
+  if (state === "rising") return "Building Momentum";
+  if (state === "slowing") return "Momentum Slowing";
+  return "Steady Rhythm";
 }
 
 function WeeklyActivityChart({ activity }: { activity: WeeklyFocusActivity[] }) {
@@ -156,13 +165,17 @@ function useWorkspaceDashboardData() {
     () => calculateWorkspaceGoalProgress(entries, goal, nowMs),
     [entries, goal, nowMs],
   );
+  const intelligence = useMemo(
+    () => buildWorkspaceFocusIntelligence(analytics),
+    [analytics],
+  );
 
   return {
-    entries,
     goal,
     goalProgress,
     hydrated,
     analytics,
+    intelligence,
     setGoal,
   };
 }
@@ -385,48 +398,84 @@ export function WorkspaceGoalsView() {
 }
 
 export function WorkspaceInsightsView() {
-  const { analytics, entries, hydrated } = useWorkspaceDashboardData();
-  const hasInsights = hydrated && entries.length > 0;
+  const { analytics, hydrated, intelligence } = useWorkspaceDashboardData();
+  const hasAnyFocus = hydrated && analytics.totalSessions > 0;
 
   return (
     <section className="workspace-dashboard-card" aria-labelledby="workspace-insights-title">
-      <div className="workspace-dashboard-card__header">
+      <div className="workspace-dashboard-card__header workspace-dashboard-card__header--split">
         <div>
           <span className="eyebrow">Insights</span>
-          <h2 id="workspace-insights-title">Simple signals from your focus history.</h2>
+          <h2 id="workspace-insights-title">A clearer read on your focus rhythm.</h2>
           <p>
-            A lightweight read on when you focused, how long you stayed with
-            the work, and how your streak is shaping up.
+            Private, practical patterns from your most recent seven days of
+            completed DeepFlow sessions.
           </p>
         </div>
+        <span className="workspace-dashboard-badge">Last 7 days</span>
       </div>
 
-      {!hasInsights ? (
+      {!hasAnyFocus ? (
         <WorkspaceEmptyState
-          title="Insights need a few completed sessions."
-          description="Finish a timer with an intention and DeepFlow will start finding useful patterns."
+          title="Start your first focus session to build your focus profile."
+          description="Finish a timer and DeepFlow will turn your local session history into useful, private patterns."
+        />
+      ) : !intelligence.hasRecentFocus ? (
+        <WorkspaceEmptyState
+          title="Your recent week is still open."
+          description="Complete one focused session in the next seven days and DeepFlow will begin shaping a fresh reflection."
         />
       ) : (
-        <div className="workspace-insights-grid">
-          <article>
-            <span>Most productive day this week</span>
-            <strong>{analytics.bestFocusDay ?? "No data yet"}</strong>
+        <div className="workspace-intelligence-grid">
+          <article className="workspace-intelligence-card">
+            <span>Best focus time</span>
+            <strong>{intelligence.bestFocusTime}</strong>
+            <p>Use this window for work that deserves your sharpest attention.</p>
           </article>
-          <article>
-            <span>Longest session</span>
-            <strong>{formatMinutes(analytics.longestSessionLength)}</strong>
+          <article className="workspace-intelligence-card">
+            <span>Most productive day</span>
+            <strong>{intelligence.mostProductiveDay}</strong>
+            <p>Your strongest day in the current seven-day focus window.</p>
           </article>
-          <article>
-            <span>Average session</span>
-            <strong>{formatMinutes(analytics.averageSessionLength)}</strong>
+          <article className="workspace-intelligence-card">
+            <span>Focus momentum</span>
+            <strong>{formatMomentumLabel(intelligence.momentum.state)}</strong>
+            <p>{formatMomentum(intelligence.momentum.percentChange)} compared with the previous seven days.</p>
           </article>
-          <article>
-            <span>Total focus time this week</span>
-            <strong>{formatMinutes(analytics.focusMinutesThisWeek)}</strong>
+          <article className="workspace-intelligence-card">
+            <span>Session quality</span>
+            <strong>{intelligence.sessionQuality?.label}</strong>
+            <p>{intelligence.sessionQuality?.description}</p>
           </article>
-          <article>
-            <span>Best streak</span>
-            <strong>{metricValue(analytics.bestStreak, " days")}</strong>
+          <article className="workspace-intelligence-card">
+            <span>Focus personality</span>
+            <strong>{intelligence.personality?.label}</strong>
+            <p>{intelligence.personality?.description}</p>
+          </article>
+          <article className="workspace-intelligence-card workspace-intelligence-card--reflection">
+            <span>Weekly reflection</span>
+            <strong>{intelligence.reflection?.title}</strong>
+            <div className="workspace-reflection-copy">
+              {intelligence.reflection
+                ? splitReflectionNarrative(intelligence.reflection.description).map(
+                    (paragraph) => <p key={paragraph}>{paragraph}</p>,
+                  )
+                : null}
+            </div>
+            <div className="workspace-reflection-details" aria-label="Supporting focus details">
+              <div>
+                <span>Best focus day</span>
+                <strong>{intelligence.mostProductiveDay}</strong>
+              </div>
+              <div>
+                <span>Best focus time</span>
+                <strong>{intelligence.bestFocusTime}</strong>
+              </div>
+              <div>
+                <span>Average session</span>
+                <strong>{formatMinutes(analytics.averageSessionLength)}</strong>
+              </div>
+            </div>
           </article>
         </div>
       )}

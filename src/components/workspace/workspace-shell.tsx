@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { FocusJournalView } from "@/components/workspace/focus-journal-view";
 import { NotesCanvas } from "@/components/workspace/notes-canvas";
+import { RoutinesView } from "@/components/workspace/routines-view";
 import {
   WorkspaceGoalsView,
   WorkspaceInsightsView,
@@ -16,6 +17,7 @@ const workspaceSections = [
   "Goals",
   "Notes Canvas",
   "Insights",
+  "Routines",
 ] as const;
 
 type WorkspaceSection = (typeof workspaceSections)[number];
@@ -59,6 +61,7 @@ export function WorkspaceShell() {
         {activeSection === "Notes Canvas" ? <NotesCanvas /> : null}
         {activeSection === "Focus" ? <FocusJournalView /> : null}
         {activeSection === "Insights" ? <WorkspaceInsightsView /> : null}
+        {activeSection === "Routines" ? <RoutinesView /> : null}
       </main>
     </div>
   );

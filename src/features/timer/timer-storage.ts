@@ -58,6 +58,8 @@ export type CompletedTimerSession = {
   path?: string;
   taskName?: string;
   category?: FocusCategory;
+  routineId?: string;
+  routineName?: string;
   /** Kept for records created before taskName was introduced. */
   intention?: string;
 };
@@ -331,6 +333,8 @@ function isCompletedTimerSession(
     (session.timerType === undefined || typeof session.timerType === "string") &&
     (session.path === undefined || typeof session.path === "string") &&
     (session.category === undefined || isFocusCategory(session.category)) &&
+    (session.routineId === undefined || typeof session.routineId === "string") &&
+    (session.routineName === undefined || typeof session.routineName === "string") &&
     (session.intention === undefined || typeof session.intention === "string")
   );
 }
@@ -365,6 +369,8 @@ export function readCompletedSessions(): CompletedTimerSession[] {
       taskName:
         session.taskName?.slice(0, 80) ??
         session.intention?.slice(0, 80),
+      routineId: session.routineId?.slice(0, 120),
+      routineName: session.routineName?.slice(0, 80),
     }));
   } catch {
     return [];
@@ -385,6 +391,8 @@ export function saveCompletedSession(session: CompletedTimerSession) {
       session.taskName?.trim().slice(0, 80) ||
       session.intention?.trim().slice(0, 80) ||
       undefined,
+    routineId: session.routineId?.trim().slice(0, 120) || undefined,
+    routineName: session.routineName?.trim().slice(0, 80) || undefined,
   };
   const nextSessions = [...sessions, normalizedSession]
     .sort((a, b) => a.completedAtMs - b.completedAtMs)

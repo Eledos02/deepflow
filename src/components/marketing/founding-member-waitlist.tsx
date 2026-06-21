@@ -8,9 +8,6 @@ const WAITLIST_STORAGE_KEY = "deepflow:founding-member-waitlist:v1";
 
 type WaitlistEntry = {
   email: string;
-  joinedAt: string;
-  plan: "founding_member";
-  price: 19;
 };
 
 function normalizeEmail(value: string) {
@@ -31,15 +28,15 @@ function readEntries(): WaitlistEntry[] {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
 
-    return parsed.filter((entry): entry is WaitlistEntry => {
-      if (!entry || typeof entry !== "object") return false;
+    return parsed.flatMap((entry) => {
+      if (typeof entry === "string") {
+        return isValidEmail(entry) ? [{ email: normalizeEmail(entry) }] : [];
+      }
+      if (!entry || typeof entry !== "object") return [];
       const candidate = entry as Partial<WaitlistEntry>;
-      return (
-        typeof candidate.email === "string" &&
-        typeof candidate.joinedAt === "string" &&
-        candidate.plan === "founding_member" &&
-        candidate.price === 19
-      );
+      return typeof candidate.email === "string" && isValidEmail(candidate.email)
+        ? [{ email: normalizeEmail(candidate.email) }]
+        : [];
     });
   } catch {
     return [];
@@ -54,8 +51,7 @@ function saveEntry(entry: WaitlistEntry) {
     ? entries
     : [...entries, entry];
 
-  // TODO: Replace localStorage MVP waitlist storage with Supabase,
-  // ConvertKit, Mailchimp, Resend, or a backend API before launch.
+  // UI-only duplicate prevention. Waitlist records are stored by /api/waitlist.
   window.localStorage.setItem(
     WAITLIST_STORAGE_KEY,
     JSON.stringify(nextEntries),
@@ -67,6 +63,7 @@ export function FoundingMemberWaitlist() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isJoined, setIsJoined] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const hydrationId = window.setTimeout(() => {
@@ -76,7 +73,7 @@ export function FoundingMemberWaitlist() {
     return () => window.clearTimeout(hydrationId);
   }, []);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedEmail = normalizeEmail(email);
 
@@ -97,15 +94,38 @@ export function FoundingMemberWaitlist() {
       return;
     }
 
-    saveEntry({
-      email: normalizedEmail,
-      joinedAt: new Date().toISOString(),
-      plan: "founding_member",
-      price: 19,
-    });
-    trackFoundingMemberWaitlistJoined();
-    setIsJoined(true);
-    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          source: "pricing",
+          plan: "founding_member",
+        }),
+      });
+      const payload: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const message =
+          payload && typeof payload === "object" && "error" in payload
+            ? String(payload.error)
+            : "We could not save your place on the waitlist. Please try again.";
+        setError(message);
+        return;
+      }
+
+      saveEntry({ email: normalizedEmail });
+      trackFoundingMemberWaitlistJoined();
+      setIsJoined(true);
+      setError("");
+    } catch {
+      setError("We could not reach the waitlist right now. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isJoined) {
@@ -136,8 +156,8 @@ export function FoundingMemberWaitlist() {
           type="email"
           value={email}
         />
-        <button className="button button--light" type="submit">
-          Join the Founding Member Waitlist
+        <button className="button button--light" disabled={isSubmitting} type="submit">
+          {isSubmitting ? "Joining..." : "Join the Founding Member Waitlist"}
         </button>
       </div>
       {error ? (

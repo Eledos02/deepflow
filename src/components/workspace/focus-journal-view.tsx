@@ -145,6 +145,11 @@ export function FocusJournalView() {
                         {" • "}
                         {formatCompletionTime(entry.completedAt)}
                       </span>
+                      {entry.routineName ? (
+                        <span className="workspace-journal-routine">
+                          Routine: {entry.routineName}
+                        </span>
+                      ) : null}
                     </div>
                   </li>
                 ))}

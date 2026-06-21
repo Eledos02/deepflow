@@ -11,6 +11,8 @@ export type FocusJournalEntry = {
   timerType: string;
   completedAt: string;
   sourcePath: string;
+  routineId?: string;
+  routineName?: string;
 };
 
 type FocusJournalInput = {
@@ -20,6 +22,8 @@ type FocusJournalInput = {
   timerType: string;
   completedAt: string;
   sourcePath: string;
+  routineId?: string;
+  routineName?: string;
 };
 
 function canUseStorage() {
@@ -43,7 +47,9 @@ function isFocusJournalEntry(value: unknown): value is FocusJournalEntry {
     typeof entry.completedAt === "string" &&
     !Number.isNaN(Date.parse(entry.completedAt)) &&
     typeof entry.sourcePath === "string" &&
-    entry.sourcePath.startsWith("/")
+    entry.sourcePath.startsWith("/") &&
+    (entry.routineId === undefined || typeof entry.routineId === "string") &&
+    (entry.routineName === undefined || typeof entry.routineName === "string")
   );
 }
 
@@ -54,8 +60,12 @@ export function createFocusJournalEntry({
   timerType,
   completedAt,
   sourcePath,
+  routineId,
+  routineName,
 }: FocusJournalInput): FocusJournalEntry {
   const normalizedIntention = intention.trim().slice(0, 120);
+  const normalizedRoutineId = routineId?.trim().slice(0, 120);
+  const normalizedRoutineName = routineName?.trim().slice(0, 80);
 
   return {
     id,
@@ -65,6 +75,12 @@ export function createFocusJournalEntry({
     timerType: timerType.trim().slice(0, 80) || "Focus Timer",
     completedAt,
     sourcePath: sourcePath.startsWith("/") ? sourcePath.slice(0, 160) : "/",
+    ...(normalizedRoutineId && normalizedRoutineName
+      ? {
+          routineId: normalizedRoutineId,
+          routineName: normalizedRoutineName,
+        }
+      : {}),
   };
 }
 
@@ -83,6 +99,8 @@ export function parseFocusJournalEntries(value: unknown): FocusJournalEntry[] {
         timerType: entry.timerType,
         completedAt: entry.completedAt,
         sourcePath: entry.sourcePath,
+        routineId: entry.routineId,
+        routineName: entry.routineName,
       }),
     )
     .filter((entry) => {
