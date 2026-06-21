@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useId, useMemo, useState } from "react";
 
+import { CollapsibleSessionListControl } from "@/components/ui/collapsible-session-list-control";
+import { getVisibleSessionListItems } from "@/features/timer/collapsible-session-list";
 import {
   FOCUS_JOURNAL_STORAGE_KEY,
   FOCUS_JOURNAL_UPDATED_EVENT,
@@ -69,6 +72,8 @@ export function FocusJournalView() {
   const [entries, setEntries] = useState<FocusJournalEntry[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [isJournalExpanded, setIsJournalExpanded] = useState(false);
+  const journalListId = useId();
 
   useEffect(() => {
     const refresh = () => {
@@ -97,9 +102,13 @@ export function FocusJournalView() {
     return () => window.clearInterval(intervalId);
   }, []);
 
-  const visibleEntries = useMemo(
+  const availableEntries = useMemo(
     () => getVisibleFocusJournalEntries(entries),
     [entries],
+  );
+  const visibleEntries = useMemo(
+    () => getVisibleSessionListItems(availableEntries, isJournalExpanded),
+    [availableEntries, isJournalExpanded],
   );
   const groups = useMemo(
     () => groupJournalEntries(visibleEntries, nowMs),
@@ -129,7 +138,7 @@ export function FocusJournalView() {
           </p>
         </div>
       ) : (
-        <div className="workspace-journal-groups">
+        <div className="workspace-journal-groups" id={journalListId}>
           {groups.map((group) => (
             <section className="workspace-journal-day" key={group.dateKey}>
               <h3>{group.label}</h3>
@@ -159,6 +168,17 @@ export function FocusJournalView() {
         </div>
       )}
 
+      <div className="workspace-journal-toggle">
+        <CollapsibleSessionListControl
+          collapseLabel="Collapse journal"
+          controlsId={journalListId}
+          expandLabel="Show all journal entries"
+          isExpanded={isJournalExpanded}
+          onExpandedChange={setIsJournalExpanded}
+          totalCount={availableEntries.length}
+        />
+      </div>
+
       {entries.length > FREE_FOCUS_JOURNAL_VISIBLE_LIMIT ? (
         <aside className="workspace-upgrade-card workspace-journal-upgrade">
           <span className="workspace-upgrade-card__badge">Journal limit</span>
@@ -168,6 +188,9 @@ export function FocusJournalView() {
             recent journal entries. Founding Members get unlimited journal
             history, cloud sync, weekly reports, and advanced focus insights.
           </p>
+          <Link className="button button--light" href="/pricing?source=workspace_upgrade#founding-member">
+            Become a Founding Member
+          </Link>
         </aside>
       ) : null}
     </section>

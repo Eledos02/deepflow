@@ -54,10 +54,38 @@ function formatMomentum(percentChange: number) {
   return `${percentChange > 0 ? "+" : ""}${percentChange}%`;
 }
 
-function formatMomentumLabel(state: "rising" | "stable" | "slowing") {
+function formatMomentumLabel(
+  state: "rising" | "stable" | "slowing",
+  hasBaseline: boolean,
+) {
+  if (!hasBaseline) return "Building baseline";
   if (state === "rising") return "Building Momentum";
   if (state === "slowing") return "Momentum Slowing";
   return "Steady Rhythm";
+}
+
+function getPatternValue(value: string | null, sessionCount: number) {
+  if (sessionCount === 0) return "Not enough data yet";
+  return value ?? "Still learning";
+}
+
+function getPatternDescription(value: string | null, sessionCount: number) {
+  if (sessionCount < 3 || !value) {
+    return "Complete a few more sessions to surface a useful pattern.";
+  }
+
+  return "A pattern supported by completed sessions from the current seven days.";
+}
+
+function getMomentumDescription(
+  percentChange: number,
+  hasBaseline: boolean,
+) {
+  if (!hasBaseline) {
+    return "Complete sessions across another week to compare your momentum.";
+  }
+
+  return `${formatMomentum(percentChange)} compared with the previous seven days.`;
 }
 
 function WeeklyActivityChart({ activity }: { activity: WeeklyFocusActivity[] }) {
@@ -250,16 +278,35 @@ export function WorkspaceOverviewView() {
           <div className="workspace-overview-secondary-metrics">
             <article className="workspace-metric-tile">
               <span>Focus momentum</span>
-              <strong>{analytics.momentum.state}</strong>
-              <small>{formatMomentum(analytics.momentum.percentChange)}</small>
+              <strong>
+                {formatMomentumLabel(
+                  analytics.momentum.state,
+                  analytics.momentum.hasBaseline,
+                )}
+              </strong>
+              <small>
+                {analytics.momentum.hasBaseline
+                  ? formatMomentum(analytics.momentum.percentChange)
+                  : "Building baseline"}
+              </small>
             </article>
             <article className="workspace-metric-tile">
               <span>Best day</span>
-              <strong>{analytics.bestFocusDay ?? "No data"}</strong>
+              <strong>
+                {getPatternValue(
+                  analytics.bestFocusDay,
+                  analytics.focusEntryCount,
+                )}
+              </strong>
             </article>
             <article className="workspace-metric-tile">
               <span>Best hour</span>
-              <strong>{analytics.bestFocusHour ?? "No data"}</strong>
+              <strong>
+                {getPatternValue(
+                  analytics.bestFocusHour,
+                  analytics.focusEntryCount,
+                )}
+              </strong>
             </article>
             <article className="workspace-metric-tile">
               <span>Average session</span>
@@ -429,28 +476,64 @@ export function WorkspaceInsightsView() {
         <div className="workspace-intelligence-grid">
           <article className="workspace-intelligence-card">
             <span>Best focus time</span>
-            <strong>{intelligence.bestFocusTime}</strong>
-            <p>Use this window for work that deserves your sharpest attention.</p>
+            <strong>
+              {getPatternValue(
+                intelligence.bestFocusTime,
+                analytics.recentFocusEntryCount,
+              )}
+            </strong>
+            <p>
+              {getPatternDescription(
+                intelligence.bestFocusTime,
+                analytics.recentFocusEntryCount,
+              )}
+            </p>
           </article>
           <article className="workspace-intelligence-card">
             <span>Most productive day</span>
-            <strong>{intelligence.mostProductiveDay}</strong>
-            <p>Your strongest day in the current seven-day focus window.</p>
+            <strong>
+              {getPatternValue(
+                intelligence.mostProductiveDay,
+                analytics.recentFocusEntryCount,
+              )}
+            </strong>
+            <p>
+              {getPatternDescription(
+                intelligence.mostProductiveDay,
+                analytics.recentFocusEntryCount,
+              )}
+            </p>
           </article>
           <article className="workspace-intelligence-card">
             <span>Focus momentum</span>
-            <strong>{formatMomentumLabel(intelligence.momentum.state)}</strong>
-            <p>{formatMomentum(intelligence.momentum.percentChange)} compared with the previous seven days.</p>
+            <strong>
+              {formatMomentumLabel(
+                intelligence.momentum.state,
+                intelligence.momentum.hasBaseline,
+              )}
+            </strong>
+            <p>
+              {getMomentumDescription(
+                intelligence.momentum.percentChange,
+                intelligence.momentum.hasBaseline,
+              )}
+            </p>
           </article>
           <article className="workspace-intelligence-card">
             <span>Session quality</span>
-            <strong>{intelligence.sessionQuality?.label}</strong>
-            <p>{intelligence.sessionQuality?.description}</p>
+            <strong>{intelligence.sessionQuality?.label ?? "Still learning"}</strong>
+            <p>
+              {intelligence.sessionQuality?.description ??
+                "Complete a few more sessions to give this rhythm more shape."}
+            </p>
           </article>
           <article className="workspace-intelligence-card">
             <span>Focus personality</span>
-            <strong>{intelligence.personality?.label}</strong>
-            <p>{intelligence.personality?.description}</p>
+            <strong>{intelligence.personality?.label ?? "Still learning"}</strong>
+            <p>
+              {intelligence.personality?.description ??
+                "Your focus personality will emerge from a few more completed sessions."}
+            </p>
           </article>
           <article className="workspace-intelligence-card workspace-intelligence-card--reflection">
             <span>Weekly reflection</span>
@@ -465,11 +548,21 @@ export function WorkspaceInsightsView() {
             <div className="workspace-reflection-details" aria-label="Supporting focus details">
               <div>
                 <span>Best focus day</span>
-                <strong>{intelligence.mostProductiveDay}</strong>
+                <strong>
+                  {getPatternValue(
+                    intelligence.mostProductiveDay,
+                    analytics.recentFocusEntryCount,
+                  )}
+                </strong>
               </div>
               <div>
                 <span>Best focus time</span>
-                <strong>{intelligence.bestFocusTime}</strong>
+                <strong>
+                  {getPatternValue(
+                    intelligence.bestFocusTime,
+                    analytics.recentFocusEntryCount,
+                  )}
+                </strong>
               </div>
               <div>
                 <span>Average session</span>

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useId, useState } from "react";
 
+import type { WaitlistSource } from "@/features/waitlist/waitlist";
 import { trackFoundingMemberWaitlistJoined } from "@/lib/analytics";
 
 const WAITLIST_STORAGE_KEY = "deepflow:founding-member-waitlist:v1";
@@ -9,6 +10,24 @@ const WAITLIST_STORAGE_KEY = "deepflow:founding-member-waitlist:v1";
 type WaitlistEntry = {
   email: string;
 };
+
+type FoundingMemberWaitlistProps = {
+  source?: WaitlistSource;
+  variant?: "default" | "compact";
+};
+
+const sourceOverrides = new Set<WaitlistSource>([
+  "workspace_upgrade",
+]);
+
+function resolveSubmissionSource(source: WaitlistSource) {
+  if (typeof window === "undefined") return source;
+
+  const requestedSource = new URLSearchParams(window.location.search).get("source");
+  return requestedSource && sourceOverrides.has(requestedSource as WaitlistSource)
+    ? (requestedSource as WaitlistSource)
+    : source;
+}
 
 function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
@@ -58,7 +77,10 @@ function saveEntry(entry: WaitlistEntry) {
   );
 }
 
-export function FoundingMemberWaitlist() {
+export function FoundingMemberWaitlist({
+  source = "pricing_founding_member",
+  variant = "default",
+}: FoundingMemberWaitlistProps) {
   const emailId = useId();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -76,6 +98,7 @@ export function FoundingMemberWaitlist() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedEmail = normalizeEmail(email);
+    const submissionSource = resolveSubmissionSource(source);
 
     if (!normalizedEmail) {
       setError("Enter your email address to join the waitlist.");
@@ -102,7 +125,7 @@ export function FoundingMemberWaitlist() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: normalizedEmail,
-          source: "pricing",
+          source: submissionSource,
           plan: "founding_member",
         }),
       });
@@ -121,7 +144,7 @@ export function FoundingMemberWaitlist() {
       }
 
       saveEntry({ email: normalizedEmail });
-      trackFoundingMemberWaitlistJoined();
+      trackFoundingMemberWaitlistJoined(submissionSource);
       setIsJoined(true);
       setError("");
     } catch {
@@ -133,7 +156,10 @@ export function FoundingMemberWaitlist() {
 
   if (isJoined) {
     return (
-      <div className="founding-waitlist__success" role="status">
+      <div
+        className={`founding-waitlist__success founding-waitlist__success--${variant}`}
+        role="status"
+      >
         <strong>You&apos;re on the list.</strong>
         <p>
           We&apos;ll notify you before Founding Member access opens and before
@@ -144,8 +170,13 @@ export function FoundingMemberWaitlist() {
   }
 
   return (
-    <form className="founding-waitlist__form" onSubmit={handleSubmit}>
-      <label htmlFor={emailId}>Email Address</label>
+    <form
+      className={`founding-waitlist__form founding-waitlist__form--${variant}`}
+      onSubmit={handleSubmit}
+    >
+      <label className={variant === "compact" ? "sr-only" : undefined} htmlFor={emailId}>
+        Email Address
+      </label>
       <div className="founding-waitlist__control">
         <input
           autoComplete="email"

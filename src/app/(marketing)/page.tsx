@@ -2,12 +2,15 @@ import Link from "next/link";
 
 import { BenefitGrid } from "@/components/marketing/benefit-grid";
 import { ConversionCard } from "@/components/marketing/conversion-card";
+import { FoundingMemberWaitlist } from "@/components/marketing/founding-member-waitlist";
 import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import { ProductPreview } from "@/components/marketing/product-preview";
 import { TimerExperience } from "@/components/product/timer-experience";
 import {
   ArrowIcon,
+  ChartIcon,
   CheckIcon,
+  LayersIcon,
   ShieldIcon,
   SparkIcon,
   TargetIcon,
@@ -28,19 +31,19 @@ const focusTool = timerTools[0];
 
 const productBenefits = [
   {
-    title: "Plan with intention",
+    title: "Start with one clear next action",
     description:
-      "Turn a vague workload into a small number of meaningful focus blocks.",
+      "Name the work, choose a length that feels possible, and let the timer hold the boundary.",
   },
   {
-    title: "Focus without friction",
+    title: "Keep the whole practice in one place",
     description:
-      "Start instantly with a quiet timer designed to disappear once work begins.",
+      "Completed sessions become a private journal, calm notes, routines, goals, and a clearer workspace.",
   },
   {
-    title: "Learn from your attention",
+    title: "Learn your natural rhythm",
     description:
-      "Use session history and weekly patterns to protect more of your best hours.",
+      "Notice your strongest focus windows, steady habits, and momentum without turning attention into a score.",
   },
 ];
 
@@ -74,6 +77,10 @@ export default function HomePage() {
               <Link className="button button--ghost button--large" href="/#product">
                 See the product
               </Link>
+            </div>
+            <div className="hero__waitlist">
+              <span>Founding Member early access</span>
+              <FoundingMemberWaitlist source="homepage_hero" variant="compact" />
             </div>
             <div className="hero__trust">
               <span>
@@ -129,15 +136,19 @@ export default function HomePage() {
           <div className="section-heading product-section__heading">
             <div>
               <span className="eyebrow">Beyond the timer</span>
-              <h2>A calm operating system for focused work.</h2>
+              <h2>DeepFlow is a calm workspace for focused work.</h2>
             </div>
             <div className="product-section__intro">
               <p>
-                The free timer helps you begin. DeepFlow Pro connects each
-                session into a system for planning, consistency, and insight.
+                Start a session, capture what you are working on, and let your
+                workspace turn completed focus blocks into a clearer rhythm.
               </p>
-              <Link className="text-arrow-link" href="/pricing">
-                Explore the roadmap
+              <Link className="text-arrow-link" href="/workspace">
+                Explore the Workspace
+                <ArrowIcon />
+              </Link>
+              <Link className="text-arrow-link" href="/adhd-timer">
+                Try the ADHD-friendly timer
                 <ArrowIcon />
               </Link>
             </div>
@@ -153,12 +164,20 @@ export default function HomePage() {
               Saved routines
             </span>
             <span>
-              <ShieldIcon />
-              Distraction protection
+              <SparkIcon />
+              Notes Canvas
             </span>
             <span>
-              <SparkIcon />
+              <ChartIcon />
               Attention insights
+            </span>
+            <span>
+              <ShieldIcon />
+              Focus Journal
+            </span>
+            <span>
+              <TimerIcon />
+              Ambient audio
             </span>
           </div>
         </div>
@@ -177,6 +196,42 @@ export default function HomePage() {
             </p>
           </div>
           <BenefitGrid items={productBenefits} />
+        </div>
+      </section>
+
+      <section className="section product-pillars">
+        <div className="shell">
+          <div className="section-heading section-heading--center">
+            <span className="eyebrow">A complete focus practice</span>
+            <h2>Keep the timer simple. Let the system grow around it.</h2>
+          </div>
+          <div className="product-pillars__grid">
+            <article>
+              <TimerIcon />
+              <h3>Focus sessions</h3>
+              <p>Set an intention, choose a calm interval, and keep the session visible with the mini player.</p>
+            </article>
+            <article>
+              <LayersIcon />
+              <h3>Workspace</h3>
+              <p>Bring your Focus Journal, goals, notes, routines, and quiet patterns into one private place.</p>
+            </article>
+            <article>
+              <TargetIcon />
+              <h3>Routines and insights</h3>
+              <p>Save the sessions you repeat, then notice your best days, focus windows, momentum, and reflection.</p>
+            </article>
+            <article>
+              <SparkIcon />
+              <h3>Notes Canvas</h3>
+              <p>Collect loose thoughts, connect ideas, and keep useful context nearby while a session is running.</p>
+            </article>
+            <article>
+              <ShieldIcon />
+              <h3>Audio that stays optional</h3>
+              <p>Choose rain, fireplace, ocean waves, or silence. The environment should support the work, not compete with it.</p>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -231,6 +286,19 @@ export default function HomePage() {
       <section className="section">
         <div className="shell">
           <ConversionCard placement="homepage" />
+        </div>
+      </section>
+
+      <section className="section home-waitlist-section" aria-labelledby="home-waitlist-title">
+        <div className="shell">
+          <div className="home-waitlist">
+            <div>
+              <span className="eyebrow">Limited early access</span>
+              <h2 id="home-waitlist-title">Join the Founding Member list.</h2>
+              <p>Get early access to DeepFlow as the product evolves.</p>
+            </div>
+            <FoundingMemberWaitlist source="homepage_final_cta" variant="compact" />
+          </div>
         </div>
       </section>
     </>

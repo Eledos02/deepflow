@@ -1297,7 +1297,10 @@ export function NotesCanvas() {
                 </span>
               ))}
             </div>
-            <Link className="button button--light button--full" href="/pricing#founding-member">
+            <Link
+              className="button button--light button--full"
+              href="/pricing?source=workspace_upgrade#founding-member"
+            >
               Become a Founding Member
             </Link>
           </aside>

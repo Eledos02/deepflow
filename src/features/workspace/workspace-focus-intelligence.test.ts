@@ -25,9 +25,14 @@ function analytics(
     activeFocusDaysLastSevenDays: 3,
     weekdayFocusMinutesLastSevenDays: 135,
     weekendFocusMinutesLastSevenDays: 0,
+    focusEntryCount: 4,
+    recentFocusEntryCount: 3,
+    hasEnoughFocusPatternData: true,
+    hasEnoughRecentFocusPatternData: true,
     weeklyActivity: [],
     momentum: {
       state: "stable",
+      hasBaseline: true,
       percentChange: 0,
       currentMinutes: 135,
       previousMinutes: 135,
@@ -78,6 +83,7 @@ describe("workspace focus intelligence", () => {
       analytics({
         momentum: {
           state: "rising",
+          hasBaseline: true,
           percentChange: 25,
           currentMinutes: 135,
           previousMinutes: 108,
@@ -101,6 +107,7 @@ describe("workspace focus intelligence", () => {
         bestFocusHourIndexLastSevenDays: 22,
         momentum: {
           state: "slowing",
+          hasBaseline: true,
           percentChange: -30,
           currentMinutes: 135,
           previousMinutes: 193,
@@ -135,6 +142,8 @@ describe("workspace focus intelligence", () => {
       analytics({
         sessionsLastSevenDays: 0,
         focusMinutesLastSevenDays: 0,
+        recentFocusEntryCount: 0,
+        hasEnoughRecentFocusPatternData: false,
         bestFocusDayLastSevenDays: null,
         bestFocusHourLastSevenDays: null,
         bestFocusHourIndexLastSevenDays: null,
@@ -147,5 +156,26 @@ describe("workspace focus intelligence", () => {
       personality: null,
       reflection: null,
     });
+  });
+
+  it("uses a learning reflection instead of naming an unsupported pattern", () => {
+    const intelligence = buildWorkspaceFocusIntelligence(
+      analytics({
+        sessionsLastSevenDays: 2,
+        recentFocusEntryCount: 2,
+        hasEnoughRecentFocusPatternData: false,
+        bestFocusDayLastSevenDays: null,
+        bestFocusHourLastSevenDays: null,
+        bestFocusHourIndexLastSevenDays: null,
+      }),
+    );
+
+    expect(intelligence.reflection).toEqual({
+      title: "Your rhythm is starting to take shape.",
+      description:
+        "Complete a few more sessions and DeepFlow will begin to surface your strongest focus patterns.",
+    });
+    expect(intelligence.personality).toBeNull();
+    expect(intelligence.sessionQuality).toBeNull();
   });
 });

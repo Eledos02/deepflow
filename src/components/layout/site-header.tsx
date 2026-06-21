@@ -53,9 +53,6 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="header-actions">
-          <Link className="text-link text-link--muted" href="/pricing">
-            Pricing
-          </Link>
           <Link className="button button--small button--dark" href="/tools/focus-timer">
             Start free
           </Link>
@@ -84,12 +81,6 @@ export function SiteHeader() {
                     {item.label}
                   </Link>
                 ))}
-                <Link href="/tools/countdown-timer" onClick={closeMobileMenu}>
-                  Countdown timer
-                </Link>
-                <Link href="/pricing" onClick={closeMobileMenu}>
-                  Pricing
-                </Link>
               </nav>
               <Link
                 className="button button--dark button--full"

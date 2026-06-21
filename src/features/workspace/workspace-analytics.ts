@@ -2,6 +2,7 @@ import type { FocusJournalEntry } from "@/features/timer/focus-journal";
 import type { TimerStats } from "@/features/timer/timer-stats";
 
 const DAY_MS = 86_400_000;
+export const MIN_FOCUS_PATTERN_SESSIONS = 3;
 const WEEKDAY_LABELS = [
   "Monday",
   "Tuesday",
@@ -27,6 +28,7 @@ export type FocusStreaks = {
 
 export type FocusMomentum = {
   state: FocusMomentumState;
+  hasBaseline: boolean;
   percentChange: number;
   currentMinutes: number;
   previousMinutes: number;
@@ -46,6 +48,10 @@ export type WorkspaceAnalytics = {
   activeFocusDaysLastSevenDays: number;
   weekdayFocusMinutesLastSevenDays: number;
   weekendFocusMinutesLastSevenDays: number;
+  focusEntryCount: number;
+  recentFocusEntryCount: number;
+  hasEnoughFocusPatternData: boolean;
+  hasEnoughRecentFocusPatternData: boolean;
   weeklyActivity: WeeklyFocusActivity[];
   momentum: FocusMomentum;
   bestFocusDay: string | null;
@@ -103,6 +109,8 @@ function getAnalyticsFocusEntries(
   entries: FocusJournalEntry[],
   stats: TimerStats,
 ) {
+  // Journal entries are the current source of truth; legacy stats history
+  // fills gaps for sessions completed before the Focus Journal existed.
   const journalEntries = getValidFocusJournalEntries(entries);
   const knownSessionKeys = new Set(
     journalEntries.map(
@@ -258,33 +266,76 @@ export function calculateFocusMomentum(
   const previousMinutes = sumFocusMinutes(
     entriesInRange(validEntries, previousStartMs, currentStartMs - 1),
   );
+  const hasBaseline = previousMinutes > 0;
+
+  if (!hasBaseline) {
+    return {
+      state: "stable",
+      hasBaseline: false,
+      percentChange: 0,
+      currentMinutes,
+      previousMinutes,
+    };
+  }
+
   const percentChange =
-    previousMinutes === 0
-      ? currentMinutes > 0
-        ? 100
-        : 0
-      : Math.round(((currentMinutes - previousMinutes) / previousMinutes) * 100);
+    Math.round(((currentMinutes - previousMinutes) / previousMinutes) * 100);
   const state: FocusMomentumState =
     percentChange > 10 ? "rising" : percentChange < -10 ? "slowing" : "stable";
 
-  return { state, percentChange, currentMinutes, previousMinutes };
+  return {
+    state,
+    hasBaseline: true,
+    percentChange,
+    currentMinutes,
+    previousMinutes,
+  };
 }
 
-export function getBestFocusDay(entries: FocusJournalEntry[]) {
-  const minutesByDay = Array.from({ length: 7 }, () => 0);
+export function getBestFocusDay(
+  entries: FocusJournalEntry[],
+  minimumSessions = MIN_FOCUS_PATTERN_SESSIONS,
+) {
+  const validEntries = getValidFocusJournalEntries(entries);
+  if (validEntries.length < minimumSessions) return null;
 
-  for (const entry of getValidFocusJournalEntries(entries)) {
-    minutesByDay[weekdayIndex(entry.completedAt)] += entry.durationMinutes;
+  const minutesByDay = Array.from({ length: 7 }, () => 0);
+  const latestCompletionByDay = Array.from({ length: 7 }, () => 0);
+
+  for (const entry of validEntries) {
+    const index = weekdayIndex(entry.completedAt);
+    minutesByDay[index] += entry.durationMinutes;
+    latestCompletionByDay[index] = Math.max(
+      latestCompletionByDay[index],
+      Date.parse(entry.completedAt),
+    );
   }
 
   const highestMinutes = Math.max(...minutesByDay);
   if (highestMinutes === 0) return null;
 
-  return WEEKDAY_LABELS[minutesByDay.indexOf(highestMinutes)];
+  const strongestDayIndex = minutesByDay.reduce(
+    (strongestIndex, minutes, index) => {
+      if (minutes > minutesByDay[strongestIndex]) return index;
+      if (
+        minutes === minutesByDay[strongestIndex] &&
+        latestCompletionByDay[index] > latestCompletionByDay[strongestIndex]
+      ) {
+        return index;
+      }
+      return strongestIndex;
+    },
+    0,
+  );
+
+  return WEEKDAY_LABELS[strongestDayIndex];
 }
 
-export function getBestFocusHour(entries: FocusJournalEntry[]) {
-  const hour = getBestFocusHourIndex(entries);
+export function getBestFocusHour(
+  entries: FocusJournalEntry[],
+  minimumSessions = MIN_FOCUS_PATTERN_SESSIONS,
+) {
+  const hour = getBestFocusHourIndex(entries, minimumSessions);
   if (hour === null) return null;
 
   return new Intl.DateTimeFormat("en-US", {
@@ -293,15 +344,38 @@ export function getBestFocusHour(entries: FocusJournalEntry[]) {
   }).format(new Date(2026, 0, 1, hour));
 }
 
-export function getBestFocusHourIndex(entries: FocusJournalEntry[]) {
-  const minutesByHour = Array.from({ length: 24 }, () => 0);
+export function getBestFocusHourIndex(
+  entries: FocusJournalEntry[],
+  minimumSessions = MIN_FOCUS_PATTERN_SESSIONS,
+) {
+  const validEntries = getValidFocusJournalEntries(entries);
+  if (validEntries.length < minimumSessions) return null;
 
-  for (const entry of getValidFocusJournalEntries(entries)) {
-    minutesByHour[new Date(entry.completedAt).getHours()] += entry.durationMinutes;
+  const minutesByHour = Array.from({ length: 24 }, () => 0);
+  const latestCompletionByHour = Array.from({ length: 24 }, () => 0);
+
+  for (const entry of validEntries) {
+    const hour = new Date(entry.completedAt).getHours();
+    minutesByHour[hour] += entry.durationMinutes;
+    latestCompletionByHour[hour] = Math.max(
+      latestCompletionByHour[hour],
+      Date.parse(entry.completedAt),
+    );
   }
 
   const highestMinutes = Math.max(...minutesByHour);
-  return highestMinutes > 0 ? minutesByHour.indexOf(highestMinutes) : null;
+  if (highestMinutes === 0) return null;
+
+  return minutesByHour.reduce((strongestHour, minutes, hour) => {
+    if (minutes > minutesByHour[strongestHour]) return hour;
+    if (
+      minutes === minutesByHour[strongestHour] &&
+      latestCompletionByHour[hour] > latestCompletionByHour[strongestHour]
+    ) {
+      return hour;
+    }
+    return strongestHour;
+  }, 0);
 }
 
 export function calculateWorkspaceAnalytics(
@@ -328,6 +402,8 @@ export function calculateWorkspaceAnalytics(
   );
   const weekdayFocusMinutesLastSevenDays =
     sumFocusMinutes(lastSevenDaysEntries) - weekendFocusMinutesLastSevenDays;
+  const focusEntryCount = validEntries.length;
+  const recentFocusEntryCount = lastSevenDaysEntries.length;
 
   return {
     totalFocusMinutes,
@@ -350,6 +426,12 @@ export function calculateWorkspaceAnalytics(
     activeFocusDaysLastSevenDays,
     weekdayFocusMinutesLastSevenDays,
     weekendFocusMinutesLastSevenDays,
+    focusEntryCount,
+    recentFocusEntryCount,
+    hasEnoughFocusPatternData:
+      focusEntryCount >= MIN_FOCUS_PATTERN_SESSIONS,
+    hasEnoughRecentFocusPatternData:
+      recentFocusEntryCount >= MIN_FOCUS_PATTERN_SESSIONS,
     weeklyActivity,
     momentum: calculateFocusMomentum(validEntries, nowMs),
     bestFocusDay: getBestFocusDay(validEntries),

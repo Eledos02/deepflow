@@ -84,6 +84,7 @@ describe("focus journal", () => {
     expect(getVisibleFocusJournalEntries(entries)).toHaveLength(
       FREE_FOCUS_JOURNAL_VISIBLE_LIMIT,
     );
+    expect(entries).toHaveLength(FREE_FOCUS_JOURNAL_VISIBLE_LIMIT + 5);
   });
 
   it("does not duplicate entries with the same id", () => {

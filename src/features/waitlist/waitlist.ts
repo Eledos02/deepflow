@@ -1,5 +1,16 @@
 export const WAITLIST_PLAN = "founding_member" as const;
 
+export const WAITLIST_SOURCES = [
+  "pricing_founding_member",
+  "homepage_hero",
+  "homepage_final_cta",
+  "workspace_upgrade",
+  "guides_cta",
+  "unknown",
+] as const;
+
+export type WaitlistSource = (typeof WAITLIST_SOURCES)[number];
+
 export type WaitlistSubmission = {
   email: string;
   source: string;
@@ -48,7 +59,7 @@ export function parseWaitlistSubmission(value: unknown): WaitlistSubmissionResul
       source:
         typeof submission.source === "string" && submission.source.trim()
           ? submission.source.trim().slice(0, 80)
-          : "pricing",
+          : "unknown",
       plan: WAITLIST_PLAN,
     },
   };

@@ -35,8 +35,11 @@ export const siteConfig = {
     { label: "Product", href: "/#product" },
     { label: "Workspace", href: "/workspace" },
     { label: "Focus timer", href: "/tools/focus-timer" },
+    { label: "Countdown timer", href: "/tools/countdown-timer" },
+    { label: "Study timer", href: "/tools/study-timer" },
     { label: "Pomodoro", href: "/pomodoro-timer" },
     { label: "Guides", href: "/guides" },
+    { label: "Pricing", href: "/pricing" },
   ],
 } as const;
 

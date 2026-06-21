@@ -25,6 +25,7 @@ export type WeeklyReflection = {
 
 export type WorkspaceFocusIntelligence = {
   hasRecentFocus: boolean;
+  hasEnoughRecentPatternData: boolean;
   bestFocusTime: string | null;
   mostProductiveDay: string | null;
   momentum: FocusMomentum;
@@ -44,7 +45,7 @@ function formatMinutes(minutes: number) {
 export function getSessionQuality(
   analytics: WorkspaceAnalytics,
 ): SessionQuality | null {
-  if (analytics.sessionsLastSevenDays === 0) return null;
+  if (!analytics.hasEnoughRecentFocusPatternData) return null;
 
   if (analytics.averageSessionLength >= 60) {
     return {
@@ -69,7 +70,7 @@ export function getSessionQuality(
 export function getFocusPersonality(
   analytics: WorkspaceAnalytics,
 ): FocusPersonality | null {
-  if (analytics.sessionsLastSevenDays === 0) return null;
+  if (!analytics.hasEnoughRecentFocusPatternData) return null;
 
   if (
     analytics.weekendFocusMinutesLastSevenDays > 0 &&
@@ -117,6 +118,14 @@ export function getWeeklyReflection(
 ): WeeklyReflection | null {
   if (analytics.sessionsLastSevenDays === 0) return null;
 
+  if (!analytics.hasEnoughRecentFocusPatternData) {
+    return {
+      title: "Your rhythm is starting to take shape.",
+      description:
+        "Complete a few more sessions and DeepFlow will begin to surface your strongest focus patterns.",
+    };
+  }
+
   const focusObservation =
     analytics.bestFocusDayLastSevenDays && analytics.bestFocusHourLastSevenDays
       ? `${analytics.bestFocusDayLastSevenDays} emerged as your strongest focus day, while your sharpest attention window appeared around ${analytics.bestFocusHourLastSevenDays}.`
@@ -125,6 +134,14 @@ export function getWeeklyReflection(
         : analytics.bestFocusHourLastSevenDays
           ? `Your sharpest attention window appeared around ${analytics.bestFocusHourLastSevenDays}.`
           : "A clearer focus pattern is beginning to emerge.";
+
+  if (!analytics.momentum.hasBaseline) {
+    return {
+      title: "Your rhythm is taking shape.",
+      description:
+        "A few completed sessions are beginning to form a useful pattern. Give the next week a little more focus time and DeepFlow can begin comparing your momentum with care.",
+    };
+  }
 
   if (analytics.momentum.state === "rising") {
     return {
@@ -155,6 +172,7 @@ export function buildWorkspaceFocusIntelligence(
 
   return {
     hasRecentFocus,
+    hasEnoughRecentPatternData: analytics.hasEnoughRecentFocusPatternData,
     bestFocusTime: analytics.bestFocusHourLastSevenDays,
     mostProductiveDay: analytics.bestFocusDayLastSevenDays,
     momentum: analytics.momentum,

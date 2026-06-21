@@ -24,4 +24,15 @@ describe("waitlist submission", () => {
     expect(parseWaitlistSubmission({ email: "" }).ok).toBe(false);
     expect(parseWaitlistSubmission({ email: "not-an-email" }).ok).toBe(false);
   });
+
+  it("uses unknown when an older client does not provide a source", () => {
+    expect(parseWaitlistSubmission({ email: "member@example.com" })).toEqual({
+      ok: true,
+      value: {
+        email: "member@example.com",
+        source: "unknown",
+        plan: "founding_member",
+      },
+    });
+  });
 });

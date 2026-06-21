@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ConversionCard } from "@/components/marketing/conversion-card";
+import { FoundingMemberWaitlist } from "@/components/marketing/founding-member-waitlist";
 import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import { FaqSection } from "@/components/seo/faq-section";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -116,6 +117,10 @@ export default async function GuidePage({ params }: GuidePageProps) {
               Open the focus timer
               <ArrowIcon />
             </Link>
+            <div className="article-cta__waitlist">
+              <p>Want to help shape what comes next?</p>
+              <FoundingMemberWaitlist source="guides_cta" variant="compact" />
+            </div>
           </div>
         </div>
       </article>

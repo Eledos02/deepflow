@@ -167,7 +167,7 @@ export default function PricingPage() {
                 ever offer.
               </p>
             </div>
-            <FoundingMemberWaitlist />
+            <FoundingMemberWaitlist source="pricing_founding_member" />
           </div>
 
           <div className="founding-feature-grid">

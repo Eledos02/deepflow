@@ -13,6 +13,7 @@ import {
 } from "react";
 
 import { AudioSettings } from "@/components/product/audio-settings";
+import { CollapsibleSessionListControl } from "@/components/ui/collapsible-session-list-control";
 import {
   PauseIcon,
   PlayIcon,
@@ -25,6 +26,7 @@ import {
   inferFocusCategory,
 } from "@/features/timer/session-journal";
 import { getProgress } from "@/features/timer/timer-engine";
+import { getVisibleSessionListItems } from "@/features/timer/collapsible-session-list";
 import {
   requestTimerNotificationPermission,
   showTimerCompletionNotification,
@@ -117,7 +119,7 @@ function groupRecentSessions(
 ): RecentSessionGroup[] {
   const groups = new Map<string, TimerSessionHistoryEntry[]>();
 
-  for (const entry of sessionHistory.slice(0, 8)) {
+  for (const entry of sessionHistory) {
     const dateKey = getLocalDateKeyFromIso(entry.completedAt);
     groups.set(dateKey, [...(groups.get(dateKey) ?? []), entry]);
   }
@@ -167,6 +169,8 @@ export function TimerExperience({
   const router = useRouter();
   const pathname = usePathname();
   const [historyNowMs, setHistoryNowMs] = useState(() => Date.now());
+  const [areRecentSessionsExpanded, setAreRecentSessionsExpanded] =
+    useState(false);
   const [scrollIndicatorStyle, setScrollIndicatorStyle] =
     useState<CSSProperties>({});
   const optionsRef = useRef<HTMLDivElement | null>(null);
@@ -177,6 +181,7 @@ export function TimerExperience({
   );
   const startingMinutes = initialMinutes ?? tool.defaultMinutes;
   const intentionId = useId();
+  const recentSessionsListId = useId();
   const storageKey = useMemo(
     () =>
       initialMinutes !== undefined
@@ -322,8 +327,12 @@ export function TimerExperience({
     options.findIndex((option) => option.minutes === activeMinutes),
   );
   const recentSessionGroups = useMemo(
-    () => groupRecentSessions(sessionHistory, historyNowMs),
-    [historyNowMs, sessionHistory],
+    () =>
+      groupRecentSessions(
+        getVisibleSessionListItems(sessionHistory, areRecentSessionsExpanded),
+        historyNowMs,
+      ),
+    [areRecentSessionsExpanded, historyNowMs, sessionHistory],
   );
   const progress = getProgress(timer.remainingSeconds, timer.totalSeconds);
   const isRunning = timer.status === "running";
@@ -616,7 +625,7 @@ export function TimerExperience({
             Completed timers will appear here.
           </p>
         ) : (
-          <div className="recent-sessions__groups">
+          <div className="recent-sessions__groups" id={recentSessionsListId}>
             {recentSessionGroups.map((group) => (
               <section className="recent-sessions__group" key={group.label}>
                 <h4>{group.label}</h4>
@@ -636,6 +645,14 @@ export function TimerExperience({
             ))}
           </div>
         )}
+        <CollapsibleSessionListControl
+          collapseLabel="Collapse sessions"
+          controlsId={recentSessionsListId}
+          expandLabel="Show all sessions"
+          isExpanded={areRecentSessionsExpanded}
+          onExpandedChange={setAreRecentSessionsExpanded}
+          totalCount={sessionHistory.length}
+        />
       </div>
       {showUpgradePrompt ? (
         <div className="session-footer">

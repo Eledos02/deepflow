@@ -28,7 +28,7 @@ export function trackTimerEvent(
   }
 }
 
-export function trackFoundingMemberWaitlistJoined() {
+export function trackFoundingMemberWaitlistJoined(source: string) {
   if (!googleAnalyticsId || typeof window === "undefined") return;
 
   try {
@@ -36,6 +36,7 @@ export function trackFoundingMemberWaitlistJoined() {
       page_path: window.location.pathname,
       plan: "founding_member",
       price: 19,
+      source,
     });
   } catch {
     // Analytics must never interrupt waitlist signups.

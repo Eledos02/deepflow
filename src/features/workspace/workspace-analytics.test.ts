@@ -46,6 +46,23 @@ function stats(overrides: Partial<TimerStats> = {}): TimerStats {
 describe("workspace analytics", () => {
   const nowMs = new Date(2026, 5, 18, 12).getTime();
 
+  it("does not fabricate a focus pattern when there are no completed sessions", () => {
+    const analytics = calculateWorkspaceAnalytics([], stats(), nowMs);
+
+    expect(analytics).toMatchObject({
+      totalSessions: 0,
+      focusEntryCount: 0,
+      recentFocusEntryCount: 0,
+      hasEnoughFocusPatternData: false,
+      hasEnoughRecentFocusPatternData: false,
+      bestFocusDay: null,
+      bestFocusHour: null,
+      bestFocusDayLastSevenDays: null,
+      bestFocusHourLastSevenDays: null,
+      momentum: { hasBaseline: false },
+    });
+  });
+
   it("calculates current and best streaks from distinct completion days", () => {
     const streaks = calculateFocusStreaks(
       [
@@ -107,7 +124,11 @@ describe("workspace analytics", () => {
       nowMs,
     );
 
-    expect(momentum).toMatchObject({ state: "rising", percentChange: 100 });
+    expect(momentum).toMatchObject({
+      state: "stable",
+      hasBaseline: false,
+      percentChange: 0,
+    });
   });
 
   it("finds the best focus day and best focus hour", () => {
@@ -119,6 +140,31 @@ describe("workspace analytics", () => {
 
     expect(getBestFocusDay(entries)).toBe("Tuesday");
     expect(getBestFocusHour(entries)).toMatch(/9:00/);
+  });
+
+  it("waits for three completed sessions before naming a focus pattern", () => {
+    const oneSession = [
+      entry("one", new Date(2026, 5, 17, 22).toISOString(), 25),
+    ];
+    const twoSessions = [
+      ...oneSession,
+      entry("two", new Date(2026, 5, 18, 22).toISOString(), 25),
+    ];
+
+    expect(getBestFocusDay(oneSession)).toBeNull();
+    expect(getBestFocusHour(oneSession)).toBeNull();
+    expect(getBestFocusDay(twoSessions)).toBeNull();
+    expect(getBestFocusHour(twoSessions)).toBeNull();
+  });
+
+  it("breaks tied focus hours with the most recent completed session", () => {
+    const entries = [
+      entry("morning", new Date(2026, 5, 15, 9).toISOString(), 25),
+      entry("midday", new Date(2026, 5, 16, 12).toISOString(), 10),
+      entry("evening", new Date(2026, 5, 17, 20).toISOString(), 25),
+    ];
+
+    expect(getBestFocusHour(entries)).toMatch(/8:00 PM/);
   });
 
   it("creates dashboard metrics from session stats and focus history", () => {
@@ -145,6 +191,7 @@ describe("workspace analytics", () => {
       sessionsLastSevenDays: 1,
       focusMinutesLastSevenDays: 25,
       activeFocusDaysLastSevenDays: 1,
+      hasEnoughRecentFocusPatternData: false,
     });
   });
 
@@ -168,8 +215,9 @@ describe("workspace analytics", () => {
 
     expect(analytics).toMatchObject({
       focusMinutesThisWeek: 50,
-      bestFocusDay: "Tuesday",
+      bestFocusDay: null,
+      bestFocusHour: null,
+      hasEnoughFocusPatternData: false,
     });
-    expect(analytics.bestFocusHour).toMatch(/9:00/);
   });
 });

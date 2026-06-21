@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
@@ -358,6 +359,9 @@ export function RoutinesView() {
             unlimited routines, cloud sync, routine history, advanced insights,
             and future workspace automation.
           </p>
+          <Link className="button button--light" href="/pricing?source=workspace_upgrade#founding-member">
+            Become a Founding Member
+          </Link>
         </aside>
       ) : null}
     </section>
