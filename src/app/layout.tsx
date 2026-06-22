@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { FloatingMiniPlayer } from "@/components/product/floating-mini-player";
 import { JsonLd } from "@/components/seo/json-ld";
+import { AuthProvider } from "@/features/auth/auth-provider";
 import { siteConfig } from "@/lib/site";
 import { createGlobalStructuredData } from "@/lib/structured-data";
 
@@ -99,14 +100,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${instrumentSerif.variable}`}>
-        <JsonLd data={createGlobalStructuredData()} />
-        <a className="skip-link" href="#main-content">
-          Skip to content
-        </a>
-        <SiteHeader />
-        <main id="main-content">{children}</main>
-        <FloatingMiniPlayer />
-        <SiteFooter />
+        <AuthProvider>
+          <JsonLd data={createGlobalStructuredData()} />
+          <a className="skip-link" href="#main-content">
+            Skip to content
+          </a>
+          <SiteHeader />
+          <main id="main-content">{children}</main>
+          <FloatingMiniPlayer />
+          <SiteFooter />
+        </AuthProvider>
       </body>
       {googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}
     </html>
