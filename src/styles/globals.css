@@ -6860,12 +6860,12 @@ a:focus-visible {
   font-size: 1rem;
 }
 
-.account-profile-card__identity strong,
-.account-profile-card__identity span {
+.account-profile-card__identity > div > strong,
+.account-profile-card__identity > div > span {
   display: block;
 }
 
-.account-profile-card__identity span {
+.account-profile-card__identity > div > span {
   margin-top: 2px;
   color: var(--muted);
   font-size: 0.8rem;
