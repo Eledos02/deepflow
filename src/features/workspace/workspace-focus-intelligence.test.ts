@@ -18,6 +18,7 @@ function analytics(
     bestStreak: 4,
     sessionsToday: 1,
     averageSessionLength: 45,
+    averageSessionLengthLastSevenDays: 45,
     longestSessionLength: 60,
     focusMinutesThisWeek: 135,
     sessionsLastSevenDays: 3,
@@ -47,13 +48,18 @@ function analytics(
 }
 
 describe("workspace focus intelligence", () => {
-  it("derives session quality from the existing average session length", () => {
-    expect(getSessionQuality(analytics({ averageSessionLength: 70 }))?.label)
+  it("derives session quality from the current seven-day average session length", () => {
+    expect(getSessionQuality(analytics({ averageSessionLengthLastSevenDays: 70 }))?.label)
       .toBe("Deep sessions");
-    expect(getSessionQuality(analytics({ averageSessionLength: 40 }))?.label)
+    expect(getSessionQuality(analytics({ averageSessionLengthLastSevenDays: 40 }))?.label)
       .toBe("Steady sessions");
-    expect(getSessionQuality(analytics({ averageSessionLength: 20 }))?.label)
+    expect(getSessionQuality(analytics({ averageSessionLengthLastSevenDays: 20 }))?.label)
       .toBe("Quick focus");
+    expect(
+      getSessionQuality(
+        analytics({ averageSessionLength: 90, averageSessionLengthLastSevenDays: 20 }),
+      )?.description,
+    ).toContain("easiest to repeat");
   });
 
   it("assigns deterministic focus personalities from seven-day analytics", () => {
@@ -66,7 +72,7 @@ describe("workspace focus intelligence", () => {
     expect(
       getFocusPersonality(analytics({ activeFocusDaysLastSevenDays: 4 }))?.label,
     ).toBe("Consistent Performer");
-    expect(getFocusPersonality(analytics({ averageSessionLength: 70 }))?.label)
+    expect(getFocusPersonality(analytics({ averageSessionLengthLastSevenDays: 70 }))?.label)
       .toBe("Deep Worker");
     expect(
       getFocusPersonality(

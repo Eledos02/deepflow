@@ -6,7 +6,9 @@ import type { TimerStats } from "@/features/timer/timer-stats";
 import {
   calculateFocusMomentum,
   calculateFocusStreaks,
+  calculateAverageFocusSessionLength,
   calculateWorkspaceAnalytics,
+  formatFocusDuration,
   getBestFocusDay,
   getBestFocusHour,
   getWeeklyFocusActivity,
@@ -53,6 +55,7 @@ describe("workspace analytics", () => {
       totalSessions: 0,
       focusEntryCount: 0,
       recentFocusEntryCount: 0,
+      averageSessionLengthLastSevenDays: 0,
       hasEnoughFocusPatternData: false,
       hasEnoughRecentFocusPatternData: false,
       bestFocusDay: null,
@@ -187,6 +190,7 @@ describe("workspace analytics", () => {
       currentStreak: 3,
       bestStreak: 6,
       averageSessionLength: 25,
+      averageSessionLengthLastSevenDays: 25,
       focusMinutesThisWeek: 25,
       sessionsLastSevenDays: 1,
       focusMinutesLastSevenDays: 25,
@@ -215,9 +219,78 @@ describe("workspace analytics", () => {
 
     expect(analytics).toMatchObject({
       focusMinutesThisWeek: 50,
+      averageSessionLengthLastSevenDays: 50,
       bestFocusDay: null,
       bestFocusHour: null,
       hasEnoughFocusPatternData: false,
     });
+  });
+
+  it("uses only deduped completed sessions from the latest seven days for Insights averages", () => {
+    const recentTimestamp = new Date(2026, 5, 17, 9).toISOString();
+    const analytics = calculateWorkspaceAnalytics(
+      [
+        entry("old", new Date(2026, 5, 1, 9).toISOString(), 120),
+        entry("five", recentTimestamp, 5),
+        entry("ten", new Date(2026, 5, 18, 9).toISOString(), 10),
+        entry("fifteen", new Date(2026, 5, 18, 10).toISOString(), 15),
+      ],
+      stats({
+        totalSessions: 4,
+        totalFocusMinutes: 150,
+        sessionHistory: [
+          {
+            completedAt: recentTimestamp,
+            durationMinutes: 5,
+            timerType: "Focus Timer",
+            path: "/tools/focus-timer",
+          },
+        ],
+      }),
+      nowMs,
+    );
+
+    expect(analytics.averageSessionLength).toBe(38);
+    expect(analytics.averageSessionLengthLastSevenDays).toBe(10);
+    expect(analytics.recentFocusEntryCount).toBe(3);
+  });
+
+  it("calculates a fresh average for one, two, and three completed sessions", () => {
+    const first = entry("one", new Date(2026, 5, 18, 9).toISOString(), 5);
+    const second = entry("two", new Date(2026, 5, 18, 10).toISOString(), 10);
+    const third = entry("three", new Date(2026, 5, 18, 11).toISOString(), 15);
+
+    expect(calculateAverageFocusSessionLength([first])).toBe(5);
+    expect(calculateAverageFocusSessionLength([first, second])).toBe(8);
+    expect(calculateAverageFocusSessionLength([first, second, third])).toBe(10);
+  });
+
+  it("excludes invalid, zero-duration entries and formats recent averages consistently", () => {
+    const validEntry = entry("valid", new Date(2026, 5, 18, 9).toISOString(), 75);
+    const zeroDurationEntry = entry("zero", new Date(2026, 5, 18, 10).toISOString(), 0);
+    const invalidTimestampEntry = entry("invalid", "not-a-date", 25);
+
+    expect(
+      calculateAverageFocusSessionLength([
+        validEntry,
+        zeroDurationEntry,
+        invalidTimestampEntry,
+      ]),
+    ).toBe(75);
+    expect(formatFocusDuration(13)).toBe("13m");
+    expect(formatFocusDuration(75)).toBe("1h 15m");
+  });
+
+  it("updates the seven-day average as a new completed session becomes available", () => {
+    const entries = [entry("first", new Date(2026, 5, 18, 9).toISOString(), 5)];
+    const firstAnalytics = calculateWorkspaceAnalytics(entries, stats(), nowMs);
+    const updatedAnalytics = calculateWorkspaceAnalytics(
+      [...entries, entry("second", new Date(2026, 5, 18, 10).toISOString(), 15)],
+      stats(),
+      nowMs,
+    );
+
+    expect(firstAnalytics.averageSessionLengthLastSevenDays).toBe(5);
+    expect(updatedAnalytics.averageSessionLengthLastSevenDays).toBe(10);
   });
 });

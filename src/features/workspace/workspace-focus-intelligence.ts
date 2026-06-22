@@ -2,6 +2,7 @@ import type {
   FocusMomentum,
   WorkspaceAnalytics,
 } from "./workspace-analytics";
+import { formatFocusDuration } from "./workspace-analytics";
 
 export type SessionQuality = {
   label: "Deep sessions" | "Steady sessions" | "Quick focus";
@@ -34,36 +35,29 @@ export type WorkspaceFocusIntelligence = {
   reflection: WeeklyReflection | null;
 };
 
-function formatMinutes(minutes: number) {
-  if (minutes < 60) return `${minutes}m`;
-
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
-}
-
 export function getSessionQuality(
   analytics: WorkspaceAnalytics,
 ): SessionQuality | null {
   if (!analytics.hasEnoughRecentFocusPatternData) return null;
 
-  if (analytics.averageSessionLength >= 60) {
+  if (analytics.averageSessionLengthLastSevenDays >= 60) {
     return {
       label: "Deep sessions",
-      description: `Your ${formatMinutes(analytics.averageSessionLength)} average leaves room for meaningful, uninterrupted work.`,
+      description: `Your ${formatFocusDuration(analytics.averageSessionLengthLastSevenDays)} recent average leaves room for meaningful, uninterrupted work.`,
     };
   }
 
-  if (analytics.averageSessionLength >= 30) {
+  if (analytics.averageSessionLengthLastSevenDays >= 30) {
     return {
       label: "Steady sessions",
-      description: `Your ${formatMinutes(analytics.averageSessionLength)} average is a dependable rhythm for focused progress.`,
+      description: `Your ${formatFocusDuration(analytics.averageSessionLengthLastSevenDays)} recent average is a dependable rhythm for focused progress.`,
     };
   }
 
   return {
     label: "Quick focus",
-    description: `Your ${formatMinutes(analytics.averageSessionLength)} average makes it easy to build momentum in small blocks.`,
+    description:
+      "Your average session length suggests the kind of focus block that is easiest to repeat.",
   };
 }
 
@@ -83,7 +77,7 @@ export function getFocusPersonality(
     };
   }
 
-  if (analytics.averageSessionLength >= 60) {
+  if (analytics.averageSessionLengthLastSevenDays >= 60) {
     return {
       label: "Deep Worker",
       description: "Longer, uninterrupted blocks are becoming the place where your best attention gathers.",

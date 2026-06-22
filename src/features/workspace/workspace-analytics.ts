@@ -40,7 +40,9 @@ export type WorkspaceAnalytics = {
   currentStreak: number;
   bestStreak: number;
   sessionsToday: number;
+  // Lifetime average retained for the Overview dashboard.
   averageSessionLength: number;
+  averageSessionLengthLastSevenDays: number;
   longestSessionLength: number;
   focusMinutesThisWeek: number;
   sessionsLastSevenDays: number;
@@ -103,6 +105,26 @@ function addLocalDays(startMs: number, days: number) {
 
 function sumFocusMinutes(entries: FocusJournalEntry[]) {
   return entries.reduce((total, entry) => total + entry.durationMinutes, 0);
+}
+
+export function calculateAverageFocusSessionLength(
+  entries: FocusJournalEntry[],
+) {
+  const validEntries = getValidFocusJournalEntries(entries);
+  return validEntries.length > 0
+    ? Math.round(sumFocusMinutes(validEntries) / validEntries.length)
+    : 0;
+}
+
+export function formatFocusDuration(minutes: number) {
+  const normalizedMinutes = Math.max(0, Math.round(minutes));
+  if (normalizedMinutes < 60) return `${normalizedMinutes}m`;
+
+  const hours = Math.floor(normalizedMinutes / 60);
+  const remainingMinutes = normalizedMinutes % 60;
+  return remainingMinutes > 0
+    ? `${hours}h ${remainingMinutes}m`
+    : `${hours}h`;
 }
 
 function getAnalyticsFocusEntries(
@@ -413,6 +435,8 @@ export function calculateWorkspaceAnalytics(
     sessionsToday: stats.sessionsToday,
     averageSessionLength:
       totalSessions > 0 ? Math.round(totalFocusMinutes / totalSessions) : 0,
+    averageSessionLengthLastSevenDays:
+      calculateAverageFocusSessionLength(lastSevenDaysEntries),
     longestSessionLength: validEntries.reduce(
       (longest, entry) => Math.max(longest, entry.durationMinutes),
       0,

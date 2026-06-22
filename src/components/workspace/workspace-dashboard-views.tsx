@@ -23,21 +23,12 @@ import {
 } from "@/features/workspace/workspace-metrics";
 import {
   calculateWorkspaceAnalytics,
+  formatFocusDuration,
   type WeeklyFocusActivity,
 } from "@/features/workspace/workspace-analytics";
 import { buildWorkspaceFocusIntelligence } from "@/features/workspace/workspace-focus-intelligence";
 
 import { splitReflectionNarrative } from "./reflection-presentation";
-
-function formatMinutes(minutes: number) {
-  if (minutes < 60) return `${minutes}m`;
-
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-
-  if (remainingMinutes === 0) return `${hours}h`;
-  return `${hours}h ${remainingMinutes}m`;
-}
 
 function metricValue(value: number, suffix = "") {
   return value > 0 ? `${value}${suffix}` : "0";
@@ -88,6 +79,27 @@ function getMomentumDescription(
   return `${formatMomentum(percentChange)} compared with the previous seven days.`;
 }
 
+function getRecentAverageSessionValue(
+  averageSessionLength: number,
+  sessionCount: number,
+) {
+  return sessionCount === 0
+    ? "Still learning"
+    : formatFocusDuration(averageSessionLength);
+}
+
+function getRecentAverageSessionDescription(sessionCount: number) {
+  if (sessionCount === 0) {
+    return "Complete a session to begin shaping a recent average.";
+  }
+
+  if (sessionCount < 3) {
+    return "Based on your first completed sessions.";
+  }
+
+  return "Your average session length suggests the kind of focus block that is easiest to repeat.";
+}
+
 function WeeklyActivityChart({ activity }: { activity: WeeklyFocusActivity[] }) {
   const highestMinutes = Math.max(...activity.map((day) => day.minutes), 1);
   const totalMinutes = activity.reduce((total, day) => total + day.minutes, 0);
@@ -102,7 +114,7 @@ function WeeklyActivityChart({ activity }: { activity: WeeklyFocusActivity[] }) 
           <span className="eyebrow">Weekly activity</span>
           <h3 id="weekly-activity-title">Your focus rhythm this week.</h3>
         </div>
-        <strong>{formatMinutes(totalMinutes)}</strong>
+        <strong>{formatFocusDuration(totalMinutes)}</strong>
       </div>
       <div
         aria-label={`Focus minutes by day this week. ${activity
@@ -253,7 +265,7 @@ export function WorkspaceOverviewView() {
           <div className="workspace-overview-primary-metrics">
             <article className="workspace-metric-tile">
               <span>Focused time</span>
-              <strong>{formatMinutes(analytics.totalFocusMinutes)}</strong>
+              <strong>{formatFocusDuration(analytics.totalFocusMinutes)}</strong>
             </article>
             <article className="workspace-metric-tile">
               <span>Sessions completed</span>
@@ -309,8 +321,8 @@ export function WorkspaceOverviewView() {
               </strong>
             </article>
             <article className="workspace-metric-tile">
-              <span>Average session</span>
-              <strong>{formatMinutes(analytics.averageSessionLength)}</strong>
+              <span>Lifetime average</span>
+              <strong>{formatFocusDuration(analytics.averageSessionLength)}</strong>
             </article>
           </div>
         </div>
@@ -385,13 +397,13 @@ export function WorkspaceGoalsView() {
               {goalProgress.sessionsThisWeek} / {goalProgress.goal.sessions} sessions
             </span>
             <span>
-              {formatMinutes(goalProgress.focusMinutesThisWeek)} /{" "}
-              {formatMinutes(goalProgress.goal.minutes)}
+              {formatFocusDuration(goalProgress.focusMinutesThisWeek)} /{" "}
+              {formatFocusDuration(goalProgress.goal.minutes)}
             </span>
           </div>
           <p>
             Remaining this week: {goalProgress.remainingSessions} sessions or{" "}
-            {formatMinutes(goalProgress.remainingMinutes)}.
+            {formatFocusDuration(goalProgress.remainingMinutes)}.
           </p>
         </div>
 
@@ -524,7 +536,7 @@ export function WorkspaceInsightsView() {
             <strong>{intelligence.sessionQuality?.label ?? "Still learning"}</strong>
             <p>
               {intelligence.sessionQuality?.description ??
-                "Complete a few more sessions to give this rhythm more shape."}
+                "Your recent sessions are starting to reveal a working rhythm."}
             </p>
           </article>
           <article className="workspace-intelligence-card">
@@ -566,7 +578,17 @@ export function WorkspaceInsightsView() {
               </div>
               <div>
                 <span>Average session</span>
-                <strong>{formatMinutes(analytics.averageSessionLength)}</strong>
+                <strong>
+                  {getRecentAverageSessionValue(
+                    analytics.averageSessionLengthLastSevenDays,
+                    analytics.recentFocusEntryCount,
+                  )}
+                </strong>
+                <small>
+                  {getRecentAverageSessionDescription(
+                    analytics.recentFocusEntryCount,
+                  )}
+                </small>
               </div>
             </div>
           </article>
