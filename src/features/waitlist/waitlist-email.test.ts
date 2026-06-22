@@ -9,7 +9,7 @@ import {
 
 const config = {
   apiKey: "re_test_key",
-  from: "DeepFlow Founders <founders@send.deepflownow.com>",
+  from: "DeepFlow <hello@send.deepflownow.com>",
   replyTo: "founders@deepflownow.com",
 };
 
@@ -24,7 +24,7 @@ describe("waitlist confirmation email", () => {
     ).toEqual({ ...config, replyTo: undefined });
   });
 
-  it("sends the calm Founding Member confirmation through a mocked Resend client", async () => {
+  it("sends a transactional waitlist confirmation through a mocked Resend client", async () => {
     const send = vi.fn().mockResolvedValue({ error: null });
     const result = await sendWaitlistConfirmationEmail("member@example.com", config, {
       emails: { send },
@@ -70,8 +70,17 @@ describe("waitlist confirmation email", () => {
   it("renders plain text and HTML without tracking pixels or sender secrets", () => {
     const content = buildWaitlistConfirmationEmail();
 
-    expect(content.text).toContain("No payment is needed today.");
+    expect(WAITLIST_CONFIRMATION_SUBJECT).toBe(
+      "Your DeepFlow waitlist confirmation",
+    );
+    expect(content.text).toContain("You're confirmed on the DeepFlow waitlist.");
+    expect(content.text).toContain("No payment was made today.");
+    expect(content.text).not.toContain("$19 lifetime access");
+    expect(content.text).not.toContain("launch price expires");
     expect(content.html).toContain("DeepFlow");
+    expect(content.html).toContain("You're confirmed on the waitlist.");
+    expect(content.html).not.toContain("Founding Member");
+    expect(content.html).not.toContain("$19 lifetime access");
     expect(content.html).not.toContain("<img");
     expect(content.html).not.toContain("re_");
   });

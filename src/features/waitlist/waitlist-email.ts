@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 export const WAITLIST_CONFIRMATION_SUBJECT =
-  "You're on the DeepFlow Founding Member list";
+  "Your DeepFlow waitlist confirmation";
 
 type WaitlistEmailEnvironment = {
   RESEND_API_KEY?: string;
@@ -50,29 +50,29 @@ export function buildWaitlistConfirmationEmail() {
   return {
     text: `Hi,
 
-You're on the DeepFlow Founding Member list.
+You're confirmed on the DeepFlow waitlist.
 
-No payment is needed today. We'll email you before $19 lifetime access opens, so you can decide before the launch price expires.
+No payment was made today. We'll send you an update before early access opens.
 
 DeepFlow is being built as a calm workspace for focused work - with timers, routines, a focus journal, insights, ambient audio, and a workspace for notes and mind maps.
 
 Thanks for helping shape the early version of DeepFlow.
 
-- DeepFlow
+— DeepFlow
 
-You are receiving this because you joined the DeepFlow Founding Member waitlist at deepflownow.com.`,
+You are receiving this because you joined the DeepFlow waitlist at deepflownow.com.`,
     html: `<!doctype html>
 <html lang="en">
   <body style="margin:0;background:#f6f1e7;color:#243127;font-family:Arial,Helvetica,sans-serif;">
     <main style="max-width:560px;margin:0 auto;padding:40px 20px;">
-      <section style="background:rgba(255,255,255,0.72);border:1px solid rgba(36,49,39,0.08);border-radius:24px;padding:38px 32px;">
-        <p style="margin:0 0 28px;color:#1f4738;font-size:18px;font-weight:700;letter-spacing:0.02em;">DeepFlow</p>
-        <h1 style="margin:0 0 18px;color:#163d30;font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:1.2;font-weight:500;">You're on the Founding Member list.</h1>
-        <p style="margin:0 0 18px;font-size:16px;line-height:1.65;">No payment is needed today. We'll email you before <strong>$19 lifetime access</strong> opens, so you can decide before the launch price expires.</p>
+      <section style="background:rgba(255,255,255,0.72);border:1px solid rgba(36,49,39,0.07);border-radius:18px;padding:32px 28px;">
+        <p style="margin:0 0 24px;color:#1f4738;font-size:16px;font-weight:700;letter-spacing:0.02em;">DeepFlow</p>
+        <h1 style="margin:0 0 16px;color:#163d30;font-family:Georgia,'Times New Roman',serif;font-size:28px;line-height:1.25;font-weight:500;">You're confirmed on the waitlist.</h1>
+        <p style="margin:0 0 16px;font-size:16px;line-height:1.65;">No payment was made today. We'll send you an update before early access opens.</p>
         <p style="margin:0;font-size:16px;line-height:1.65;">DeepFlow is being built as a calm workspace for focused work - with timers, routines, a focus journal, insights, ambient audio, and a workspace for notes and mind maps.</p>
-        <p style="margin:28px 0 0;font-size:16px;line-height:1.65;">Thanks for helping shape the early version of DeepFlow.<br><br>- DeepFlow</p>
+        <p style="margin:26px 0 0;font-size:16px;line-height:1.65;">Thanks for helping shape the early version of DeepFlow.<br><br>— DeepFlow</p>
       </section>
-      <p style="margin:20px 8px 0;color:#6b746b;font-size:12px;line-height:1.55;">You are receiving this because you joined the DeepFlow Founding Member waitlist at deepflownow.com.</p>
+      <p style="margin:18px 8px 0;color:#6b746b;font-size:12px;line-height:1.55;">You are receiving this because you joined the DeepFlow waitlist at deepflownow.com.</p>
     </main>
   </body>
 </html>`,
