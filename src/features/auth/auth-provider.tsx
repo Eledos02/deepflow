@@ -38,6 +38,19 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const PROFILE_SELECT_COLUMNS =
+  "id,email,display_name,avatar_color,onboarding_completed,created_at,updated_at";
+
+function logAuthDiagnostic(operation: string, payload: unknown) {
+  // Temporary V7 diagnostics. Never log Supabase sessions because they contain tokens.
+  console.info(`[DeepFlow auth diagnostic] ${operation}`, payload);
+}
+
+function safeSessionSummary(user: User | null | undefined) {
+  return user
+    ? { hasSession: true, userId: user.id, email: user.email ?? null }
+    : { hasSession: false };
+}
 
 function authError(message: string | undefined) {
   return message?.trim().slice(0, 240) || "Something went wrong. Please try again.";
@@ -45,30 +58,62 @@ function authError(message: string | undefined) {
 
 async function readProfile(userId: string) {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) return null;
+  if (!supabase) {
+    logAuthDiagnostic("readProfile skipped", {
+      reason: "Supabase browser client is unavailable",
+      userId,
+    });
+    return null;
+  }
 
-  const { data } = await supabase
+  const response = await supabase
     .from("profiles")
-    .select("id,email,display_name,avatar_color,onboarding_completed,created_at,updated_at")
+    .select(PROFILE_SELECT_COLUMNS)
     .eq("id", userId)
     .maybeSingle();
 
-  return parseProfile(data);
+  logAuthDiagnostic("readProfile response", {
+    request: {
+      table: "public.profiles",
+      operation: "select",
+      columns: PROFILE_SELECT_COLUMNS,
+      filter: { id: `eq.${userId}` },
+      mode: "maybeSingle",
+    },
+    response,
+  });
+
+  return parseProfile(response.data);
 }
 
 async function createProfileIfMissing(user: User) {
   const supabase = getSupabaseBrowserClient();
-  if (!supabase) return null;
+  if (!supabase) {
+    logAuthDiagnostic("createProfile skipped", {
+      reason: "Supabase browser client is unavailable",
+      userId: user.id,
+    });
+    return null;
+  }
 
   const existingProfile = await readProfile(user.id);
   if (existingProfile) return existingProfile;
 
-  const { error } = await supabase.from("profiles").insert({
+  const response = await supabase.from("profiles").insert({
     id: user.id,
     email: user.email ?? null,
   });
 
-  if (error && error.code !== "23505") return null;
+  logAuthDiagnostic("createProfile response", {
+    request: {
+      table: "public.profiles",
+      operation: "insert",
+      values: { id: user.id, email: user.email ?? null },
+    },
+    response,
+  });
+
+  if (response.error && response.error.code !== "23505") return null;
   return readProfile(user.id);
 }
 
@@ -94,17 +139,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
+    logAuthDiagnostic("authProvider initialization", {
+      isConfigured,
+      hasBrowserClient: Boolean(supabase),
+    });
     if (!supabase) {
       return;
     }
 
-    void supabase.auth.getSession().then(({ data }) => syncUser(data.session?.user ?? null));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    void supabase.auth.getSession().then((response) => {
+      logAuthDiagnostic("authProvider getSession response", {
+        response: {
+          data: safeSessionSummary(response.data.session?.user),
+          error: response.error,
+        },
+      });
+      return syncUser(response.data.session?.user ?? null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      logAuthDiagnostic("authProvider auth-state change", {
+        event,
+        session: safeSessionSummary(session?.user),
+      });
       void syncUser(session?.user ?? null);
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [syncUser]);
+  }, [isConfigured, syncUser]);
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     const supabase = getSupabaseBrowserClient();
@@ -155,14 +216,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: false, error: "Account setup is not available yet. Please try again later." };
     }
 
-    const { error } = await supabase
+    const response = await supabase
       .from("profiles")
       .update({
         display_name: validation.value,
         onboarding_completed: true,
       })
       .eq("id", user.id);
-    if (error) return { ok: false, error: authError(error.message) };
+
+    logAuthDiagnostic("updateProfile response", {
+      request: {
+        table: "public.profiles",
+        operation: "update",
+        values: {
+          display_name: validation.value,
+          onboarding_completed: true,
+        },
+        filter: { id: `eq.${user.id}` },
+      },
+      response,
+    });
+
+    if (response.error) return { ok: false, error: authError(response.error.message) };
 
     setProfile(await readProfile(user.id));
     return { ok: true };
