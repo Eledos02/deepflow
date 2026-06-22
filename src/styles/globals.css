@@ -396,10 +396,10 @@ a:focus-visible {
 
 .account-menu summary {
   display: inline-flex;
-  min-height: 42px;
+  min-height: 48px;
   align-items: center;
-  gap: 8px;
-  padding: 4px 10px 4px 4px;
+  gap: 10px;
+  padding: 4px 16px 4px 4px;
   border: 1px solid rgba(19, 32, 25, 0.1);
   border-radius: 999px;
   background: rgba(255, 254, 250, 0.72);
@@ -422,16 +422,18 @@ a:focus-visible {
 
 .account-menu__avatar,
 .account-avatar {
-  display: grid;
-  width: 32px;
-  height: 32px;
+  display: flex;
+  width: 40px;
+  height: 40px;
   flex: 0 0 auto;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, #284c3d, #597245);
+  background: linear-gradient(135deg, #466b4b, #36543b);
   color: var(--lime);
-  font-size: 0.75rem;
-  font-weight: 850;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .account-menu__label {
@@ -7282,9 +7284,9 @@ a:focus-visible {
   }
 
   .account-menu summary {
-    width: 42px;
+    width: 48px;
     justify-content: center;
-    padding: 4px;
+    padding: 3px;
   }
 
   .mobile-menu__panel {
