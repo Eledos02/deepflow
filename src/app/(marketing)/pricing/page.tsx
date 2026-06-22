@@ -156,15 +156,17 @@ export default function PricingPage() {
                 Limited early access
               </span>
               <h2 id="founding-member-title">Become a Founding Member</h2>
-              <p className="founding-waitlist__price">$19 Lifetime Access</p>
+              <p className="founding-waitlist__price">
+                $19 Lifetime Access - coming soon
+              </p>
               <p className="founding-waitlist__description">
                 Support the development of DeepFlow and lock in lifetime access
                 to all future Pro features.
               </p>
               <p className="founding-waitlist__subtext">
-                DeepFlow is currently in active development. Founding Members
-                help shape the product and secure the lowest price DeepFlow will
-                ever offer.
+                Join the Founding Member list today. No payment required.
+                We&apos;ll notify you before lifetime access opens and before the
+                launch price expires.
               </p>
             </div>
             <FoundingMemberWaitlist source="pricing_founding_member" />

@@ -1,15 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useId, useState } from "react";
+import { FormEvent, useId, useRef, useState } from "react";
 
 import type { WaitlistSource } from "@/features/waitlist/waitlist";
+import {
+  getWaitlistEmailSubmissionStatus,
+  saveWaitlistSubmissionEmail,
+} from "@/features/waitlist/waitlist-submissions";
 import { trackFoundingMemberWaitlistJoined } from "@/lib/analytics";
-
-const WAITLIST_STORAGE_KEY = "deepflow:founding-member-waitlist:v1";
-
-type WaitlistEntry = {
-  email: string;
-};
 
 type FoundingMemberWaitlistProps = {
   source?: WaitlistSource;
@@ -37,63 +35,18 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-function readEntries(): WaitlistEntry[] {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const raw = window.localStorage.getItem(WAITLIST_STORAGE_KEY);
-    if (!raw) return [];
-
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.flatMap((entry) => {
-      if (typeof entry === "string") {
-        return isValidEmail(entry) ? [{ email: normalizeEmail(entry) }] : [];
-      }
-      if (!entry || typeof entry !== "object") return [];
-      const candidate = entry as Partial<WaitlistEntry>;
-      return typeof candidate.email === "string" && isValidEmail(candidate.email)
-        ? [{ email: normalizeEmail(candidate.email) }]
-        : [];
-    });
-  } catch {
-    return [];
-  }
-}
-
-function saveEntry(entry: WaitlistEntry) {
-  if (typeof window === "undefined") return;
-
-  const entries = readEntries();
-  const nextEntries = entries.some((existing) => existing.email === entry.email)
-    ? entries
-    : [...entries, entry];
-
-  // UI-only duplicate prevention. Waitlist records are stored by /api/waitlist.
-  window.localStorage.setItem(
-    WAITLIST_STORAGE_KEY,
-    JSON.stringify(nextEntries),
-  );
-}
-
 export function FoundingMemberWaitlist({
   source = "pricing_founding_member",
   variant = "default",
 }: FoundingMemberWaitlistProps) {
   const emailId = useId();
+  const emailInputRef = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
-  const [isJoined, setIsJoined] = useState(false);
+  const [successState, setSuccessState] = useState<"joined" | "duplicate" | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const hydrationId = window.setTimeout(() => {
-      setIsJoined(readEntries().length > 0);
-    }, 0);
-
-    return () => window.clearTimeout(hydrationId);
-  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -110,9 +63,13 @@ export function FoundingMemberWaitlist({
       return;
     }
 
-    const existingEntries = readEntries();
-    if (existingEntries.some((entry) => entry.email === normalizedEmail)) {
-      setIsJoined(true);
+    if (
+      getWaitlistEmailSubmissionStatus(
+        window.localStorage,
+        normalizedEmail,
+      ) === "duplicate"
+    ) {
+      setSuccessState("duplicate");
       setError("");
       return;
     }
@@ -143,9 +100,9 @@ export function FoundingMemberWaitlist({
         return;
       }
 
-      saveEntry({ email: normalizedEmail });
+      saveWaitlistSubmissionEmail(window.localStorage, normalizedEmail);
       trackFoundingMemberWaitlistJoined(submissionSource);
-      setIsJoined(true);
+      setSuccessState("joined");
       setError("");
     } catch {
       setError("We could not reach the waitlist right now. Please try again.");
@@ -154,17 +111,36 @@ export function FoundingMemberWaitlist({
     }
   };
 
-  if (isJoined) {
+  if (successState) {
+    const isDuplicate = successState === "duplicate";
+
     return (
       <div
         className={`founding-waitlist__success founding-waitlist__success--${variant}`}
         role="status"
       >
-        <strong>You&apos;re on the list.</strong>
+        <strong>
+          {isDuplicate
+            ? "You're already on the Founding Member list."
+            : "You're on the Founding Member list."}
+        </strong>
         <p>
-          We&apos;ll notify you before Founding Member access opens and before
-          the lifetime launch pricing expires.
+          {isDuplicate
+            ? "No payment is needed today. We'll email you before lifetime access opens."
+            : "No payment today. We'll email you before $19 lifetime access opens, so you can decide before the launch price expires."}
         </p>
+        <button
+          className="founding-waitlist__alternate-email"
+          onClick={() => {
+            setEmail("");
+            setError("");
+            setSuccessState(null);
+            window.requestAnimationFrame(() => emailInputRef.current?.focus());
+          }}
+          type="button"
+        >
+          Use another email
+        </button>
       </div>
     );
   }
@@ -187,6 +163,7 @@ export function FoundingMemberWaitlist({
             if (error) setError("");
           }}
           placeholder="you@example.com"
+          ref={emailInputRef}
           type="email"
           value={email}
         />

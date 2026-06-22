@@ -506,6 +506,16 @@ a:focus-visible {
   color: var(--ink-soft);
 }
 
+.hero__waitlist .founding-waitlist__alternate-email {
+  border-bottom-color: rgba(23, 35, 25, 0.28);
+  color: var(--ink);
+}
+
+.hero__waitlist .founding-waitlist__alternate-email:hover {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+}
+
 .hero__trust {
   display: flex;
   flex-wrap: wrap;
@@ -4174,6 +4184,30 @@ a:focus-visible {
   margin: 0;
   color: rgba(255, 255, 255, 0.68);
   line-height: 1.7;
+}
+
+.founding-waitlist__alternate-email {
+  min-height: 32px;
+  margin-top: 16px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(223, 255, 145, 0.42);
+  background: transparent;
+  color: var(--lime);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 760;
+}
+
+.founding-waitlist__alternate-email:hover {
+  border-bottom-color: var(--lime);
+  color: #f2ffd5;
+}
+
+.founding-waitlist__alternate-email:focus-visible {
+  outline: 3px solid rgba(223, 255, 145, 0.45);
+  outline-offset: 3px;
 }
 
 .home-waitlist-section {
