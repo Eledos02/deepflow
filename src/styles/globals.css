@@ -25,6 +25,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -40,6 +41,7 @@ body {
   line-height: 1.6;
   letter-spacing: -0.012em;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 button,
@@ -6884,6 +6886,7 @@ a:focus-visible {
 
   .header-actions {
     gap: 8px;
+    min-width: 0;
   }
 
   .mobile-menu__panel {
@@ -6892,6 +6895,30 @@ a:focus-visible {
 
   .hero {
     padding: 52px 0 70px;
+  }
+
+  .hero__grid,
+  .hero__copy,
+  .hero__product,
+  .hero__waitlist,
+  .product-window,
+  .mini-workspace {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .hero__product,
+  .product-window,
+  .mini-workspace {
+    width: 100%;
+  }
+
+  .hero__waitlist,
+  .founding-waitlist__form--compact,
+  .founding-waitlist__control,
+  .founding-waitlist__control input {
+    width: 100%;
+    max-width: 100%;
   }
 
   .hero h1,
@@ -6942,6 +6969,18 @@ a:focus-visible {
 
   .product-window .timer-panel {
     padding-inline: 18px;
+  }
+
+  .product-window__bar {
+    padding-inline: 13px;
+  }
+
+  .product-window__bar p {
+    max-width: 100%;
+    padding-right: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .floating-note {
@@ -7120,6 +7159,7 @@ a:focus-visible {
     gap: 16px;
     overflow: visible;
     text-align: center;
+    flex-wrap: wrap;
   }
 
   .proof-strip__inner > span {
