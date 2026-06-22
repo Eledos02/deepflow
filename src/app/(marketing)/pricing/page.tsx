@@ -161,7 +161,7 @@ export default function PricingPage() {
               </p>
               <p className="founding-waitlist__description">
                 Support the development of DeepFlow and lock in lifetime access
-                to all future Pro features.
+                to DeepFlow Pro as the product evolves.
               </p>
               <p className="founding-waitlist__subtext">
                 Join the Founding Member list today. No payment required.

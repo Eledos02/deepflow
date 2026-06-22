@@ -34,12 +34,15 @@ export const siteConfig = {
   navigation: [
     { label: "Product", href: "/#product" },
     { label: "Workspace", href: "/workspace" },
-    { label: "Focus timer", href: "/tools/focus-timer" },
-    { label: "Countdown timer", href: "/tools/countdown-timer" },
-    { label: "Study timer", href: "/tools/study-timer" },
-    { label: "Pomodoro", href: "/pomodoro-timer" },
     { label: "Guides", href: "/guides" },
     { label: "Pricing", href: "/pricing" },
+  ],
+  timerNavigation: [
+    { label: "Focus Timer", href: "/tools/focus-timer" },
+    { label: "Countdown Timer", href: "/tools/countdown-timer" },
+    { label: "Study Timer", href: "/tools/study-timer" },
+    { label: "Pomodoro Timer", href: "/pomodoro-timer" },
+    { label: "ADHD Timer", href: "/adhd-timer" },
   ],
 } as const;
 

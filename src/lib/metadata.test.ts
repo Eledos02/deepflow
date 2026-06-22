@@ -16,7 +16,7 @@ const pageMetadataInputs: MetadataInput[] = [
   {
     title: "Focus better. Finish what matters.",
     description:
-      "A calm, accurate focus timer for deep work, Pomodoro sessions, and distraction-free productivity.",
+      "A calm workspace for focused work with timers, routines, local session history, and attention insights.",
     path: "/",
     keywords: ["focus timer", "deep work", "pomodoro timer", "productivity"],
   },

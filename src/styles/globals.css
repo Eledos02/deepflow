@@ -287,6 +287,90 @@ a:focus-visible {
   color: var(--ink);
 }
 
+.timers-menu {
+  position: relative;
+}
+
+.timers-menu summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 650;
+  list-style: none;
+  transition: color 160ms ease;
+}
+
+.timers-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.timers-menu summary::after {
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  content: "";
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.timers-menu summary:hover,
+.timers-menu[open] summary {
+  color: var(--ink);
+}
+
+.timers-menu[open] summary::after {
+  transform: translateY(1px) rotate(225deg);
+}
+
+.timers-menu__panel {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 16px);
+  left: 50%;
+  display: grid;
+  min-width: 185px;
+  padding: 8px;
+  border: 1px solid rgba(23, 35, 30, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 254, 250, 0.98);
+  box-shadow: 0 16px 36px rgba(22, 42, 33, 0.1);
+  transform: translateX(-50%);
+}
+
+.timers-menu[open] .timers-menu__panel {
+  animation: timers-menu-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timers-menu__panel a {
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.timers-menu__panel a:hover,
+.timers-menu__panel a:focus-visible {
+  background: rgba(122, 149, 83, 0.1);
+  color: var(--ink);
+  outline: none;
+}
+
+@keyframes timers-menu-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
 .header-actions {
   position: relative;
   display: flex;
@@ -534,6 +618,13 @@ a:focus-visible {
 
 .hero__trust svg {
   color: #759146;
+}
+
+.hero__local-note {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
 }
 
 .hero__product {

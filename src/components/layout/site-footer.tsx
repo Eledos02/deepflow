@@ -4,12 +4,13 @@ import { Brand } from "@/components/ui/brand";
 
 const footerGroups = [
   {
-    title: "Tools",
+    title: "Timers",
     links: [
-      { label: "Focus timer", href: "/tools/focus-timer" },
-      { label: "Pomodoro timer", href: "/pomodoro-timer" },
-      { label: "Countdown timer", href: "/tools/countdown-timer" },
-      { label: "25 minute timer", href: "/timer/25" },
+      { label: "Focus Timer", href: "/tools/focus-timer" },
+      { label: "Countdown Timer", href: "/tools/countdown-timer" },
+      { label: "Study Timer", href: "/tools/study-timer" },
+      { label: "Pomodoro Timer", href: "/pomodoro-timer" },
+      { label: "ADHD Timer", href: "/adhd-timer" },
     ],
   },
   {
@@ -18,6 +19,7 @@ const footerGroups = [
       { label: "Deep work guide", href: "/guides/deep-work" },
       { label: "Pomodoro method", href: "/guides/pomodoro-technique" },
       { label: "Focus better", href: "/guides/focus-better" },
+      { label: "Workspace", href: "/workspace" },
       { label: "Pricing", href: "/pricing" },
     ],
   },

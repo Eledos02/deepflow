@@ -22,7 +22,7 @@ import { createMetadata } from "@/lib/metadata";
 export const metadata = createMetadata({
   title: "Focus better. Finish what matters.",
   description:
-    "A calm, accurate focus timer for deep work, Pomodoro sessions, and distraction-free productivity.",
+    "A calm workspace for focused work with timers, routines, local session history, and attention insights.",
   path: "/",
   keywords: ["focus timer", "deep work", "pomodoro timer", "productivity"],
 });
@@ -66,8 +66,8 @@ export default function HomePage() {
               <em>Finish what matters.</em>
             </h1>
             <p className="hero__lede">
-              Plan focused sessions, work without distraction, and understand
-              where your attention goes.
+              Plan focused sessions, keep your work in one calm workspace, and
+              understand where your attention goes.
             </p>
             <div className="hero__actions">
               <Link className="button button--dark button--large" href="/tools/focus-timer">
@@ -92,6 +92,9 @@ export default function HomePage() {
                 Private by default
               </span>
             </div>
+            <p className="hero__local-note">
+              Start without an account. Your sessions stay local by default.
+            </p>
           </div>
           <div className="hero__product">
             <div className="product-window">
