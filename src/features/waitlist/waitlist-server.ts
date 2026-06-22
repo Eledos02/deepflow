@@ -12,8 +12,15 @@ type SupabaseEnvironment = {
 
 type FetchLike = typeof fetch;
 
+export type WaitlistRecord = {
+  email: string;
+  welcome_email_sent_at: string | null;
+  welcome_email_error: string | null;
+};
+
 type WaitlistSaveSuccess = {
   ok: true;
+  record: WaitlistRecord;
 };
 
 type WaitlistSaveFailure = {
@@ -23,6 +30,10 @@ type WaitlistSaveFailure = {
 };
 
 export type WaitlistSaveResult = WaitlistSaveSuccess | WaitlistSaveFailure;
+
+type WaitlistRecordResult =
+  | { ok: true; record: WaitlistRecord | null }
+  | WaitlistSaveFailure;
 
 export function normalizeSupabaseUrl(value: string) {
   const trimmed = value.trim().replace(/\/+$/, "");
@@ -53,33 +64,132 @@ export function getSupabaseConfig(
   return url && serviceRoleKey ? { url, serviceRoleKey } : null;
 }
 
+function supabaseHeaders(config: SupabaseConfig) {
+  return {
+    apikey: config.serviceRoleKey,
+    Authorization: `Bearer ${config.serviceRoleKey}`,
+  };
+}
+
+function parseWaitlistRecord(value: unknown): WaitlistRecord | null {
+  if (!value || typeof value !== "object") return null;
+
+  const record = value as Partial<WaitlistRecord>;
+  if (typeof record.email !== "string") return null;
+
+  return {
+    email: record.email,
+    welcome_email_sent_at:
+      typeof record.welcome_email_sent_at === "string"
+        ? record.welcome_email_sent_at
+        : null,
+    welcome_email_error:
+      typeof record.welcome_email_error === "string"
+        ? record.welcome_email_error
+        : null,
+  };
+}
+
+export async function findWaitlistSubmission(
+  email: string,
+  config: SupabaseConfig,
+  fetcher: FetchLike = fetch,
+): Promise<WaitlistRecordResult> {
+  const response = await fetcher(
+    `${config.url}/rest/v1/waitlist?email=eq.${encodeURIComponent(email)}&select=email,welcome_email_sent_at,welcome_email_error`,
+    { headers: supabaseHeaders(config) },
+  );
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      responseBody: await response.text(),
+    };
+  }
+
+  const payload: unknown = await response.json();
+  if (!Array.isArray(payload)) return { ok: true, record: null };
+
+  return { ok: true, record: parseWaitlistRecord(payload[0]) };
+}
+
 export async function saveWaitlistSubmission(
   submission: WaitlistSubmission,
   config: SupabaseConfig,
   fetcher: FetchLike = fetch,
 ): Promise<WaitlistSaveResult> {
   const response = await fetcher(
-    `${config.url}/rest/v1/waitlist?on_conflict=email`,
+    `${config.url}/rest/v1/waitlist`,
     {
       method: "POST",
       headers: {
-        apikey: config.serviceRoleKey,
-        Authorization: `Bearer ${config.serviceRoleKey}`,
+        ...supabaseHeaders(config),
         "Content-Type": "application/json",
-        Prefer: "resolution=ignore-duplicates,return=minimal",
+        Prefer: "return=representation",
       },
       body: JSON.stringify(submission),
     },
   );
 
   if (response.ok) {
-    return { ok: true as const };
+    const payload: unknown = await response.json();
+    const record = Array.isArray(payload) ? parseWaitlistRecord(payload[0]) : null;
+
+    if (record) return { ok: true as const, record };
+
+    return {
+      ok: false as const,
+      status: 502,
+      responseBody: "Supabase insert response did not include a waitlist row.",
+    };
   }
 
   return {
     ok: false as const,
     status: response.status,
     responseBody: await response.text(),
+  };
+}
+
+export async function updateWaitlistWelcomeEmail(
+  email: string,
+  values: {
+    welcome_email_sent_at?: string | null;
+    welcome_email_error?: string | null;
+  },
+  config: SupabaseConfig,
+  fetcher: FetchLike = fetch,
+): Promise<WaitlistSaveResult> {
+  const response = await fetcher(
+    `${config.url}/rest/v1/waitlist?email=eq.${encodeURIComponent(email)}`,
+    {
+      method: "PATCH",
+      headers: {
+        ...supabaseHeaders(config),
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify(values),
+    },
+  );
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      responseBody: await response.text(),
+    };
+  }
+
+  const payload: unknown = await response.json();
+  const record = Array.isArray(payload) ? parseWaitlistRecord(payload[0]) : null;
+  if (record) return { ok: true, record };
+
+  return {
+    ok: false,
+    status: 502,
+    responseBody: "Supabase email status update did not include a waitlist row.",
   };
 }
 

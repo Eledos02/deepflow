@@ -46,6 +46,7 @@ export function FoundingMemberWaitlist({
   const [successState, setSuccessState] = useState<"joined" | "duplicate" | null>(
     null,
   );
+  const [emailSent, setEmailSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -101,8 +102,24 @@ export function FoundingMemberWaitlist({
       }
 
       saveWaitlistSubmissionEmail(window.localStorage, normalizedEmail);
-      trackFoundingMemberWaitlistJoined(submissionSource);
-      setSuccessState("joined");
+      const isAlreadyJoined =
+        payload &&
+        typeof payload === "object" &&
+        "status" in payload &&
+        payload.status === "already_joined";
+      const confirmationWasSent =
+        payload &&
+        typeof payload === "object" &&
+        "emailSent" in payload &&
+        payload.emailSent === true
+          ? true
+          : false;
+
+      if (!isAlreadyJoined) {
+        trackFoundingMemberWaitlistJoined(submissionSource);
+      }
+      setEmailSent(confirmationWasSent);
+      setSuccessState(isAlreadyJoined ? "duplicate" : "joined");
       setError("");
     } catch {
       setError("We could not reach the waitlist right now. Please try again.");
@@ -129,11 +146,17 @@ export function FoundingMemberWaitlist({
             ? "No payment is needed today. We'll email you before lifetime access opens."
             : "No payment today. We'll email you before $19 lifetime access opens, so you can decide before the launch price expires."}
         </p>
+        {emailSent ? (
+          <p className="founding-waitlist__email-hint">
+            Check your inbox for a confirmation email.
+          </p>
+        ) : null}
         <button
           className="founding-waitlist__alternate-email"
           onClick={() => {
             setEmail("");
             setError("");
+            setEmailSent(false);
             setSuccessState(null);
             window.requestAnimationFrame(() => emailInputRef.current?.focus());
           }}
