@@ -40,6 +40,15 @@ import {
   syncDeepFlowData,
 } from "./cloud-sync";
 import {
+  fetchCloudRestoreSnapshot,
+  getEffectiveCloudRestoreState,
+  getCloudRestoreSummary,
+  readCloudRestoreState,
+  restoreCloudDataToDevice,
+  writeCloudRestoreState,
+  type CloudRestoreState,
+} from "./cloud-restore";
+import {
   getEffectiveLocalDataMigrationState,
   getLocalDataMigrationSummary,
   readLocalDataMigrationState,
@@ -56,8 +65,11 @@ type CloudSyncContextValue = {
   isAvailable: boolean;
   isAuthenticated: boolean;
   migration: LocalDataMigrationState;
+  restore: CloudRestoreState;
   syncNow: () => Promise<void>;
   saveDeviceDataToAccount: () => Promise<void>;
+  restoreCloudData: () => Promise<void>;
+  dismissCloudRestore: () => void;
   deleteRoutineFromCloud: (localId: string) => Promise<void>;
 };
 
@@ -91,6 +103,19 @@ const emptyMigrationState: LocalDataMigrationState = {
   error: null,
 };
 
+const emptyRestoreState: CloudRestoreState = {
+  status: "not_checked",
+  summary: {
+    sessionsAvailable: 0,
+    routinesAvailable: 0,
+    goalAvailable: false,
+    hasData: false,
+  },
+  completedAt: null,
+  dismissedAt: null,
+  error: null,
+};
+
 export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const { isConfigured, user } = useAuth();
   const isAvailable = Boolean(getSupabaseBrowserConfig()) && isConfigured;
@@ -102,9 +127,11 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const [migration, setMigration] = useState<LocalDataMigrationState>(
     emptyMigrationState,
   );
+  const [restore, setRestore] = useState<CloudRestoreState>(emptyRestoreState);
   const syncTimeoutRef = useRef<number | null>(null);
   const isSyncingRef = useRef(false);
   const isMigratingRef = useRef(false);
+  const isRestoringRef = useRef(false);
 
   const refreshMigration = useCallback(() => {
     if (!user) {
@@ -119,6 +146,43 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       }),
     );
   }, [user]);
+
+  const refreshRestore = useCallback(async () => {
+    if (!user || !isAvailable) {
+      setRestore(emptyRestoreState);
+      return;
+    }
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      setRestore(emptyRestoreState);
+      return;
+    }
+
+    const cloudSnapshot = await fetchCloudRestoreSnapshot({
+      supabase,
+      userId: user.id,
+    });
+
+    if (!cloudSnapshot.ok) {
+      setRestore({
+        ...emptyRestoreState,
+        status: "error",
+        error: cloudSnapshot.error,
+      });
+      return;
+    }
+
+    setRestore(
+      getEffectiveCloudRestoreState({
+        storedState: readCloudRestoreState(user.id),
+        summary: getCloudRestoreSummary({
+          cloudData: cloudSnapshot.data,
+          userId: user.id,
+        }),
+      }),
+    );
+  }, [isAvailable, user]);
 
   const runSync = useCallback(async () => {
     if (!isAvailable || !user) {
@@ -184,6 +248,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
           error: null,
         });
         setMigration(emptyMigrationState);
+        setRestore(emptyRestoreState);
       }, 0);
       return () => window.clearTimeout(resetId);
     }
@@ -196,33 +261,37 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
           error: null,
         });
         refreshMigration();
+        void refreshRestore();
       }, 0);
       return () => window.clearTimeout(resetId);
     }
 
     const initialSyncId = window.setTimeout(() => {
       refreshMigration();
+      void refreshRestore();
       void runSync();
     }, 500);
 
     return () => window.clearTimeout(initialSyncId);
-  }, [isAvailable, refreshMigration, runSync, user]);
+  }, [isAvailable, refreshMigration, refreshRestore, runSync, user]);
 
   useEffect(() => {
     if (!user) return;
 
-    const handleStorage = (event: StorageEvent) => {
-      if (!event.key || !localDataStorageKeys.has(event.key)) return;
+    const handleLocalDataUpdated = () => {
       refreshMigration();
+      void refreshRestore();
       if (!isAvailable) return;
       scheduleSync();
     };
 
+    const handleStorage = (event: StorageEvent) => {
+      if (!event.key || !localDataStorageKeys.has(event.key)) return;
+      handleLocalDataUpdated();
+    };
+
     for (const eventName of localDataEvents) {
-      window.addEventListener(eventName, refreshMigration);
-      if (isAvailable) {
-        window.addEventListener(eventName, scheduleSync);
-      }
+      window.addEventListener(eventName, handleLocalDataUpdated);
     }
     window.addEventListener("storage", handleStorage);
 
@@ -233,12 +302,11 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       }
 
       for (const eventName of localDataEvents) {
-        window.removeEventListener(eventName, refreshMigration);
-        window.removeEventListener(eventName, scheduleSync);
+        window.removeEventListener(eventName, handleLocalDataUpdated);
       }
       window.removeEventListener("storage", handleStorage);
     };
-  }, [isAvailable, refreshMigration, scheduleSync, user]);
+  }, [isAvailable, refreshMigration, refreshRestore, scheduleSync, user]);
 
   const saveDeviceDataToAccount = useCallback(async () => {
     if (!isAvailable || !user || isMigratingRef.current) return;
@@ -290,6 +358,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         lastSyncedAt: completedAt,
         error: null,
       });
+      void refreshRestore();
       return;
     }
 
@@ -308,7 +377,79 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       lastSyncedAt: currentStatus.lastSyncedAt,
       error: result.error,
     }));
-  }, [isAvailable, user]);
+  }, [isAvailable, refreshRestore, user]);
+
+  const restoreCloudData = useCallback(async () => {
+    if (!isAvailable || !user || isRestoringRef.current) return;
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    isRestoringRef.current = true;
+    writeCloudRestoreState(user.id, { status: "restoring" });
+    setRestore((currentRestore) => ({
+      ...currentRestore,
+      status: "restoring",
+      error: null,
+    }));
+
+    const result = await restoreCloudDataToDevice({
+      supabase,
+      userId: user.id,
+    });
+
+    isRestoringRef.current = false;
+
+    if (result.ok) {
+      const completedAt = new Date().toISOString();
+      writeCloudRestoreState(user.id, {
+        status: "completed",
+        completedAt,
+      });
+      setRestore({
+        status: "completed",
+        summary: result.summary,
+        completedAt,
+        dismissedAt: null,
+        error: null,
+      });
+      setStatus({
+        state: "synced",
+        lastSyncedAt: completedAt,
+        error: null,
+      });
+      refreshMigration();
+      return;
+    }
+
+    writeCloudRestoreState(user.id, {
+      status: "error",
+      error: result.error,
+    });
+    setRestore({
+      status: "error",
+      summary: result.summary,
+      completedAt: null,
+      dismissedAt: null,
+      error: result.error,
+    });
+  }, [isAvailable, refreshMigration, user]);
+
+  const dismissCloudRestore = useCallback(() => {
+    if (!user) return;
+
+    const dismissedAt = new Date().toISOString();
+    writeCloudRestoreState(user.id, {
+      status: "dismissed",
+      dismissedAt,
+    });
+    setRestore((currentRestore) => ({
+      ...currentRestore,
+      status: "dismissed",
+      dismissedAt,
+      error: null,
+    }));
+  }, [user]);
 
   const deleteRoutineFromCloud = useCallback(
     async (localId: string) => {
@@ -339,13 +480,19 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     isAvailable,
     isAuthenticated: Boolean(user),
     migration,
+    restore,
     syncNow: runSync,
     saveDeviceDataToAccount,
+    restoreCloudData,
+    dismissCloudRestore,
     deleteRoutineFromCloud,
   }), [
     deleteRoutineFromCloud,
+    dismissCloudRestore,
     isAvailable,
     migration,
+    restore,
+    restoreCloudData,
     runSync,
     saveDeviceDataToAccount,
     status,

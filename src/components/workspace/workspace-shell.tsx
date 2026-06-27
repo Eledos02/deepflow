@@ -30,6 +30,8 @@ export function WorkspaceShell() {
     useState<WorkspaceSection>("Overview");
   const { profile, user } = useAuth();
   const {
+    restore,
+    restoreCloudData,
     isAuthenticated,
     migration,
     saveDeviceDataToAccount,
@@ -73,6 +75,14 @@ export function WorkspaceShell() {
               type="button"
             >
               {migration.status === "saving" ? "Saving..." : "Save device data"}
+            </button>
+          ) : null}
+          {isAuthenticated && restore.status === "available" ? (
+            <button
+              onClick={() => void restoreCloudData()}
+              type="button"
+            >
+              Restore cloud data
             </button>
           ) : null}
         </div>

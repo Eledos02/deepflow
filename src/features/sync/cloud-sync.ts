@@ -136,7 +136,7 @@ function isCloudGoalRecord(value: unknown): value is CloudFocusGoalRecord {
   );
 }
 
-function mergeCloudSessionsIntoLocal(rows: unknown[]) {
+export function mergeCloudSessionsIntoLocal(rows: unknown[]) {
   const existingIds = new Set(readCompletedSessions().map((session) => session.id));
   let pulled = 0;
 
@@ -181,16 +181,18 @@ function mergeCloudSessionsIntoLocal(rows: unknown[]) {
   return pulled;
 }
 
-function mergeCloudGoalIntoLocal(row: unknown) {
-  if (!isCloudGoalRecord(row) || hasLocalWeeklyGoal()) return;
+export function mergeCloudGoalIntoLocal(row: unknown) {
+  if (!isCloudGoalRecord(row) || hasLocalWeeklyGoal()) return 0;
 
   saveWorkspaceWeeklyGoal({
     sessions: Math.max(1, Math.round(row.weekly_sessions_target)),
     minutes: Math.max(1, Math.round(row.weekly_minutes_target)),
   });
+
+  return 1;
 }
 
-function mergeCloudRoutinesIntoLocal(rows: unknown[]) {
+export function mergeCloudRoutinesIntoLocal(rows: unknown[]) {
   const currentRoutines = readWorkspaceRoutines();
   const knownIds = new Set(currentRoutines.map((routine) => routine.id));
   const nextRoutines = [...currentRoutines];

@@ -207,8 +207,11 @@ export function LoginPageContent() {
 export function AccountPageContent() {
   const { isConfigured, isLoading, profile, signOut, updateDisplayName, user } = useAuth();
   const {
+    dismissCloudRestore,
     isAvailable,
     migration,
+    restore,
+    restoreCloudData,
     saveDeviceDataToAccount,
     status,
     statusLabel,
@@ -275,6 +278,25 @@ export function AccountPageContent() {
     migration.summary.hasData
       ? "You have focus history on this device. Save it to your DeepFlow account so it can be restored later."
       : "There is no local focus history, routine, or goal waiting to be saved from this device.";
+  const restoreTitle =
+    restore.status === "completed"
+      ? "Restored to this device."
+      : restore.status === "error"
+        ? "Could not restore right now. Your cloud data is safe."
+        : restore.status === "restoring"
+          ? "Restoring your DeepFlow data..."
+          : restore.summary.hasData
+            ? "Restore your DeepFlow data"
+            : "This device already has your saved DeepFlow data.";
+  const restoreDescription =
+    restore.summary.hasData
+      ? "DeepFlow found focus history saved to your account. Restore it on this device without deleting anything already saved here."
+      : "There are no missing saved sessions, routines, or goals to restore on this device.";
+  const canRestoreCloudData =
+    isAvailable &&
+    restore.summary.hasData &&
+    restore.status !== "completed" &&
+    restore.status !== "restoring";
 
   return (
     <section className="auth-page">
@@ -365,6 +387,56 @@ export function AccountPageContent() {
                   ? "Saved"
                   : "Save to my account"}
             </button>
+          ) : null}
+        </aside>
+        <aside className="account-restore-card" data-state={restore.status}>
+          <div>
+            <span className="eyebrow">Restore</span>
+            <strong>{restoreTitle}</strong>
+            <p>{restoreDescription}</p>
+            <dl className="account-migration-card__summary" aria-label="Cloud data available">
+              <div>
+                <dt>Sessions available</dt>
+                <dd>{restore.summary.sessionsAvailable}</dd>
+              </div>
+              <div>
+                <dt>Routines available</dt>
+                <dd>{restore.summary.routinesAvailable}</dd>
+              </div>
+              <div>
+                <dt>Goal available</dt>
+                <dd>{restore.summary.goalAvailable ? "Yes" : "No"}</dd>
+              </div>
+            </dl>
+            <small>
+              Restore is additive only. DeepFlow will not delete or replace
+              anything already saved on this device.
+            </small>
+          </div>
+          {restore.summary.hasData ? (
+            <div className="account-restore-card__actions">
+              <button
+                className="button button--dark"
+                disabled={!canRestoreCloudData}
+                onClick={() => void restoreCloudData()}
+                type="button"
+              >
+                {restore.status === "restoring"
+                  ? "Restoring..."
+                  : restore.status === "completed"
+                    ? "Restored"
+                    : "Restore to this device"}
+              </button>
+              {restore.status === "available" ? (
+                <button
+                  className="button button--ghost"
+                  onClick={dismissCloudRestore}
+                  type="button"
+                >
+                  Not now
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </aside>
         <aside className="account-local-note">

@@ -6939,6 +6939,7 @@ a:focus-visible {
 .account-detail-grid article,
 .account-local-note,
 .account-migration-card,
+.account-restore-card,
 .account-cloud-sync-card {
   padding: 18px;
   border: 1px solid rgba(19, 32, 25, 0.05);
@@ -6989,23 +6990,27 @@ a:focus-visible {
   flex: 0 0 auto;
 }
 
-.account-migration-card {
+.account-migration-card,
+.account-restore-card {
   display: grid;
   gap: 16px;
   border-color: rgba(124, 139, 116, 0.08);
   background: rgba(255, 254, 250, 0.7);
 }
 
-.account-migration-card .eyebrow {
+.account-migration-card .eyebrow,
+.account-restore-card .eyebrow {
   margin-bottom: 6px;
 }
 
-.account-migration-card strong {
+.account-migration-card strong,
+.account-restore-card strong {
   display: block;
   color: var(--ink);
 }
 
-.account-migration-card p {
+.account-migration-card p,
+.account-restore-card p {
   max-width: 680px;
   margin: 6px 0 0;
   color: var(--muted);
@@ -7013,7 +7018,8 @@ a:focus-visible {
   line-height: 1.65;
 }
 
-.account-migration-card small {
+.account-migration-card small,
+.account-restore-card small {
   display: block;
   max-width: 720px;
   margin-top: 10px;
@@ -7057,12 +7063,25 @@ a:focus-visible {
   background: rgba(242, 251, 216, 0.42);
 }
 
-.account-migration-card[data-state="error"] {
+.account-restore-card[data-state="completed"] {
+  border-color: rgba(107, 130, 72, 0.08);
+  background: rgba(242, 251, 216, 0.42);
+}
+
+.account-migration-card[data-state="error"],
+.account-restore-card[data-state="error"] {
   background: rgba(255, 248, 235, 0.72);
 }
 
-.account-migration-card .button {
+.account-migration-card .button,
+.account-restore-card .button {
   width: max-content;
+}
+
+.account-restore-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .account-detail-grid span {
@@ -7096,9 +7115,14 @@ a:focus-visible {
   }
 
   .account-cloud-sync-card .button,
-  .account-migration-card .button {
+  .account-migration-card .button,
+  .account-restore-card .button {
     width: 100%;
     justify-content: center;
+  }
+
+  .account-restore-card__actions {
+    flex-direction: column;
   }
 
   .account-migration-card__summary {
