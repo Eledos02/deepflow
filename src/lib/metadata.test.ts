@@ -14,18 +14,18 @@ import { normalizeSiteUrl } from "./site";
 
 const pageMetadataInputs: MetadataInput[] = [
   {
-    title: "Focus better. Finish what matters.",
+    title: "DeepFlow - Calm Focus Workspace for Deep Work",
     description:
-      "A calm workspace for focused work with timers, routines, local session history, and attention insights.",
+      "DeepFlow helps you plan focused work sessions, build routines, track weekly goals, and reflect on your focus rhythm in a calm, distraction-light workspace.",
     path: "/",
-    keywords: ["focus timer", "deep work", "pomodoro timer", "productivity"],
+    keywords: ["focus workspace", "deep work", "focus timer", "weekly goals"],
   },
   {
-    title: "Pricing",
+    title: "DeepFlow Pricing and Founding Member Updates",
     description:
-      "Start focusing for free. Upgrade to DeepFlow Pro for history, goals, insights, and distraction blocking.",
+      "DeepFlow is free to start. Founding Member access is coming soon, and pricing will be introduced after the free core experience is stable.",
     path: "/pricing",
-    keywords: ["DeepFlow pricing", "focus app pricing"],
+    keywords: ["DeepFlow pricing", "Founding Member", "focus workspace"],
   },
   {
     title: "DeepFlow Guides — Focus, Pomodoro, Study & Deep Work",
@@ -136,6 +136,30 @@ describe("metadata validation", () => {
         title: input!.title,
         description: input!.description,
         images: ["https://deepflownow.com/deepflow-og.png"],
+      },
+    });
+  });
+
+  it("can mark private and auth routes as noindex", () => {
+    const metadata = createMetadata({
+      title: "Sign in",
+      description:
+        "Sign in to return to your DeepFlow account and cloud backup for sessions, routines, and goals.",
+      path: "/login",
+      index: false,
+    });
+
+    expect(metadata).toMatchObject({
+      alternates: {
+        canonical: "https://deepflownow.com/login",
+      },
+      robots: {
+        index: false,
+        follow: false,
+        googleBot: {
+          index: false,
+          follow: false,
+        },
       },
     });
   });

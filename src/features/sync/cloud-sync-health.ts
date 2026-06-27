@@ -224,6 +224,13 @@ export function deriveCloudSyncHealth({
     normalizedMetadata.lastSavedAt,
     now,
   );
+  const hasNoLocalData = !migration.summary.hasData;
+  const hasNoCloudData =
+    normalizedMetadata.lastCloudSessionsCount === 0 &&
+    normalizedMetadata.lastCloudRoutinesCount === 0 &&
+    !normalizedMetadata.lastCloudGoalFound;
+  const hasNoCloudHistory =
+    !normalizedMetadata.lastSavedAt && !normalizedMetadata.lastRestoredAt;
 
   if (!isAuthenticated) {
     return {
@@ -288,10 +295,24 @@ export function deriveCloudSyncHealth({
   if (restore.summary.hasData) {
     return {
       kind: "restore-available",
-      title: "Cloud data available",
+      title: "Cloud data available.",
       body: "DeepFlow found saved focus history in your account that is not on this device yet.",
       statusLine: "Cloud data is available to restore.",
       workspaceStatus: "Cloud data available",
+      lastCheckedLabel,
+      lastSavedLabel,
+      lastRestoredLabel,
+      metadata: normalizedMetadata,
+    };
+  }
+
+  if (hasNoLocalData && hasNoCloudData && hasNoCloudHistory) {
+    return {
+      kind: "up-to-date",
+      title: "This account is clean.",
+      body: "Your sessions, routines, and goals can be saved when you are ready.",
+      statusLine: "No cloud backup yet.",
+      workspaceStatus: "Cloud backup ready",
       lastCheckedLabel,
       lastSavedLabel,
       lastRestoredLabel,
@@ -315,8 +336,8 @@ export function deriveCloudSyncHealth({
 
   return {
     kind: "up-to-date",
-    title: "Cloud backup",
-    body: "Your sessions, routines, and goals can be saved to your DeepFlow account.",
+    title: "Your DeepFlow data is backed up.",
+    body: "This device is up to date.",
     statusLine: normalizedMetadata.lastSavedAt
       ? `Saved to cloud ${lastSavedSentence}.`
       : "This device is up to date.",

@@ -8,6 +8,7 @@ export const metadata = createMetadata({
     "Open the DeepFlow Workspace MVP with a draggable notes canvas for focus planning, lightweight ideas, and local-first workspace notes.",
   path: "/workspace",
   keywords: ["DeepFlow workspace", "notes canvas", "focus workspace"],
+  index: false,
 });
 
 export default function WorkspacePage() {

@@ -7,6 +7,7 @@ export type MetadataInput = {
   description: string;
   path: string;
   keywords?: string[];
+  index?: boolean;
 };
 
 export type MetadataValidationResult = {
@@ -82,6 +83,7 @@ export function createMetadata({
   description,
   path,
   keywords,
+  index = true,
 }: MetadataInput): Metadata {
   const validation = validateMetadataInput({
     title,
@@ -107,11 +109,11 @@ export function createMetadata({
     keywords: keywords?.map((keyword) => keyword.trim()),
     alternates: { canonical },
     robots: {
-      index: true,
-      follow: true,
+      index,
+      follow: index,
       googleBot: {
-        index: true,
-        follow: true,
+        index,
+        follow: index,
         "max-image-preview": "large",
         "max-snippet": -1,
         "max-video-preview": -1,

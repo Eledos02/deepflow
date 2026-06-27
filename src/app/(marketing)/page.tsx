@@ -20,11 +20,11 @@ import { timerTools } from "@/content/timer-tools";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Focus better. Finish what matters.",
+  title: "DeepFlow - Calm Focus Workspace for Deep Work",
   description:
-    "A calm workspace for focused work with timers, routines, local session history, and attention insights.",
+    "DeepFlow helps you plan focused work sessions, build routines, track weekly goals, and reflect on your focus rhythm in a calm, distraction-light workspace.",
   path: "/",
-  keywords: ["focus timer", "deep work", "pomodoro timer", "productivity"],
+  keywords: ["focus workspace", "deep work", "focus timer", "weekly goals"],
 });
 
 const focusTool = timerTools[0];
@@ -66,16 +66,17 @@ export default function HomePage() {
               <em>Finish what matters.</em>
             </h1>
             <p className="hero__lede">
-              Plan focused sessions, keep your work in one calm workspace, and
-              understand where your attention goes.
+              DeepFlow is a calm focus workspace for timed work sessions,
+              routines, goals, and reflection - designed to help you stay with
+              one meaningful task at a time.
             </p>
             <div className="hero__actions">
-              <Link className="button button--dark button--large" href="/tools/focus-timer">
-                Start focusing free
+              <Link className="button button--dark button--large" href="/workspace">
+                Start focusing
                 <ArrowIcon />
               </Link>
-              <Link className="button button--ghost button--large" href="/#product">
-                See the product
+              <Link className="button button--ghost button--large" href="/signup">
+                Create free account
               </Link>
             </div>
             <div className="hero__waitlist">
@@ -93,7 +94,8 @@ export default function HomePage() {
               </span>
             </div>
             <p className="hero__local-note">
-              Start without an account. Your sessions stay local by default.
+              Use it without an account. Sign in when you want cloud backup
+              across devices.
             </p>
           </div>
           <div className="hero__product">
@@ -123,14 +125,14 @@ export default function HomePage() {
 
       <section className="proof-strip" aria-label="DeepFlow principles">
         <div className="shell proof-strip__inner">
-          <span>Designed for</span>
+          <span>Built for</span>
           <strong>Writers</strong>
           <i />
           <strong>Developers</strong>
           <i />
           <strong>Students</strong>
           <i />
-          <strong>Creative teams</strong>
+          <strong>Independent builders</strong>
         </div>
       </section>
 
@@ -138,13 +140,14 @@ export default function HomePage() {
         <div className="shell">
           <div className="section-heading product-section__heading">
             <div>
-              <span className="eyebrow">Beyond the timer</span>
+              <span className="eyebrow">What DeepFlow is</span>
               <h2>DeepFlow is a calm workspace for focused work.</h2>
             </div>
             <div className="product-section__intro">
               <p>
-                Start a session, capture what you are working on, and let your
-                workspace turn completed focus blocks into a clearer rhythm.
+                Start a timer, save routines, set weekly goals, reflect in the
+                Focus Journal, and review insights without turning your work
+                into a noisy dashboard.
               </p>
               <Link className="text-arrow-link" href="/workspace">
                 Explore the Workspace
@@ -176,11 +179,11 @@ export default function HomePage() {
             </span>
             <span>
               <ShieldIcon />
-              Focus Journal
+              Account cloud backup
             </span>
             <span>
               <TimerIcon />
-              Ambient audio
+              Notes Canvas local-only
             </span>
           </div>
         </div>
@@ -190,12 +193,14 @@ export default function HomePage() {
         <div className="shell">
           <div className="section-heading section-heading--split">
             <div>
-              <span className="eyebrow">A complete attention loop</span>
-              <h2>Structure the work without over-managing it.</h2>
+              <span className="eyebrow">For scattered attention</span>
+              <h2>Make the next focused session easier to begin.</h2>
             </div>
             <p>
-              DeepFlow gives important work a clear beginning, a protected
-              middle, and enough context to improve the next session.
+              DeepFlow is for people who feel pulled between tabs, tasks, and
+              half-finished ideas. It gives important work a clear beginning, a
+              protected middle, and enough reflection to return with less
+              friction.
             </p>
           </div>
           <BenefitGrid items={productBenefits} />
@@ -227,13 +232,30 @@ export default function HomePage() {
             <article>
               <SparkIcon />
               <h3>Notes Canvas</h3>
-              <p>Collect loose thoughts, connect ideas, and keep useful context nearby while a session is running.</p>
+              <p>Collect loose thoughts, connect ideas, and keep useful context nearby. Notes Canvas and layout data remain local-only for now.</p>
             </article>
             <article>
               <ShieldIcon />
-              <h3>Audio that stays optional</h3>
-              <p>Choose rain, fireplace, ocean waves, or silence. The environment should support the work, not compete with it.</p>
+              <h3>Account cloud backup</h3>
+              <p>Save sessions, routines, and goals to your account, restore them on another device, and recover access with password reset.</p>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="section local-first-section">
+        <div className="shell">
+          <div className="local-first-panel">
+            <span className="eyebrow">Local-first by design</span>
+            <h2>Your workspace starts on this device.</h2>
+            <p>
+              Your focus sessions, routines, and goals can be backed up to your
+              account. Notes Canvas and layout data remain local-only for now.
+            </p>
+            <Link className="text-arrow-link" href="/signup">
+              Create free account
+              <ArrowIcon />
+            </Link>
           </div>
         </div>
       </section>
@@ -296,9 +318,9 @@ export default function HomePage() {
         <div className="shell">
           <div className="home-waitlist">
             <div>
-              <span className="eyebrow">Limited early access</span>
-              <h2 id="home-waitlist-title">Join the Founding Member list.</h2>
-              <p>Get early access to DeepFlow as the product evolves.</p>
+              <span className="eyebrow">Founder teaser</span>
+              <h2 id="home-waitlist-title">Founding Member access is coming soon.</h2>
+              <p>Pricing will be introduced after the free core experience is stable.</p>
             </div>
             <FoundingMemberWaitlist source="homepage_final_cta" variant="compact" />
           </div>

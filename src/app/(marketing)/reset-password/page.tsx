@@ -5,6 +5,7 @@ export const metadata = createMetadata({
   title: "Update your password",
   description: "Choose a new DeepFlow password after opening a valid Supabase Auth password recovery link.",
   path: "/reset-password",
+  index: false,
 });
 
 export default function ResetPasswordPage() {

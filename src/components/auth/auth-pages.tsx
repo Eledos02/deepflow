@@ -80,7 +80,7 @@ function OnboardingForm() {
             {isSubmitting ? "Saving…" : "Continue to Workspace"}
           </button>
         </form>
-        <p className="auth-card__note">Your current workspace stays stored locally on this device. Cloud sync is coming later.</p>
+        <p className="auth-card__note">Your current workspace stays on this device. You can save sessions, routines, and goals to your account from Account.</p>
         {user?.email ? <small>{user.email}</small> : null}
       </div>
     </section>
@@ -130,7 +130,7 @@ export function SignupPageContent() {
       <div className="auth-card">
         <span className="eyebrow">DeepFlow account</span>
         <h1>Create your DeepFlow account.</h1>
-        <p>Save your identity now. Cloud sync and Pro features will build from here.</p>
+        <p>Create a simple DeepFlow identity for cloud backup and account recovery.</p>
         {needsConfirmation ? (
           <div className="auth-message" role="status">
             <strong>Check your inbox to confirm your email.</strong>
@@ -245,7 +245,7 @@ export function ForgotPasswordPageContent() {
       <div className="auth-card">
         <span className="eyebrow">Password recovery</span>
         <h1>Reset your password.</h1>
-        <p>Enter the email for your DeepFlow account and we will send a reset link.</p>
+        <p>Enter your email and we will send a reset link if the account exists.</p>
         {isSent ? (
           <div className="auth-message" role="status">
             <strong>Check your inbox.</strong>
@@ -460,7 +460,7 @@ export function AccountPageContent() {
             </div>
           </div>
           <form className="auth-form" onSubmit={handleSubmit}>
-            <label htmlFor="account-display-name">Display name</label>
+            <label htmlFor="account-display-name">Display name for DeepFlow</label>
             <input id="account-display-name" maxLength={40} onChange={(event) => { setDisplayName(event.target.value); setSaved(false); if (error) setError(""); }} value={displayName} />
             {error ? <p className="auth-form__error" role="alert">{error}</p> : null}
             <button className="button button--dark" disabled={isSaving} type="submit">
@@ -471,7 +471,7 @@ export function AccountPageContent() {
         <div className="account-detail-grid">
           <article><span>Member since</span><strong>{memberSince}</strong></article>
           <article><span>Current plan</span><strong>Free</strong></article>
-          <article><span>Founding Member</span><strong>Not active yet</strong></article>
+          <article><span>Founding member</span><strong>Not active yet</strong></article>
         </div>
         <aside className="account-cloud-backup-card" data-state={health.kind}>
           <div className="account-cloud-backup-card__heading">
@@ -539,7 +539,7 @@ export function AccountPageContent() {
             </dl>
           ) : null}
           <small>
-            Restore is additive only. Notes Canvas, canvas layout, audio preferences, and mind map data remain local-only.
+            Notes Canvas, canvas layout, audio preferences, and mind map data remain local-only.
           </small>
           <div className="account-cloud-backup-card__actions">
             {shouldShowRestoreAction ? (
@@ -581,7 +581,7 @@ export function AccountPageContent() {
             )}
           </div>
         </aside>
-        <button className="button button--ghost" onClick={() => void signOut()} type="button">Sign out</button>
+        <button className="button button--ghost" onClick={() => void signOut()} type="button">Sign out of DeepFlow</button>
       </div>
     </section>
   );

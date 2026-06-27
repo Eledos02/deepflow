@@ -25,9 +25,9 @@ export function normalizeSiteUrl(value: string) {
 
 export const siteConfig = {
   name: "DeepFlow",
-  title: "DeepFlow — Focus better. Finish what matters.",
+  title: "DeepFlow - Calm Focus Workspace for Deep Work",
   description:
-    "Calm focus timers, deep work sessions, Pomodoro, and distraction-free productivity.",
+    "DeepFlow helps you plan focused work sessions, build routines, track weekly goals, and reflect in a calm, distraction-light workspace.",
   socialImage: "/deepflow-og.png",
   url: normalizeSiteUrl(productionSiteUrl),
   email: "hello@deepflownow.com",

@@ -8,26 +8,32 @@ type ConversionCardProps = {
 
 const content = {
   homepage: {
-    eyebrow: "DeepFlow Pro - Early access",
-    title: "Build a focus practice that compounds.",
+    eyebrow: "Founding Member updates",
+    title: "The free core comes first.",
     description:
-      "Plan meaningful sessions, protect your attention, and understand the patterns behind your best work.",
-    action: "See Pro plans",
+      "DeepFlow will introduce pricing after the focus workspace is stable, honest, and useful without pressure.",
+    action: "See pricing notes",
   },
   tool: {
     eyebrow: "Keep the momentum",
     title: "Turn one good session into a repeatable rhythm.",
     description:
       "Save session history, build weekly goals, and return to the routines that help you do your best work.",
-    action: "Track progress with Pro",
+    action: "Create free account",
   },
   guide: {
     eyebrow: "Put the method into practice",
     title: "Make focused work easier to repeat.",
     description:
       "Move from reading about focus to planning sessions, protecting time, and learning from your attention.",
-    action: "Explore DeepFlow Pro",
+    action: "Start focusing",
   },
+} as const;
+
+const actionHref = {
+  homepage: "/pricing",
+  tool: "/signup",
+  guide: "/workspace",
 } as const;
 
 export function ConversionCard({ placement }: ConversionCardProps) {
@@ -44,11 +50,11 @@ export function ConversionCard({ placement }: ConversionCardProps) {
         <p>{copy.description}</p>
       </div>
       <div className="conversion-card__actions">
-        <Link className="button button--light" href="/pricing">
+        <Link className="button button--light" href={actionHref[placement]}>
           {copy.action}
           <ArrowIcon />
         </Link>
-        <span>No charge today. Founding access opens soon.</span>
+        <span>No checkout today. Founding access opens soon.</span>
       </div>
     </aside>
   );

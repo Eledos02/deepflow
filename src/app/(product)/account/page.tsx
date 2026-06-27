@@ -3,8 +3,9 @@ import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
   title: "Your account",
-  description: "Manage your DeepFlow profile, local-first account settings, and future sync foundation.",
+  description: "Manage your DeepFlow profile and cloud backup status for sessions, routines, and goals.",
   path: "/account",
+  index: false,
 });
 
 export default function AccountPage() {

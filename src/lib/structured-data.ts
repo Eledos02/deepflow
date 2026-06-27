@@ -65,12 +65,6 @@ export function createGlobalStructuredData(): JsonLdObject {
         isAccessibleForFree: true,
         image: absoluteUrl(siteConfig.socialImage),
         publisher: publisherReference,
-        offers: {
-          "@type": "Offer",
-          price: "0",
-          priceCurrency: "USD",
-          url: siteConfig.url,
-        },
       },
     ],
   };
@@ -102,12 +96,6 @@ export function createSoftwareApplicationSchema({
     isAccessibleForFree: true,
     isPartOf: websiteReference,
     publisher: publisherReference,
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-      url,
-    },
   };
 }
 

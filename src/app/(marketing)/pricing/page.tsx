@@ -11,83 +11,25 @@ import {
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Pricing",
+  title: "DeepFlow Pricing and Founding Member Updates",
   description:
-    "Start focusing for free. Upgrade to DeepFlow Pro for history, goals, insights, and distraction blocking.",
+    "DeepFlow is free to start. Founding Member access is coming soon, and pricing will be introduced after the free core experience is stable.",
   path: "/pricing",
-  keywords: ["DeepFlow pricing", "focus app pricing"],
+  keywords: ["DeepFlow pricing", "Founding Member", "focus workspace"],
 });
 
 const freeFeatures = [
-  "Focus, Pomodoro, and countdown timers",
-  "Unlimited local sessions",
-  "Common timer durations",
-  "No account required",
+  "Focus timers, routines, weekly goals, Focus Journal, and Insights",
+  "Use the Workspace without creating an account",
+  "Create a free account for cloud backup of sessions, routines, and goals",
+  "Notes Canvas and layout data remain local-only for now",
 ];
 
-const proFeatures = [
-  "Everything in Free",
-  "Cross-device session history",
-  "Weekly goals and focus insights",
-  "Saved routines and soundscapes",
-  "Distraction blocking",
-];
-
-const premiumAudioFeatures = [
-  "Rain Window",
-  "Fireplace",
-  "Forest Cabin",
-  "Ocean Waves",
-  "Coffee Shop",
-  "Deep Focus Brown Noise",
-  "Night Crickets",
-  "Soft Wind",
-  "Thunderstorm",
-  "Library Ambience",
-];
-
-const focusEnvironments = [
-  {
-    title: "Rain Window Environment",
-    description:
-      "Animated rain on a virtual window with subtle weather effects.",
-  },
-  {
-    title: "Fireplace Environment",
-    description:
-      "A warm fireplace with gentle animated flames and ambient glow.",
-  },
-  {
-    title: "Forest Cabin Environment",
-    description:
-      "A peaceful cabin overlooking a forest with subtle motion.",
-  },
-  {
-    title: "Ocean View Environment",
-    description:
-      "Relaxing ocean scenery with slow-moving waves.",
-  },
-  {
-    title: "Night Studio Environment",
-    description:
-      "A calm night workspace with city lights and atmospheric ambience.",
-  },
-  {
-    title: "Mountain Sunrise Environment",
-    description:
-      "A beautiful sunrise scene with gradual lighting changes.",
-  },
-];
-
-const productivityFeatures = [
-  "Cloud Sync Across Devices",
-  "Unlimited Focus History",
-  "Advanced Focus Analytics",
-  "Weekly Insights & Reports",
-  "Focus Goals & Milestones",
-  "Priority Access To New Features",
-  "Founding Member Badge",
-  "Lock In Your Price Forever",
+const foundingNotes = [
+  "Founding Member access is coming soon",
+  "Pricing will be shared before anything paid opens",
+  "No checkout, billing, or payment flow is active yet",
+  "The free core experience remains the priority",
 ];
 
 export default function PricingPage() {
@@ -96,21 +38,21 @@ export default function PricingPage() {
       <InteractiveBrainwaveBackground />
       <div className="shell">
         <div className="pricing-heading">
-          <span className="eyebrow">Simple pricing</span>
-          <h1>Start free. Build a deeper practice when you are ready.</h1>
+          <span className="eyebrow">Pricing</span>
+          <h1>Start free. Founder access comes later.</h1>
           <p>
-            The core timer stays useful without an account. Pro turns individual
-            sessions into a durable focus system.
+            DeepFlow is focused on making the free core experience stable
+            before introducing supporter access. There is no checkout today.
           </p>
         </div>
         <div className="pricing-grid">
           <article className="price-card">
             <span className="price-card__eyebrow">Start now</span>
-            <span className="price-card__label">Free</span>
-            <h2>$0</h2>
-            <p>The essential focus toolkit, available without an account.</p>
-            <Link className="button button--ghost button--full" href="/tools/focus-timer">
-              Start focusing free
+            <span className="price-card__label">Free core</span>
+            <strong className="price-card__status">Available now</strong>
+            <p>A calm focus workspace you can use before creating an account.</p>
+            <Link className="button button--ghost button--full" href="/workspace">
+              Start focusing
             </Link>
             <ul>
               {freeFeatures.map((feature) => (
@@ -122,21 +64,22 @@ export default function PricingPage() {
             </ul>
           </article>
           <article className="price-card price-card--featured">
-            <span className="price-card__badge">Future Pro</span>
+            <span className="price-card__badge">No checkout</span>
             <span className="price-card__eyebrow">Coming soon</span>
-            <span className="price-card__label">Pro plan</span>
-            <h2>
-              $8 <small>/ month</small>
-            </h2>
-            <p>Planned subscription for people ready to make focus repeatable.</p>
+            <span className="price-card__label">Founding Member</span>
+            <strong className="price-card__status">Coming soon</strong>
+            <p>
+              Early supporter access will open after the free core experience
+              is stable.
+            </p>
             <a className="button button--light button--full" href="#founding-member">
-              Join lifetime waitlist
+              Join updates
             </a>
             <small className="price-card__note">
-              Payments are not active yet. Founding Member access opens first.
+              Payments are not active yet.
             </small>
             <ul>
-              {proFeatures.map((feature) => (
+              {foundingNotes.map((feature) => (
                 <li key={feature}>
                   <CheckIcon />
                   {feature}
@@ -155,60 +98,17 @@ export default function PricingPage() {
               <span className="founding-waitlist__badge">
                 Limited early access
               </span>
-              <h2 id="founding-member-title">Become a Founding Member</h2>
-              <p className="founding-waitlist__price">
-                $19 Lifetime Access - coming soon
-              </p>
+              <h2 id="founding-member-title">Founding Member access is coming soon.</h2>
               <p className="founding-waitlist__description">
-                Support the development of DeepFlow and lock in lifetime access
-                to DeepFlow Pro as the product evolves.
+                Join the list if you want an update when DeepFlow is ready to
+                introduce supporter access.
               </p>
               <p className="founding-waitlist__subtext">
-                Join the Founding Member list today. No payment required.
-                We&apos;ll notify you before lifetime access opens and before the
-                launch price expires.
+                No payment today. Pricing will be introduced after the free core
+                experience is stable.
               </p>
             </div>
             <FoundingMemberWaitlist source="pricing_founding_member" />
-          </div>
-
-          <div className="founding-feature-grid">
-            <article className="founding-feature-card founding-feature-card--audio">
-              <span className="eyebrow">Premium Audio Library</span>
-              <ul>
-                {premiumAudioFeatures.map((feature) => (
-                  <li key={feature}>
-                    <CheckIcon />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </article>
-
-            <article className="founding-feature-card founding-feature-card--wide">
-              <span className="eyebrow">Focus Environments</span>
-              <h3>Transform your timer into a calm environment designed for deep work.</h3>
-              <div className="founding-environment-grid">
-                {focusEnvironments.map((environment) => (
-                  <div key={environment.title}>
-                    <strong>{environment.title}</strong>
-                    <p>{environment.description}</p>
-                  </div>
-                ))}
-              </div>
-            </article>
-
-            <article className="founding-feature-card founding-feature-card--productivity">
-              <span className="eyebrow">Productivity Features</span>
-              <ul>
-                {productivityFeatures.map((feature) => (
-                  <li key={feature}>
-                    <CheckIcon />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </article>
           </div>
         </section>
         <div className="pricing-assurance">
@@ -229,8 +129,8 @@ export default function PricingPage() {
           <article>
             <TargetIcon />
             <div>
-              <strong>Pay for durable value</strong>
-              <p>Pro is designed around history, goals, routines, and insight.</p>
+              <strong>Pricing will be clear before it opens</strong>
+              <p>No billing is active, and no plan is required to start.</p>
             </div>
           </article>
         </div>

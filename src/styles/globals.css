@@ -4213,6 +4213,21 @@ a:focus-visible {
   line-height: 1;
 }
 
+.price-card__status {
+  display: block;
+  margin: 15px 0 8px;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 4vw, 3.6rem);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.price-card--featured .price-card__status {
+  color: #fffefa;
+}
+
 .price-card h2 small {
   font-family: var(--font-sans);
   font-size: 0.85rem;
@@ -4267,6 +4282,30 @@ a:focus-visible {
 
 .price-card--featured li svg {
   color: var(--lime);
+}
+
+.local-first-section {
+  padding-top: 24px;
+}
+
+.local-first-panel {
+  padding: clamp(30px, 5vw, 54px);
+  border: 1px solid rgba(23, 35, 25, 0.08);
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(216, 238, 229, 0.58), transparent 30%),
+    rgba(255, 254, 250, 0.7);
+}
+
+.local-first-panel h2 {
+  max-width: 720px;
+}
+
+.local-first-panel p {
+  max-width: 680px;
+  margin: 14px 0 22px;
+  color: var(--muted);
+  line-height: 1.8;
 }
 
 .founding-waitlist {

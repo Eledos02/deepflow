@@ -51,10 +51,34 @@ describe("SEO route handlers", () => {
       rules: {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/app/"],
+        disallow: [
+          "/api/",
+          "/app/",
+          "/account",
+          "/workspace",
+          "/login",
+          "/signup",
+          "/forgot-password",
+          "/reset-password",
+        ],
       },
       sitemap: "https://deepflownow.com/sitemap.xml",
       host: "https://deepflownow.com",
     });
+  });
+
+  it("keeps auth and private app routes out of the sitemap", () => {
+    const paths = getIndexableRoutes().map((route) => route.path);
+
+    expect(paths).not.toEqual(
+      expect.arrayContaining([
+        "/account",
+        "/workspace",
+        "/login",
+        "/signup",
+        "/forgot-password",
+        "/reset-password",
+      ]),
+    );
   });
 });

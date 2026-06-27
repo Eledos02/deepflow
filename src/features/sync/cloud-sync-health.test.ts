@@ -91,7 +91,7 @@ describe("cloud sync health status", () => {
     expect(health.statusLine).toBe("Cloud backup is optional.");
   });
 
-  it("treats authenticated empty local and cloud data as healthy", () => {
+  it("treats authenticated empty local and cloud data as a clean account", () => {
     const health = deriveCloudSyncHealth({
       isAuthenticated: true,
       isAvailable: true,
@@ -106,7 +106,11 @@ describe("cloud sync health status", () => {
     });
 
     expect(health.kind).toBe("up-to-date");
-    expect(health.statusLine).toBe("This device is up to date.");
+    expect(health.title).toBe("This account is clean.");
+    expect(health.body).toBe(
+      "Your sessions, routines, and goals can be saved when you are ready.",
+    );
+    expect(health.statusLine).toBe("No cloud backup yet.");
     expect(health.lastCheckedLabel).toBe("Just now");
   });
 
@@ -137,6 +141,8 @@ describe("cloud sync health status", () => {
     });
 
     expect(health.kind).toBe("up-to-date");
+    expect(health.title).toBe("Your DeepFlow data is backed up.");
+    expect(health.body).toBe("This device is up to date.");
     expect(health.statusLine).toBe("Saved to cloud today at 2:41 PM.");
     expect(health.lastSavedLabel).toBe("Today, 2:41 PM");
   });
@@ -165,7 +171,10 @@ describe("cloud sync health status", () => {
     });
 
     expect(health.kind).toBe("restore-available");
-    expect(health.title).toBe("Cloud data available");
+    expect(health.title).toBe("Cloud data available.");
+    expect(health.body).toBe(
+      "DeepFlow found saved focus history in your account that is not on this device yet.",
+    );
     expect(health.workspaceStatus).toBe("Cloud data available");
   });
 

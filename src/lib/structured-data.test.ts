@@ -143,6 +143,21 @@ describe("guide structured data", () => {
 });
 
 describe("structured data validation", () => {
+  it("does not emit prices or offers for the generic app schema", () => {
+    const globalData = createGlobalStructuredData();
+    const appData = createSoftwareApplicationSchema({
+      name: "DeepFlow Focus Timer",
+      description:
+        "A calm timer for planning focused sessions and reflecting on attention.",
+      url: absoluteUrl("/tools/focus-timer"),
+    });
+
+    expect(JSON.stringify(globalData)).not.toContain("\"Offer\"");
+    expect(JSON.stringify(globalData)).not.toContain("\"price\"");
+    expect(JSON.stringify(appData)).not.toContain("\"Offer\"");
+    expect(JSON.stringify(appData)).not.toContain("\"price\"");
+  });
+
   it("rejects invalid contexts and retired DeepFlow domains", () => {
     const result = validateStructuredData({
       "@context": "http://schema.org",
