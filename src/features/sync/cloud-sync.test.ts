@@ -118,7 +118,7 @@ describe("cloud sync service", () => {
     vi.unstubAllGlobals();
   });
 
-  it("upserts completed sessions, weekly goals, and routines with local id conflict keys", async () => {
+  it("upserts completed sessions and routines without creating a default goal", async () => {
     const { supabase, upserts } = createSupabaseMock();
 
     const result = await syncDeepFlowData({
@@ -131,19 +131,37 @@ describe("cloud sync service", () => {
     expect(result.ok).toBe(true);
     expect(upserts.map((call) => call.table)).toEqual([
       "focus_sessions",
-      "focus_goals",
       "focus_routines",
     ]);
     expect(upserts.map((call) => call.options)).toEqual([
       { onConflict: "user_id,local_id" },
       { onConflict: "user_id,local_id" },
-      { onConflict: "user_id,local_id" },
     ]);
     expect(result.summary).toMatchObject({
       focusSessions: 1,
-      goals: 1,
+      goals: 0,
       routines: 1,
     });
+  });
+
+  it("uploads a real local goal only when goal sync is explicitly enabled", async () => {
+    const { supabase, upserts } = createSupabaseMock();
+
+    const result = await syncDeepFlowData({
+      supabase,
+      userId,
+      localData: snapshot(),
+      mergeCloudToLocal: false,
+      syncGoal: true,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(upserts.map((call) => call.table)).toEqual([
+      "focus_sessions",
+      "focus_goals",
+      "focus_routines",
+    ]);
+    expect(result.summary.goals).toBe(1);
   });
 
   it("does not create duplicate cloud rows for duplicate local focus records", async () => {
@@ -224,7 +242,6 @@ describe("cloud sync service", () => {
 
     expect(upserts.map((call) => call.table)).toEqual([
       "focus_sessions",
-      "focus_goals",
       "focus_routines",
     ]);
     expect(upserts.map((call) => call.table).join(" ")).not.toMatch(/note|canvas/i);

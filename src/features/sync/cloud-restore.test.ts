@@ -7,6 +7,7 @@ import type {
   CloudFocusSessionRecord,
 } from "./sync-types";
 import {
+  fetchCloudRestoreSnapshot,
   getCloudRestoreStorageKey,
   getCloudRestoreSummary,
   getEffectiveCloudRestoreState,
@@ -152,6 +153,22 @@ describe("cloud restore summary", () => {
     });
   });
 
+  it("does not show a cloud goal or goal restore when Supabase has no goal row", () => {
+    expect(
+      getCloudRestoreSummary({
+        cloudData: cloudSnapshot({ goal: null, sessions: [], routines: [] }),
+        localData: localSnapshot(),
+        hasStoredGoal: false,
+        userId,
+      }),
+    ).toEqual({
+      sessionsAvailable: 0,
+      routinesAvailable: 0,
+      goalAvailable: false,
+      hasData: false,
+    });
+  });
+
   it("does not offer restore when local data already contains cloud identities", () => {
     expect(
       getCloudRestoreSummary({
@@ -208,6 +225,61 @@ describe("cloud restore summary", () => {
       status: "dismissed",
       dismissedAt: "2026-06-20T15:00:00.000Z",
     });
+  });
+});
+
+describe("fetchCloudRestoreSnapshot", () => {
+  it("checks cloud goals read-only and keeps deleted goals deleted", async () => {
+    const mutations: string[] = [];
+    const supabase = {
+      from(table: string) {
+        const query = {
+          select() {
+            return query;
+          },
+          eq() {
+            return query;
+          },
+          order() {
+            return query;
+          },
+          limit() {
+            return Promise.resolve({ data: [], error: null });
+          },
+          maybeSingle() {
+            return Promise.resolve({ data: null, error: null });
+          },
+          upsert() {
+            mutations.push(table);
+            return Promise.resolve({ error: null });
+          },
+          insert() {
+            mutations.push(table);
+            return Promise.resolve({ error: null });
+          },
+          update() {
+            mutations.push(table);
+            return Promise.resolve({ error: null });
+          },
+        };
+        return query;
+      },
+    };
+
+    const snapshot = await fetchCloudRestoreSnapshot({
+      supabase: supabase as never,
+      userId,
+    });
+
+    expect(snapshot).toEqual({
+      ok: true,
+      data: {
+        sessions: [],
+        goal: null,
+        routines: [],
+      },
+    });
+    expect(mutations).toEqual([]);
   });
 });
 

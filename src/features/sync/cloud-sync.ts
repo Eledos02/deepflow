@@ -231,7 +231,7 @@ export async function syncDeepFlowData({
   userId,
   localData = readLocalSyncSnapshot(),
   mergeCloudToLocal = false,
-  syncGoal = true,
+  syncGoal = false,
 }: SyncDeepFlowDataOptions): Promise<CloudSyncResult> {
   const summary = { ...emptySummary };
 

@@ -234,4 +234,51 @@ describe("local data migration", () => {
     expect(result.ok).toBe(true);
     expect(upserts).toEqual([]);
   });
+
+  it("does not create a cloud goal when only default local goal values exist", async () => {
+    stubLocalStorage({
+      "deepflow:user:account-b:focus_sessions": JSON.stringify([{
+        id: "account-b-session",
+        completedAtMs: Date.parse("2026-06-20T14:00:00.000Z"),
+        durationSeconds: 25 * 60,
+        timerKind: "focus",
+        countsAsFocus: true,
+      }]),
+    });
+    const { supabase, upserts } = createSupabaseMock();
+
+    setLocalDataScopeForUser("account-b");
+    const result = await saveLocalDataToAccount({
+      supabase: supabase as never,
+      userId: "account-b",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(upserts.map((call) => call.table)).toEqual(["focus_sessions"]);
+    expect(upserts.map((call) => call.table)).not.toContain("focus_goals");
+  });
+
+  it("uploads a cloud goal when a real scoped local goal was saved", async () => {
+    stubLocalStorage({
+      "deepflow:user:account-b:focus_goal": JSON.stringify({
+        sessions: 12,
+        minutes: 300,
+      }),
+    });
+    const { supabase, upserts } = createSupabaseMock();
+
+    setLocalDataScopeForUser("account-b");
+    const result = await saveLocalDataToAccount({
+      supabase: supabase as never,
+      userId: "account-b",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(upserts.map((call) => call.table)).toEqual(["focus_goals"]);
+    expect(upserts[0].rows).toEqual(expect.objectContaining({
+      user_id: "account-b",
+      weekly_sessions_target: 12,
+      weekly_minutes_target: 300,
+    }));
+  });
 });
