@@ -39,6 +39,14 @@ import {
   deleteCloudRoutine,
   syncDeepFlowData,
 } from "./cloud-sync";
+import {
+  getEffectiveLocalDataMigrationState,
+  getLocalDataMigrationSummary,
+  readLocalDataMigrationState,
+  saveLocalDataToAccount,
+  writeLocalDataMigrationState,
+  type LocalDataMigrationState,
+} from "./local-data-migration";
 import { getCloudSyncStatusLabel } from "./sync-status";
 import type { CloudSyncStatus } from "./sync-types";
 
@@ -47,7 +55,9 @@ type CloudSyncContextValue = {
   statusLabel: string;
   isAvailable: boolean;
   isAuthenticated: boolean;
+  migration: LocalDataMigrationState;
   syncNow: () => Promise<void>;
+  saveDeviceDataToAccount: () => Promise<void>;
   deleteRoutineFromCloud: (localId: string) => Promise<void>;
 };
 
@@ -69,6 +79,18 @@ const localDataStorageKeys = new Set([
   WORKSPACE_ROUTINES_STORAGE_KEY,
 ]);
 
+const emptyMigrationState: LocalDataMigrationState = {
+  status: "not_started",
+  summary: {
+    sessionsFound: 0,
+    routinesFound: 0,
+    goalFound: false,
+    hasData: false,
+  },
+  completedAt: null,
+  error: null,
+};
+
 export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const { isConfigured, user } = useAuth();
   const isAvailable = Boolean(getSupabaseBrowserConfig()) && isConfigured;
@@ -77,8 +99,26 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     lastSyncedAt: null,
     error: null,
   }));
+  const [migration, setMigration] = useState<LocalDataMigrationState>(
+    emptyMigrationState,
+  );
   const syncTimeoutRef = useRef<number | null>(null);
   const isSyncingRef = useRef(false);
+  const isMigratingRef = useRef(false);
+
+  const refreshMigration = useCallback(() => {
+    if (!user) {
+      setMigration(emptyMigrationState);
+      return;
+    }
+
+    setMigration(
+      getEffectiveLocalDataMigrationState({
+        storedState: readLocalDataMigrationState(user.id),
+        summary: getLocalDataMigrationSummary({ userId: user.id }),
+      }),
+    );
+  }, [user]);
 
   const runSync = useCallback(async () => {
     if (!isAvailable || !user) {
@@ -143,6 +183,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
           lastSyncedAt: null,
           error: null,
         });
+        setMigration(emptyMigrationState);
       }, 0);
       return () => window.clearTimeout(resetId);
     }
@@ -154,27 +195,34 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
           lastSyncedAt: null,
           error: null,
         });
+        refreshMigration();
       }, 0);
       return () => window.clearTimeout(resetId);
     }
 
     const initialSyncId = window.setTimeout(() => {
+      refreshMigration();
       void runSync();
     }, 500);
 
     return () => window.clearTimeout(initialSyncId);
-  }, [isAvailable, runSync, user]);
+  }, [isAvailable, refreshMigration, runSync, user]);
 
   useEffect(() => {
-    if (!user || !isAvailable) return;
+    if (!user) return;
 
     const handleStorage = (event: StorageEvent) => {
       if (!event.key || !localDataStorageKeys.has(event.key)) return;
+      refreshMigration();
+      if (!isAvailable) return;
       scheduleSync();
     };
 
     for (const eventName of localDataEvents) {
-      window.addEventListener(eventName, scheduleSync);
+      window.addEventListener(eventName, refreshMigration);
+      if (isAvailable) {
+        window.addEventListener(eventName, scheduleSync);
+      }
     }
     window.addEventListener("storage", handleStorage);
 
@@ -185,11 +233,82 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       }
 
       for (const eventName of localDataEvents) {
+        window.removeEventListener(eventName, refreshMigration);
         window.removeEventListener(eventName, scheduleSync);
       }
       window.removeEventListener("storage", handleStorage);
     };
-  }, [isAvailable, scheduleSync, user]);
+  }, [isAvailable, refreshMigration, scheduleSync, user]);
+
+  const saveDeviceDataToAccount = useCallback(async () => {
+    if (!isAvailable || !user || isMigratingRef.current) return;
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const summary = getLocalDataMigrationSummary({ userId: user.id });
+    if (!summary.hasData) {
+      setMigration({
+        status: "not_started",
+        summary,
+        completedAt: null,
+        error: null,
+      });
+      return;
+    }
+
+    isMigratingRef.current = true;
+    writeLocalDataMigrationState(user.id, { status: "saving" });
+    setMigration({
+      status: "saving",
+      summary,
+      completedAt: null,
+      error: null,
+    });
+
+    const result = await saveLocalDataToAccount({
+      supabase,
+      userId: user.id,
+    });
+
+    isMigratingRef.current = false;
+
+    if (result.ok) {
+      const completedAt = new Date().toISOString();
+      writeLocalDataMigrationState(user.id, {
+        status: "completed",
+        completedAt,
+      });
+      setMigration({
+        status: "completed",
+        summary: getLocalDataMigrationSummary({ userId: user.id }),
+        completedAt,
+        error: null,
+      });
+      setStatus({
+        state: "synced",
+        lastSyncedAt: completedAt,
+        error: null,
+      });
+      return;
+    }
+
+    writeLocalDataMigrationState(user.id, {
+      status: "error",
+      error: result.error,
+    });
+    setMigration({
+      status: "error",
+      summary,
+      completedAt: null,
+      error: result.error,
+    });
+    setStatus((currentStatus) => ({
+      state: "error",
+      lastSyncedAt: currentStatus.lastSyncedAt,
+      error: result.error,
+    }));
+  }, [isAvailable, user]);
 
   const deleteRoutineFromCloud = useCallback(
     async (localId: string) => {
@@ -219,9 +338,19 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     statusLabel: getCloudSyncStatusLabel(status.state),
     isAvailable,
     isAuthenticated: Boolean(user),
+    migration,
     syncNow: runSync,
+    saveDeviceDataToAccount,
     deleteRoutineFromCloud,
-  }), [deleteRoutineFromCloud, isAvailable, runSync, status, user]);
+  }), [
+    deleteRoutineFromCloud,
+    isAvailable,
+    migration,
+    runSync,
+    saveDeviceDataToAccount,
+    status,
+    user,
+  ]);
 
   return (
     <CloudSyncContext.Provider value={value}>

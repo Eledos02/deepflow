@@ -4726,6 +4726,30 @@ a:focus-visible {
   line-height: 1.45;
 }
 
+.workspace-sidebar__sync button {
+  min-height: 34px;
+  margin-top: 7px;
+  padding: 0 10px;
+  border: 1px solid rgba(223, 255, 145, 0.22);
+  border-radius: 999px;
+  background: rgba(223, 255, 145, 0.1);
+  color: var(--lime);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.workspace-sidebar__sync button:hover:not(:disabled),
+.workspace-sidebar__sync button:focus-visible {
+  background: rgba(223, 255, 145, 0.16);
+  outline: none;
+}
+
+.workspace-sidebar__sync button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
 .workspace-sidebar__sync[data-state="synced"] strong {
   color: var(--lime);
 }
@@ -6914,6 +6938,7 @@ a:focus-visible {
 
 .account-detail-grid article,
 .account-local-note,
+.account-migration-card,
 .account-cloud-sync-card {
   padding: 18px;
   border: 1px solid rgba(19, 32, 25, 0.05);
@@ -6964,6 +6989,82 @@ a:focus-visible {
   flex: 0 0 auto;
 }
 
+.account-migration-card {
+  display: grid;
+  gap: 16px;
+  border-color: rgba(124, 139, 116, 0.08);
+  background: rgba(255, 254, 250, 0.7);
+}
+
+.account-migration-card .eyebrow {
+  margin-bottom: 6px;
+}
+
+.account-migration-card strong {
+  display: block;
+  color: var(--ink);
+}
+
+.account-migration-card p {
+  max-width: 680px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+
+.account-migration-card small {
+  display: block;
+  max-width: 720px;
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.account-migration-card__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.account-migration-card__summary div {
+  padding: 12px;
+  border: 1px solid rgba(19, 32, 25, 0.045);
+  border-radius: 12px;
+  background: rgba(247, 245, 239, 0.56);
+}
+
+.account-migration-card__summary dt {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-migration-card__summary dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.account-migration-card[data-state="completed"] {
+  border-color: rgba(107, 130, 72, 0.08);
+  background: rgba(242, 251, 216, 0.42);
+}
+
+.account-migration-card[data-state="error"] {
+  background: rgba(255, 248, 235, 0.72);
+}
+
+.account-migration-card .button {
+  width: max-content;
+}
+
 .account-detail-grid span {
   display: block;
   margin-bottom: 6px;
@@ -6994,9 +7095,14 @@ a:focus-visible {
     flex-direction: column;
   }
 
-  .account-cloud-sync-card .button {
+  .account-cloud-sync-card .button,
+  .account-migration-card .button {
     width: 100%;
     justify-content: center;
+  }
+
+  .account-migration-card__summary {
+    grid-template-columns: 1fr;
   }
 }
 

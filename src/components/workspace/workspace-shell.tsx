@@ -29,7 +29,13 @@ export function WorkspaceShell() {
   const [activeSection, setActiveSection] =
     useState<WorkspaceSection>("Overview");
   const { profile, user } = useAuth();
-  const { isAuthenticated, status, statusLabel } = useCloudSync();
+  const {
+    isAuthenticated,
+    migration,
+    saveDeviceDataToAccount,
+    status,
+    statusLabel,
+  } = useCloudSync();
   const greeting =
     user && profile?.displayName
       ? getWorkspaceGreeting(profile.displayName)
@@ -58,6 +64,17 @@ export function WorkspaceShell() {
         <div className="workspace-sidebar__sync" data-state={status.state}>
           <span>{isAuthenticated ? "Cloud sync" : "Local-first"}</span>
           <strong>{statusLabel}</strong>
+          {isAuthenticated &&
+          migration.summary.hasData &&
+          migration.status !== "completed" ? (
+            <button
+              disabled={migration.status === "saving"}
+              onClick={() => void saveDeviceDataToAccount()}
+              type="button"
+            >
+              {migration.status === "saving" ? "Saving..." : "Save device data"}
+            </button>
+          ) : null}
         </div>
       </aside>
 

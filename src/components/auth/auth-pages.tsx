@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import { useAuth } from "@/features/auth/auth-provider";
 import { getAvatarInitial, validateDisplayName } from "@/features/auth/profile";
@@ -206,11 +206,26 @@ export function LoginPageContent() {
 
 export function AccountPageContent() {
   const { isConfigured, isLoading, profile, signOut, updateDisplayName, user } = useAuth();
-  const { isAvailable, status, statusLabel, syncNow } = useCloudSync();
+  const {
+    isAvailable,
+    migration,
+    saveDeviceDataToAccount,
+    status,
+    statusLabel,
+    syncNow,
+  } = useCloudSync();
   const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const syncId = window.setTimeout(() => {
+      setDisplayName(profile?.displayName ?? "");
+    }, 0);
+
+    return () => window.clearTimeout(syncId);
+  }, [profile?.displayName]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -244,6 +259,22 @@ export function AccountPageContent() {
   const memberSince = profile?.createdAt
     ? new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(new Date(profile.createdAt))
     : "Recently";
+  const canSaveDeviceData =
+    isAvailable &&
+    migration.summary.hasData &&
+    migration.status !== "completed";
+  const migrationTitle =
+    migration.status === "completed"
+      ? "Saved to your DeepFlow account."
+      : migration.status === "error"
+        ? "Saved locally. Cloud save will retry."
+        : migration.summary.hasData
+          ? "Save this device data"
+          : "This device is already synced.";
+  const migrationDescription =
+    migration.summary.hasData
+      ? "You have focus history on this device. Save it to your DeepFlow account so it can be restored later."
+      : "There is no local focus history, routine, or goal waiting to be saved from this device.";
 
   return (
     <section className="auth-page">
@@ -296,6 +327,45 @@ export function AccountPageContent() {
           >
             {status.state === "syncing" ? "Syncing..." : "Sync now"}
           </button>
+        </aside>
+        <aside className="account-migration-card" data-state={migration.status}>
+          <div>
+            <span className="eyebrow">Device data</span>
+            <strong>{migrationTitle}</strong>
+            <p>{migrationDescription}</p>
+            <dl className="account-migration-card__summary" aria-label="Local data found">
+              <div>
+                <dt>Sessions found</dt>
+                <dd>{migration.summary.sessionsFound}</dd>
+              </div>
+              <div>
+                <dt>Routines found</dt>
+                <dd>{migration.summary.routinesFound}</dd>
+              </div>
+              <div>
+                <dt>Goal found</dt>
+                <dd>{migration.summary.goalFound ? "Yes" : "No"}</dd>
+              </div>
+            </dl>
+            <small>
+              DeepFlow keeps your work local first. Saving to your account
+              creates a cloud backup without deleting anything from this device.
+            </small>
+          </div>
+          {migration.summary.hasData ? (
+            <button
+              className="button button--dark"
+              disabled={!canSaveDeviceData || migration.status === "saving"}
+              onClick={() => void saveDeviceDataToAccount()}
+              type="button"
+            >
+              {migration.status === "saving"
+                ? "Saving your device data..."
+                : migration.status === "completed"
+                  ? "Saved"
+                  : "Save to my account"}
+            </button>
+          ) : null}
         </aside>
         <aside className="account-local-note">
           <strong>Local-first by design</strong>

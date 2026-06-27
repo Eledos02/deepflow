@@ -158,4 +158,23 @@ describe("cloud sync service", () => {
     expect(result.status).toBe("error");
     expect(result.summary.goals).toBe(0);
   });
+
+  it("can skip goal upsert for explicit local-data migration when no stored goal exists", async () => {
+    const { supabase, upserts } = createSupabaseMock();
+
+    const result = await syncDeepFlowData({
+      supabase,
+      userId,
+      localData: snapshot(),
+      mergeCloudToLocal: false,
+      syncGoal: false,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(upserts.map((call) => call.table)).toEqual([
+      "focus_sessions",
+      "focus_routines",
+    ]);
+    expect(result.summary.goals).toBe(0);
+  });
 });

@@ -56,6 +56,7 @@ type SyncDeepFlowDataOptions = {
   userId: string;
   localData?: LocalSyncSnapshot;
   mergeCloudToLocal?: boolean;
+  syncGoal?: boolean;
 };
 
 type DeleteCloudRoutineOptions = {
@@ -228,6 +229,7 @@ export async function syncDeepFlowData({
   userId,
   localData = readLocalSyncSnapshot(),
   mergeCloudToLocal = true,
+  syncGoal = true,
 }: SyncDeepFlowDataOptions): Promise<CloudSyncResult> {
   const summary = { ...emptySummary };
 
@@ -238,7 +240,9 @@ export async function syncDeepFlowData({
       stats: localData.stats,
       userId,
     });
-    const goalRow = mapWorkspaceGoalToCloudRow(localData.goal, userId);
+    const goalRow = syncGoal
+      ? mapWorkspaceGoalToCloudRow(localData.goal, userId)
+      : null;
     const routineRows = mapWorkspaceRoutinesToCloudRows(localData.routines, userId);
 
     if (focusRows.length > 0) {
@@ -249,11 +253,13 @@ export async function syncDeepFlowData({
       summary.focusSessions = focusRows.length;
     }
 
-    const { error: goalError } = await supabase
-      .from("focus_goals")
-      .upsert(goalRow, { onConflict: "user_id,local_id" });
-    if (goalError) throw new Error(summarizeSupabaseError(goalError));
-    summary.goals = 1;
+    if (goalRow) {
+      const { error: goalError } = await supabase
+        .from("focus_goals")
+        .upsert(goalRow, { onConflict: "user_id,local_id" });
+      if (goalError) throw new Error(summarizeSupabaseError(goalError));
+      summary.goals = 1;
+    }
 
     if (routineRows.length > 0) {
       const { error } = await supabase
