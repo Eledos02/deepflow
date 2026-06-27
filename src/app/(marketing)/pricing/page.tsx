@@ -115,7 +115,7 @@ export default function PricingPage() {
           <article>
             <TimerIcon />
             <div>
-              <strong>Useful before you upgrade</strong>
+              <strong>Useful before paid access exists</strong>
               <p>The core timer remains free and starts without an account.</p>
             </div>
           </article>

@@ -65,15 +65,15 @@ import {
 } from "@/features/workspace/workspace-canvas-utils";
 
 const foundingMemberFeatures = [
-  "Unlimited Notes",
-  "Unlimited Workspaces",
-  "Cloud Sync",
+  "Expanded Notes",
+  "More Workspace Capacity",
+  "Account Cloud Backup",
   "Focus Journal",
   "Categories & Colors",
   "Search",
   "Export",
-  "Advanced Analytics",
-  "Founder Badge",
+  "Deeper Insights",
+  "Founder Updates",
 ] as const;
 
 type DragState = {
@@ -1275,7 +1275,7 @@ export function NotesCanvas() {
         <div>
           <strong>{notes.length} / {MAX_FREE_WORKSPACE_NOTES} notes used</strong>
           <p>
-            Free plan includes one workspace, up to 10 local notes, and{" "}
+            Free workspace includes one board, up to 10 local notes, and{" "}
             {MAX_FREE_WORKSPACE_CONNECTIONS} connections.
           </p>
         </div>
@@ -1285,9 +1285,9 @@ export function NotesCanvas() {
             <h3>Workspace limit reached</h3>
             <p>
               Free users can create up to 10 notes and{" "}
-              {MAX_FREE_WORKSPACE_CONNECTIONS} connections. Founding Members
-              get unlimited notes, unlimited workspaces, cloud sync, advanced
-              analytics, and future Workspace features.
+              {MAX_FREE_WORKSPACE_CONNECTIONS} connections. Expanded canvas
+              capacity and future Workspace features are planned, but supporter
+              access is not active yet.
             </p>
             <div className="workspace-upgrade-card__features">
               {foundingMemberFeatures.map((feature) => (
@@ -1301,7 +1301,7 @@ export function NotesCanvas() {
               className="button button--light button--full"
               href="/pricing?source=workspace_upgrade#founding-member"
             >
-              Become a Founding Member
+              Join updates
             </Link>
           </aside>
         ) : null}

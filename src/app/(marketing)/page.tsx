@@ -80,7 +80,7 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="hero__waitlist">
-              <span>Founding Member early access</span>
+              <span>Founding Member updates</span>
               <FoundingMemberWaitlist source="homepage_hero" variant="compact" />
             </div>
             <div className="hero__trust">

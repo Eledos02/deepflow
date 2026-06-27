@@ -660,7 +660,7 @@ export function TimerExperience({
             Saved locally on this device
           </span>
           <Link className="session-upgrade-link" href="/pricing">
-            Sync with Pro
+            Cloud backup with account
           </Link>
         </div>
       ) : null}

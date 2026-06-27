@@ -377,12 +377,12 @@ export function RoutinesView() {
           <span className="workspace-upgrade-card__badge">Routine limit</span>
           <h3>Keep every ritual close.</h3>
           <p>
-            Free users can create up to 3 routines. Founding Members get
-            unlimited routines, cloud sync, routine history, advanced insights,
-            and future workspace automation.
+            Free users can create up to 3 routines. Expanded routine history,
+            deeper insights, and future workspace automation are planned for
+            account features.
           </p>
           <Link className="button button--light" href="/pricing?source=workspace_upgrade#founding-member">
-            Become a Founding Member
+            Join updates
           </Link>
         </aside>
       ) : null}

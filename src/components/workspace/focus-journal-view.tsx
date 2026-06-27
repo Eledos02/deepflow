@@ -190,11 +190,11 @@ export function FocusJournalView() {
           <h3>Unlock your full focus history</h3>
           <p>
             Free users can view the {FREE_FOCUS_JOURNAL_VISIBLE_LIMIT} most
-            recent journal entries. Founding Members get unlimited journal
-            history, cloud sync, weekly reports, and advanced focus insights.
+            recent journal entries. Expanded journal history and deeper focus
+            insights are planned for future account features.
           </p>
           <Link className="button button--light" href="/pricing?source=workspace_upgrade#founding-member">
-            Become a Founding Member
+            Join updates
           </Link>
         </aside>
       ) : null}
