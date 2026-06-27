@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { getTimerPath, isConfiguredTimer } from "@/config/timers";
+import { useCloudSync } from "@/features/sync/cloud-sync-provider";
 import { writeRoutineSessionHandoff } from "@/features/timer/routine-session-handoff";
 import {
   MAX_FREE_WORKSPACE_ROUTINES,
@@ -44,6 +45,7 @@ function formatCreatedDate(value: string) {
 
 export function RoutinesView() {
   const router = useRouter();
+  const { deleteRoutineFromCloud } = useCloudSync();
   const [routines, setRoutines] = useState<WorkspaceRoutine[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [editor, setEditor] = useState<RoutineEditor | null>(null);
@@ -129,6 +131,7 @@ export function RoutinesView() {
     }
 
     saveRoutines(deleteWorkspaceRoutine(routines, routineId));
+    void deleteRoutineFromCloud(routineId);
     setConfirmingDeleteId(null);
   };
 

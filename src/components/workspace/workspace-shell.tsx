@@ -7,6 +7,7 @@ import { NotesCanvas } from "@/components/workspace/notes-canvas";
 import { RoutinesView } from "@/components/workspace/routines-view";
 import { useAuth } from "@/features/auth/auth-provider";
 import { getWorkspaceGreeting } from "@/features/auth/profile";
+import { useCloudSync } from "@/features/sync/cloud-sync-provider";
 import {
   WorkspaceGoalsView,
   WorkspaceInsightsView,
@@ -28,6 +29,7 @@ export function WorkspaceShell() {
   const [activeSection, setActiveSection] =
     useState<WorkspaceSection>("Overview");
   const { profile, user } = useAuth();
+  const { isAuthenticated, status, statusLabel } = useCloudSync();
   const greeting =
     user && profile?.displayName
       ? getWorkspaceGreeting(profile.displayName)
@@ -53,6 +55,10 @@ export function WorkspaceShell() {
             </button>
           ))}
         </nav>
+        <div className="workspace-sidebar__sync" data-state={status.state}>
+          <span>{isAuthenticated ? "Cloud sync" : "Local-first"}</span>
+          <strong>{statusLabel}</strong>
+        </div>
       </aside>
 
       <main className="workspace-main">

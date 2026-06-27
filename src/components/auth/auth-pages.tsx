@@ -6,6 +6,8 @@ import { FormEvent, useState } from "react";
 
 import { useAuth } from "@/features/auth/auth-provider";
 import { getAvatarInitial, validateDisplayName } from "@/features/auth/profile";
+import { useCloudSync } from "@/features/sync/cloud-sync-provider";
+import { getCloudSyncCardState } from "@/features/sync/sync-status";
 
 function AuthUnavailable() {
   return (
@@ -204,6 +206,7 @@ export function LoginPageContent() {
 
 export function AccountPageContent() {
   const { isConfigured, isLoading, profile, signOut, updateDisplayName, user } = useAuth();
+  const { isAvailable, status, statusLabel, syncNow } = useCloudSync();
   const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
@@ -272,9 +275,31 @@ export function AccountPageContent() {
           <article><span>Current plan</span><strong>Free</strong></article>
           <article><span>Founding Member</span><strong>Not active yet</strong></article>
         </div>
+        <aside className="account-cloud-sync-card" data-state={status.state}>
+          <div>
+            <span className="eyebrow">Cloud sync</span>
+            <strong>{getCloudSyncCardState(status.state, Boolean(user))}</strong>
+            <p>
+              Your focus sessions, routines, and goals can sync to your
+              DeepFlow account. Notes Canvas sync is coming later.
+            </p>
+            <small>{statusLabel}</small>
+            {!isAvailable ? (
+              <small>Cloud sync is unavailable in this environment.</small>
+            ) : null}
+          </div>
+          <button
+            className="button button--dark"
+            disabled={!isAvailable || status.state === "syncing"}
+            onClick={() => void syncNow()}
+            type="button"
+          >
+            {status.state === "syncing" ? "Syncing..." : "Sync now"}
+          </button>
+        </aside>
         <aside className="account-local-note">
           <strong>Local-first by design</strong>
-          <p>Your current workspace is stored locally on this device. Cloud sync is coming later.</p>
+          <p>Your work is saved locally first. Cloud sync keeps a backup for your account.</p>
         </aside>
         <button className="button button--ghost" onClick={() => void signOut()} type="button">Sign out</button>
       </div>

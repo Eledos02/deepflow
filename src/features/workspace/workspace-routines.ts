@@ -5,6 +5,8 @@ import {
 } from "./workspace-notes";
 
 export const WORKSPACE_ROUTINES_STORAGE_KEY = "deepflow:workspace-routines:v1";
+export const WORKSPACE_ROUTINES_UPDATED_EVENT =
+  "deepflow:workspace-routines-updated";
 export const MAX_FREE_WORKSPACE_ROUTINES = 3;
 
 export const WORKSPACE_ROUTINE_TEMPLATES = [
@@ -219,6 +221,7 @@ export function writeWorkspaceRoutines(routines: WorkspaceRoutine[]) {
       WORKSPACE_ROUTINES_STORAGE_KEY,
       JSON.stringify(parseWorkspaceRoutines(routines)),
     );
+    window.dispatchEvent(new Event(WORKSPACE_ROUTINES_UPDATED_EVENT));
   } catch {
     // Routines are local-first and must never block the workspace UI.
   }
