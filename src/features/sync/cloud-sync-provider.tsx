@@ -259,8 +259,6 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         error: null,
       });
       updateHealthMetadata({
-        lastSavedAt: completedAt,
-        lastSaveStatus: "completed",
         lastErrorCode: null,
       });
       void refreshRestore();

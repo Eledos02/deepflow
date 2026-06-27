@@ -109,6 +109,28 @@ function stubLocalStorage(initial: Record<string, string> = {}) {
 }
 
 describe("cloud restore summary", () => {
+  it("detects cloud data on a new device without writing localStorage", () => {
+    const values = stubLocalStorage();
+
+    const summary = getCloudRestoreSummary({
+      cloudData: cloudSnapshot(),
+      localData: localSnapshot(),
+      hasStoredGoal: false,
+      userId,
+    });
+
+    expect(summary).toEqual({
+      sessionsAvailable: 1,
+      routinesAvailable: 1,
+      goalAvailable: true,
+      hasData: true,
+    });
+    expect(values.get("deepflow:completed-sessions:v1")).toBeUndefined();
+    expect(values.get("deepflow:focus-journal:v1")).toBeUndefined();
+    expect(values.get("deepflow:workspace-routines:v1")).toBeUndefined();
+    expect(values.get("deepflow:workspace-weekly-goal:v1")).toBeUndefined();
+  });
+
   it("detects cloud records missing from local data", () => {
     expect(
       getCloudRestoreSummary({

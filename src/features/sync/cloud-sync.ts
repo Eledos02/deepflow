@@ -230,7 +230,7 @@ export async function syncDeepFlowData({
   supabase,
   userId,
   localData = readLocalSyncSnapshot(),
-  mergeCloudToLocal = true,
+  mergeCloudToLocal = false,
   syncGoal = true,
 }: SyncDeepFlowDataOptions): Promise<CloudSyncResult> {
   const summary = { ...emptySummary };

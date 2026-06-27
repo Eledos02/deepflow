@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { TimerStats } from "@/features/timer/timer-stats";
 
@@ -61,6 +61,31 @@ function snapshot(): LocalSyncSnapshot {
   };
 }
 
+function emptySnapshot(): LocalSyncSnapshot {
+  return {
+    completedSessions: [],
+    journalEntries: [],
+    stats: emptyStats(),
+    goal: { sessions: 10, minutes: 250 },
+    routines: [],
+  };
+}
+
+function stubLocalStorage(initial: Record<string, string> = {}) {
+  const values = new Map(Object.entries(initial));
+  const localStorage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  };
+
+  vi.stubGlobal("window", {
+    dispatchEvent: vi.fn(),
+    localStorage,
+  });
+
+  return values;
+}
+
 function createSupabaseMock({ failTable }: { failTable?: string } = {}) {
   const upserts: UpsertCall[] = [];
 
@@ -84,6 +109,10 @@ function createSupabaseMock({ failTable }: { failTable?: string } = {}) {
 }
 
 describe("cloud sync service", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("upserts completed sessions, weekly goals, and routines with local id conflict keys", async () => {
     const { supabase, upserts } = createSupabaseMock();
 
@@ -194,5 +223,34 @@ describe("cloud sync service", () => {
       "focus_routines",
     ]);
     expect(upserts.map((call) => call.table).join(" ")).not.toMatch(/note|canvas/i);
+  });
+
+  it("does not auto-restore cloud data during default sync on a new device", async () => {
+    const values = stubLocalStorage();
+    const supabase = {
+      from() {
+        return {
+          select() {
+            throw new Error("Cloud data should not be selected for automatic restore.");
+          },
+          upsert() {
+            return Promise.resolve({ error: null });
+          },
+        };
+      },
+    } as unknown as SupabaseClient;
+
+    const result = await syncDeepFlowData({
+      supabase,
+      userId,
+      localData: emptySnapshot(),
+      syncGoal: false,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(values.get("deepflow:completed-sessions:v1")).toBeUndefined();
+    expect(values.get("deepflow:focus-journal:v1")).toBeUndefined();
+    expect(values.get("deepflow:workspace-routines:v1")).toBeUndefined();
+    expect(values.get("deepflow:workspace-weekly-goal:v1")).toBeUndefined();
   });
 });

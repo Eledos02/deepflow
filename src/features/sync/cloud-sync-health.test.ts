@@ -169,6 +169,75 @@ describe("cloud sync health status", () => {
     expect(health.workspaceStatus).toBe("Cloud data available");
   });
 
+  it("keeps local counts empty before restore while showing cloud availability", () => {
+    const migration = migrationState();
+    const health = deriveCloudSyncHealth({
+      isAuthenticated: true,
+      isAvailable: true,
+      migration,
+      restore: restoreState({
+        status: "available",
+        summary: {
+          sessionsAvailable: 2,
+          routinesAvailable: 1,
+          goalAvailable: true,
+          hasData: true,
+        },
+      }),
+      status: syncStatus({ state: "synced" }),
+      metadata: {
+        ...emptyCloudSyncHealthMetadata,
+        lastCloudSessionsCount: 2,
+        lastCloudRoutinesCount: 1,
+        lastCloudGoalFound: true,
+      },
+      now,
+    });
+
+    expect(migration.summary.sessionsFound).toBe(0);
+    expect(migration.summary.routinesFound).toBe(0);
+    expect(migration.summary.goalFound).toBe(false);
+    expect(health.kind).toBe("restore-available");
+  });
+
+  it("becomes up to date after explicit restore completes", () => {
+    const health = deriveCloudSyncHealth({
+      isAuthenticated: true,
+      isAvailable: true,
+      migration: migrationState({
+        status: "completed",
+        summary: {
+          sessionsFound: 2,
+          routinesFound: 1,
+          goalFound: true,
+          hasData: true,
+        },
+      }),
+      restore: restoreState({
+        status: "completed",
+        summary: {
+          sessionsAvailable: 0,
+          routinesAvailable: 0,
+          goalAvailable: false,
+          hasData: false,
+        },
+        completedAt: restoredAt,
+      }),
+      status: syncStatus({ state: "synced" }),
+      metadata: {
+        ...emptyCloudSyncHealthMetadata,
+        lastRestoredAt: restoredAt,
+        lastCloudSessionsCount: 2,
+        lastCloudRoutinesCount: 1,
+        lastCloudGoalFound: true,
+      },
+      now,
+    });
+
+    expect(health.kind).toBe("up-to-date");
+    expect(health.lastRestoredLabel).toBe("Yesterday, 6:20 PM");
+  });
+
   it("shows a safe generic error for failed cloud checks", () => {
     const health = deriveCloudSyncHealth({
       isAuthenticated: true,
@@ -216,5 +285,26 @@ describe("cloud sync health status", () => {
       lastCloudGoalFound: true,
     });
     expect(values.has(getCloudSyncHealthStorageKey("another-user"))).toBe(false);
+  });
+
+  it("health check metadata does not imply a save timestamp", () => {
+    const health = deriveCloudSyncHealth({
+      isAuthenticated: true,
+      isAvailable: true,
+      migration: migrationState(),
+      restore: restoreState(),
+      status: syncStatus({ state: "synced" }),
+      metadata: {
+        ...emptyCloudSyncHealthMetadata,
+        lastCheckedAt: now.toISOString(),
+        lastCloudSessionsCount: 3,
+        lastCloudRoutinesCount: 1,
+        lastCloudGoalFound: true,
+      },
+      now,
+    });
+
+    expect(health.lastCheckedLabel).toBe("Just now");
+    expect(health.lastSavedLabel).toBe("Never");
   });
 });

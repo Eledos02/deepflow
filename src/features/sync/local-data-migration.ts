@@ -183,7 +183,7 @@ export async function saveLocalDataToAccount({
     supabase,
     userId,
     localData,
-    mergeCloudToLocal: true,
+    mergeCloudToLocal: false,
     syncGoal: hasStoredGoal,
   });
 }
