@@ -40,6 +40,14 @@ import {
   syncDeepFlowData,
 } from "./cloud-sync";
 import {
+  deriveCloudSyncHealth,
+  emptyCloudSyncHealthMetadata,
+  mergeCloudSyncHealthMetadata,
+  readCloudSyncHealthMetadata,
+  type CloudSyncHealth,
+  type CloudSyncHealthMetadata,
+} from "./cloud-sync-health";
+import {
   fetchCloudRestoreSnapshot,
   getEffectiveCloudRestoreState,
   getCloudRestoreSummary,
@@ -62,6 +70,7 @@ import type { CloudSyncStatus } from "./sync-types";
 type CloudSyncContextValue = {
   status: CloudSyncStatus;
   statusLabel: string;
+  health: CloudSyncHealth;
   isAvailable: boolean;
   isAuthenticated: boolean;
   migration: LocalDataMigrationState;
@@ -128,10 +137,23 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     emptyMigrationState,
   );
   const [restore, setRestore] = useState<CloudRestoreState>(emptyRestoreState);
+  const [healthMetadata, setHealthMetadata] = useState<CloudSyncHealthMetadata>(
+    emptyCloudSyncHealthMetadata,
+  );
   const syncTimeoutRef = useRef<number | null>(null);
   const isSyncingRef = useRef(false);
   const isMigratingRef = useRef(false);
   const isRestoringRef = useRef(false);
+
+  const updateHealthMetadata = useCallback((
+    metadata: Partial<CloudSyncHealthMetadata>,
+  ) => {
+    if (!user) return emptyCloudSyncHealthMetadata;
+
+    const nextMetadata = mergeCloudSyncHealthMetadata(user.id, metadata);
+    setHealthMetadata(nextMetadata);
+    return nextMetadata;
+  }, [user]);
 
   const refreshMigration = useCallback(() => {
     if (!user) {
@@ -163,8 +185,13 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       supabase,
       userId: user.id,
     });
+    const checkedAt = new Date().toISOString();
 
     if (!cloudSnapshot.ok) {
+      updateHealthMetadata({
+        lastCheckedAt: checkedAt,
+        lastErrorCode: "check_failed",
+      });
       setRestore({
         ...emptyRestoreState,
         status: "error",
@@ -173,16 +200,29 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    const summary = getCloudRestoreSummary({
+      cloudData: cloudSnapshot.data,
+      userId: user.id,
+    });
+
+    updateHealthMetadata({
+      lastCheckedAt: checkedAt,
+      lastErrorCode: null,
+      lastCloudSessionsCount: cloudSnapshot.data.sessions.length,
+      lastCloudRoutinesCount: cloudSnapshot.data.routines.length,
+      lastCloudGoalFound: Boolean(cloudSnapshot.data.goal),
+      lastRestorableSessionsCount: summary.sessionsAvailable,
+      lastRestorableRoutinesCount: summary.routinesAvailable,
+      lastRestorableGoalAvailable: summary.goalAvailable,
+    });
+
     setRestore(
       getEffectiveCloudRestoreState({
         storedState: readCloudRestoreState(user.id),
-        summary: getCloudRestoreSummary({
-          cloudData: cloudSnapshot.data,
-          userId: user.id,
-        }),
+        summary,
       }),
     );
-  }, [isAvailable, user]);
+  }, [isAvailable, updateHealthMetadata, user]);
 
   const runSync = useCallback(async () => {
     if (!isAvailable || !user) {
@@ -212,20 +252,31 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     isSyncingRef.current = false;
 
     if (result.ok) {
+      const completedAt = new Date().toISOString();
       setStatus({
         state: "synced",
-        lastSyncedAt: new Date().toISOString(),
+        lastSyncedAt: completedAt,
         error: null,
       });
+      updateHealthMetadata({
+        lastSavedAt: completedAt,
+        lastSaveStatus: "completed",
+        lastErrorCode: null,
+      });
+      void refreshRestore();
       return;
     }
 
+    updateHealthMetadata({
+      lastSaveStatus: "error",
+      lastErrorCode: "save_failed",
+    });
     setStatus((currentStatus) => ({
       state: "error",
       lastSyncedAt: currentStatus.lastSyncedAt,
       error: result.error,
     }));
-  }, [isAvailable, user]);
+  }, [isAvailable, refreshRestore, updateHealthMetadata, user]);
 
   const scheduleSync = useCallback(() => {
     if (!user || !isAvailable) return;
@@ -242,6 +293,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) {
       const resetId = window.setTimeout(() => {
+        setHealthMetadata(emptyCloudSyncHealthMetadata);
         setStatus({
           state: "offline/local-only",
           lastSyncedAt: null,
@@ -255,6 +307,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
 
     if (!isAvailable) {
       const resetId = window.setTimeout(() => {
+        setHealthMetadata(readCloudSyncHealthMetadata(user.id));
         setStatus({
           state: "offline/local-only",
           lastSyncedAt: null,
@@ -267,6 +320,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     }
 
     const initialSyncId = window.setTimeout(() => {
+      setHealthMetadata(readCloudSyncHealthMetadata(user.id));
       refreshMigration();
       void refreshRestore();
       void runSync();
@@ -347,6 +401,11 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         status: "completed",
         completedAt,
       });
+      updateHealthMetadata({
+        lastSavedAt: completedAt,
+        lastSaveStatus: "completed",
+        lastErrorCode: null,
+      });
       setMigration({
         status: "completed",
         summary: getLocalDataMigrationSummary({ userId: user.id }),
@@ -366,6 +425,10 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       status: "error",
       error: result.error,
     });
+    updateHealthMetadata({
+      lastSaveStatus: "error",
+      lastErrorCode: "save_failed",
+    });
     setMigration({
       status: "error",
       summary,
@@ -377,7 +440,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       lastSyncedAt: currentStatus.lastSyncedAt,
       error: result.error,
     }));
-  }, [isAvailable, refreshRestore, user]);
+  }, [isAvailable, refreshRestore, updateHealthMetadata, user]);
 
   const restoreCloudData = useCallback(async () => {
     if (!isAvailable || !user || isRestoringRef.current) return;
@@ -406,6 +469,11 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         status: "completed",
         completedAt,
       });
+      updateHealthMetadata({
+        lastRestoredAt: completedAt,
+        lastRestoreStatus: "completed",
+        lastErrorCode: null,
+      });
       setRestore({
         status: "completed",
         summary: result.summary,
@@ -419,12 +487,17 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         error: null,
       });
       refreshMigration();
+      void refreshRestore();
       return;
     }
 
     writeCloudRestoreState(user.id, {
       status: "error",
       error: result.error,
+    });
+    updateHealthMetadata({
+      lastRestoreStatus: "error",
+      lastErrorCode: "restore_failed",
     });
     setRestore({
       status: "error",
@@ -433,7 +506,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       dismissedAt: null,
       error: result.error,
     });
-  }, [isAvailable, refreshMigration, user]);
+  }, [isAvailable, refreshMigration, refreshRestore, updateHealthMetadata, user]);
 
   const dismissCloudRestore = useCallback(() => {
     if (!user) return;
@@ -474,9 +547,19 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     [isAvailable, user],
   );
 
+  const health = useMemo(() => deriveCloudSyncHealth({
+    isAuthenticated: Boolean(user),
+    isAvailable,
+    migration,
+    restore,
+    status,
+    metadata: healthMetadata,
+  }), [healthMetadata, isAvailable, migration, restore, status, user]);
+
   const value = useMemo<CloudSyncContextValue>(() => ({
     status,
     statusLabel: getCloudSyncStatusLabel(status.state),
+    health,
     isAvailable,
     isAuthenticated: Boolean(user),
     migration,
@@ -489,6 +572,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   }), [
     deleteRoutineFromCloud,
     dismissCloudRestore,
+    health,
     isAvailable,
     migration,
     restore,

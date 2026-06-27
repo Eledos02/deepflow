@@ -177,4 +177,22 @@ describe("cloud sync service", () => {
     ]);
     expect(result.summary.goals).toBe(0);
   });
+
+  it("keeps Notes Canvas local-only by syncing only focus tables", async () => {
+    const { supabase, upserts } = createSupabaseMock();
+
+    await syncDeepFlowData({
+      supabase,
+      userId,
+      localData: snapshot(),
+      mergeCloudToLocal: false,
+    });
+
+    expect(upserts.map((call) => call.table)).toEqual([
+      "focus_sessions",
+      "focus_goals",
+      "focus_routines",
+    ]);
+    expect(upserts.map((call) => call.table).join(" ")).not.toMatch(/note|canvas/i);
+  });
 });

@@ -30,13 +30,12 @@ export function WorkspaceShell() {
     useState<WorkspaceSection>("Overview");
   const { profile, user } = useAuth();
   const {
+    health,
     restore,
     restoreCloudData,
     isAuthenticated,
     migration,
     saveDeviceDataToAccount,
-    status,
-    statusLabel,
   } = useCloudSync();
   const greeting =
     user && profile?.displayName
@@ -63,9 +62,9 @@ export function WorkspaceShell() {
             </button>
           ))}
         </nav>
-        <div className="workspace-sidebar__sync" data-state={status.state}>
+        <div className="workspace-sidebar__sync" data-state={health.kind}>
           <span>{isAuthenticated ? "Cloud sync" : "Local-first"}</span>
-          <strong>{statusLabel}</strong>
+          <strong>{health.workspaceStatus}</strong>
           {isAuthenticated &&
           migration.summary.hasData &&
           migration.status !== "completed" ? (

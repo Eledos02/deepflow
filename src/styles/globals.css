@@ -4750,8 +4750,12 @@ a:focus-visible {
   opacity: 0.68;
 }
 
-.workspace-sidebar__sync[data-state="synced"] strong {
+.workspace-sidebar__sync[data-state="up-to-date"] strong {
   color: var(--lime);
+}
+
+.workspace-sidebar__sync[data-state="restore-available"] strong {
+  color: #d8eee5;
 }
 
 .workspace-sidebar__sync[data-state="error"] strong {
@@ -6956,36 +6960,48 @@ a:focus-visible {
 }
 
 .account-detail-grid article,
-.account-local-note,
-.account-migration-card,
-.account-restore-card,
-.account-cloud-sync-card {
+.account-cloud-backup-card {
   padding: 18px;
   border: 1px solid rgba(19, 32, 25, 0.05);
   border-radius: 16px;
   background: rgba(255, 254, 250, 0.62);
 }
 
-.account-cloud-sync-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+.account-cloud-backup-card {
+  display: grid;
+  gap: 16px;
   border-color: rgba(107, 130, 72, 0.08);
   background:
     linear-gradient(135deg, rgba(223, 255, 145, 0.18), rgba(255, 254, 250, 0.7));
 }
 
-.account-cloud-sync-card .eyebrow {
+.account-cloud-backup-card[data-state="error"] {
+  background: rgba(255, 248, 235, 0.72);
+}
+
+.account-cloud-backup-card[data-state="restore-available"] {
+  border-color: rgba(107, 130, 72, 0.16);
+  background:
+    linear-gradient(135deg, rgba(216, 238, 229, 0.48), rgba(255, 254, 250, 0.72));
+}
+
+.account-cloud-backup-card__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.account-cloud-backup-card .eyebrow {
   margin-bottom: 6px;
 }
 
-.account-cloud-sync-card strong {
+.account-cloud-backup-card strong {
   display: block;
   color: var(--ink);
 }
 
-.account-cloud-sync-card p {
+.account-cloud-backup-card p {
   max-width: 600px;
   margin: 6px 0 0;
   color: var(--muted);
@@ -6993,75 +7009,52 @@ a:focus-visible {
   line-height: 1.65;
 }
 
-.account-cloud-sync-card small {
+.account-cloud-backup-card__heading > span {
+  max-width: 220px;
+  padding: 8px 11px;
+  border: 1px solid rgba(19, 32, 25, 0.06);
+  border-radius: 999px;
+  background: rgba(255, 254, 250, 0.58);
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.account-cloud-backup-card small {
   display: block;
-  margin-top: 7px;
+  max-width: 720px;
   color: var(--ink-soft);
   font-size: 0.76rem;
-  font-weight: 700;
-}
-
-.account-cloud-sync-card[data-state="error"] {
-  background: rgba(255, 248, 235, 0.72);
-}
-
-.account-cloud-sync-card .button {
-  flex: 0 0 auto;
-}
-
-.account-migration-card,
-.account-restore-card {
-  display: grid;
-  gap: 16px;
-  border-color: rgba(124, 139, 116, 0.08);
-  background: rgba(255, 254, 250, 0.7);
-}
-
-.account-migration-card .eyebrow,
-.account-restore-card .eyebrow {
-  margin-bottom: 6px;
-}
-
-.account-migration-card strong,
-.account-restore-card strong {
-  display: block;
-  color: var(--ink);
-}
-
-.account-migration-card p,
-.account-restore-card p {
-  max-width: 680px;
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 0.85rem;
   line-height: 1.65;
 }
 
-.account-migration-card small,
-.account-restore-card small {
-  display: block;
-  max-width: 720px;
-  margin-top: 10px;
-  color: var(--ink-soft);
-  font-size: 0.76rem;
-  line-height: 1.55;
-}
-
-.account-migration-card__summary {
+.account-cloud-backup-card__metrics,
+.account-cloud-backup-card__restore,
+.account-cloud-backup-card__timeline {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  margin: 14px 0 0;
+  margin: 0;
 }
 
-.account-migration-card__summary div {
+.account-cloud-backup-card__metrics {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.account-cloud-backup-card__metrics div,
+.account-cloud-backup-card__restore div,
+.account-cloud-backup-card__timeline div {
   padding: 12px;
   border: 1px solid rgba(19, 32, 25, 0.045);
   border-radius: 12px;
   background: rgba(247, 245, 239, 0.56);
 }
 
-.account-migration-card__summary dt {
+.account-cloud-backup-card__metrics dt,
+.account-cloud-backup-card__restore dt,
+.account-cloud-backup-card__timeline dt {
   margin-bottom: 4px;
   color: var(--muted);
   font-size: 0.64rem;
@@ -7070,37 +7063,23 @@ a:focus-visible {
   text-transform: uppercase;
 }
 
-.account-migration-card__summary dd {
+.account-cloud-backup-card__metrics dd,
+.account-cloud-backup-card__restore dd,
+.account-cloud-backup-card__timeline dd {
   margin: 0;
   color: var(--ink);
   font-size: 0.92rem;
   font-weight: 800;
 }
 
-.account-migration-card[data-state="completed"] {
-  border-color: rgba(107, 130, 72, 0.08);
-  background: rgba(242, 251, 216, 0.42);
-}
-
-.account-restore-card[data-state="completed"] {
-  border-color: rgba(107, 130, 72, 0.08);
-  background: rgba(242, 251, 216, 0.42);
-}
-
-.account-migration-card[data-state="error"],
-.account-restore-card[data-state="error"] {
-  background: rgba(255, 248, 235, 0.72);
-}
-
-.account-migration-card .button,
-.account-restore-card .button {
-  width: max-content;
-}
-
-.account-restore-card__actions {
+.account-cloud-backup-card__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.account-cloud-backup-card__actions .button {
+  width: max-content;
 }
 
 .account-detail-grid span {
@@ -7117,34 +7096,29 @@ a:focus-visible {
   font-size: 0.92rem;
 }
 
-.account-local-note strong {
-  color: var(--ink);
-}
-
-.account-local-note p {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
 @media (max-width: 720px) {
-  .account-cloud-sync-card {
+  .account-cloud-backup-card__heading {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .account-cloud-sync-card .button,
-  .account-migration-card .button,
-  .account-restore-card .button {
+  .account-cloud-backup-card__heading > span {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .account-cloud-backup-card__actions .button {
     width: 100%;
     justify-content: center;
   }
 
-  .account-restore-card__actions {
+  .account-cloud-backup-card__actions {
     flex-direction: column;
   }
 
-  .account-migration-card__summary {
+  .account-cloud-backup-card__metrics,
+  .account-cloud-backup-card__restore,
+  .account-cloud-backup-card__timeline {
     grid-template-columns: 1fr;
   }
 }

@@ -15,7 +15,6 @@ import {
 } from "@/features/auth/password-recovery";
 import { getAvatarInitial, validateDisplayName } from "@/features/auth/profile";
 import { useCloudSync } from "@/features/sync/cloud-sync-provider";
-import { getCloudSyncCardState } from "@/features/sync/sync-status";
 
 function AuthUnavailable() {
   return (
@@ -374,13 +373,13 @@ export function AccountPageContent() {
   const { isConfigured, isLoading, profile, signOut, updateDisplayName, user } = useAuth();
   const {
     dismissCloudRestore,
+    health,
     isAvailable,
     migration,
     restore,
     restoreCloudData,
     saveDeviceDataToAccount,
     status,
-    statusLabel,
     syncNow,
   } = useCloudSync();
   const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
@@ -417,8 +416,8 @@ export function AccountPageContent() {
     return (
       <section className="auth-page">
         <div className="auth-card auth-message">
-          <strong>Sign in to see your account.</strong>
-          <p>DeepFlow remains fully usable without one.</p>
+          <strong>{health.title}</strong>
+          <p>{health.body} Sign in when you want cloud backup for sessions, routines, and goals.</p>
           <Link className="button button--dark" href="/login">Sign in</Link>
         </div>
       </section>
@@ -428,41 +427,21 @@ export function AccountPageContent() {
   const memberSince = profile?.createdAt
     ? new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(new Date(profile.createdAt))
     : "Recently";
-  const canSaveDeviceData =
-    isAvailable &&
-    migration.summary.hasData &&
-    migration.status !== "completed";
-  const migrationTitle =
-    migration.status === "completed"
-      ? "Saved to your DeepFlow account."
-      : migration.status === "error"
-        ? "Saved locally. Cloud save will retry."
-        : migration.summary.hasData
-          ? "Save this device data"
-          : "This device is already synced.";
-  const migrationDescription =
-    migration.summary.hasData
-      ? "You have focus history on this device. Save it to your DeepFlow account so it can be restored later."
-      : "There is no local focus history, routine, or goal waiting to be saved from this device.";
-  const restoreTitle =
-    restore.status === "completed"
-      ? "Restored to this device."
-      : restore.status === "error"
-        ? "Could not restore right now. Your cloud data is safe."
-        : restore.status === "restoring"
-          ? "Restoring your DeepFlow data..."
-          : restore.summary.hasData
-            ? "Restore your DeepFlow data"
-            : "This device already has your saved DeepFlow data.";
-  const restoreDescription =
-    restore.summary.hasData
-      ? "DeepFlow found focus history saved to your account. Restore it on this device without deleting anything already saved here."
-      : "There are no missing saved sessions, routines, or goals to restore on this device.";
+  const canSaveDeviceData = isAvailable && migration.summary.hasData && migration.status !== "saving";
   const canRestoreCloudData =
     isAvailable &&
     restore.summary.hasData &&
-    restore.status !== "completed" &&
     restore.status !== "restoring";
+  const shouldShowSaveAction =
+    health.kind === "never-synced" ||
+    (migration.summary.hasData && migration.status === "available");
+  const shouldShowRestoreAction = health.kind === "restore-available";
+  const syncActionLabel =
+    health.kind === "error"
+      ? "Try again"
+      : status.state === "syncing"
+        ? "Checking..."
+        : "Sync now";
 
   return (
     <section className="auth-page">
@@ -494,106 +473,85 @@ export function AccountPageContent() {
           <article><span>Current plan</span><strong>Free</strong></article>
           <article><span>Founding Member</span><strong>Not active yet</strong></article>
         </div>
-        <aside className="account-cloud-sync-card" data-state={status.state}>
-          <div>
-            <span className="eyebrow">Cloud sync</span>
-            <strong>{getCloudSyncCardState(status.state, Boolean(user))}</strong>
-            <p>
-              Your focus sessions, routines, and goals can sync to your
-              DeepFlow account. Notes Canvas sync is coming later.
-            </p>
-            <small>{statusLabel}</small>
-            {!isAvailable ? (
-              <small>Cloud sync is unavailable in this environment.</small>
-            ) : null}
+        <aside className="account-cloud-backup-card" data-state={health.kind}>
+          <div className="account-cloud-backup-card__heading">
+            <div>
+              <span className="eyebrow">Cloud backup</span>
+              <strong>{health.title}</strong>
+              <p>{health.body}</p>
+            </div>
+            <span>{health.statusLine}</span>
           </div>
-          <button
-            className="button button--dark"
-            disabled={!isAvailable || status.state === "syncing"}
-            onClick={() => void syncNow()}
-            type="button"
-          >
-            {status.state === "syncing" ? "Syncing..." : "Sync now"}
-          </button>
-        </aside>
-        <aside className="account-migration-card" data-state={migration.status}>
-          <div>
-            <span className="eyebrow">Device data</span>
-            <strong>{migrationTitle}</strong>
-            <p>{migrationDescription}</p>
-            <dl className="account-migration-card__summary" aria-label="Local data found">
+          <dl className="account-cloud-backup-card__metrics" aria-label="Cloud backup data summary">
+            <div>
+              <dt>Local sessions</dt>
+              <dd>{migration.summary.sessionsFound}</dd>
+            </div>
+            <div>
+              <dt>Local routines</dt>
+              <dd>{migration.summary.routinesFound}</dd>
+            </div>
+            <div>
+              <dt>Local goal</dt>
+              <dd>{migration.summary.goalFound ? "Yes" : "No"}</dd>
+            </div>
+            <div>
+              <dt>Cloud sessions</dt>
+              <dd>{health.metadata.lastCloudSessionsCount}</dd>
+            </div>
+            <div>
+              <dt>Cloud routines</dt>
+              <dd>{health.metadata.lastCloudRoutinesCount}</dd>
+            </div>
+            <div>
+              <dt>Cloud goal</dt>
+              <dd>{health.metadata.lastCloudGoalFound ? "Yes" : "No"}</dd>
+            </div>
+          </dl>
+          <dl className="account-cloud-backup-card__timeline" aria-label="Cloud backup activity">
+            <div>
+              <dt>Last saved to cloud</dt>
+              <dd>{health.lastSavedLabel}</dd>
+            </div>
+            <div>
+              <dt>Last restored here</dt>
+              <dd>{health.lastRestoredLabel}</dd>
+            </div>
+            <div>
+              <dt>Last checked</dt>
+              <dd>{health.lastCheckedLabel}</dd>
+            </div>
+          </dl>
+          {restore.summary.hasData ? (
+            <dl className="account-cloud-backup-card__restore" aria-label="Cloud data available to restore">
               <div>
-                <dt>Sessions found</dt>
-                <dd>{migration.summary.sessionsFound}</dd>
-              </div>
-              <div>
-                <dt>Routines found</dt>
-                <dd>{migration.summary.routinesFound}</dd>
-              </div>
-              <div>
-                <dt>Goal found</dt>
-                <dd>{migration.summary.goalFound ? "Yes" : "No"}</dd>
-              </div>
-            </dl>
-            <small>
-              DeepFlow keeps your work local first. Saving to your account
-              creates a cloud backup without deleting anything from this device.
-            </small>
-          </div>
-          {migration.summary.hasData ? (
-            <button
-              className="button button--dark"
-              disabled={!canSaveDeviceData || migration.status === "saving"}
-              onClick={() => void saveDeviceDataToAccount()}
-              type="button"
-            >
-              {migration.status === "saving"
-                ? "Saving your device data..."
-                : migration.status === "completed"
-                  ? "Saved"
-                  : "Save to my account"}
-            </button>
-          ) : null}
-        </aside>
-        <aside className="account-restore-card" data-state={restore.status}>
-          <div>
-            <span className="eyebrow">Restore</span>
-            <strong>{restoreTitle}</strong>
-            <p>{restoreDescription}</p>
-            <dl className="account-migration-card__summary" aria-label="Cloud data available">
-              <div>
-                <dt>Sessions available</dt>
+                <dt>Sessions to restore</dt>
                 <dd>{restore.summary.sessionsAvailable}</dd>
               </div>
               <div>
-                <dt>Routines available</dt>
+                <dt>Routines to restore</dt>
                 <dd>{restore.summary.routinesAvailable}</dd>
               </div>
               <div>
-                <dt>Goal available</dt>
+                <dt>Goal to restore</dt>
                 <dd>{restore.summary.goalAvailable ? "Yes" : "No"}</dd>
               </div>
             </dl>
-            <small>
-              Restore is additive only. DeepFlow will not delete or replace
-              anything already saved on this device.
-            </small>
-          </div>
-          {restore.summary.hasData ? (
-            <div className="account-restore-card__actions">
-              <button
-                className="button button--dark"
-                disabled={!canRestoreCloudData}
-                onClick={() => void restoreCloudData()}
-                type="button"
-              >
-                {restore.status === "restoring"
-                  ? "Restoring..."
-                  : restore.status === "completed"
-                    ? "Restored"
-                    : "Restore to this device"}
-              </button>
-              {restore.status === "available" ? (
+          ) : null}
+          <small>
+            Restore is additive only. Notes Canvas, canvas layout, audio preferences, and mind map data remain local-only.
+          </small>
+          <div className="account-cloud-backup-card__actions">
+            {shouldShowRestoreAction ? (
+              <>
+                <button
+                  className="button button--dark"
+                  disabled={!canRestoreCloudData}
+                  onClick={() => void restoreCloudData()}
+                  type="button"
+                >
+                  {restore.status === "restoring" ? "Restoring..." : "Restore to this device"}
+                </button>
                 <button
                   className="button button--ghost"
                   onClick={dismissCloudRestore}
@@ -601,13 +559,27 @@ export function AccountPageContent() {
                 >
                   Not now
                 </button>
-              ) : null}
-            </div>
-          ) : null}
-        </aside>
-        <aside className="account-local-note">
-          <strong>Local-first by design</strong>
-          <p>Your work is saved locally first. Cloud sync keeps a backup for your account.</p>
+              </>
+            ) : shouldShowSaveAction ? (
+              <button
+                className="button button--dark"
+                disabled={!canSaveDeviceData}
+                onClick={() => void saveDeviceDataToAccount()}
+                type="button"
+              >
+                {migration.status === "saving" ? "Saving..." : "Save to account"}
+              </button>
+            ) : (
+              <button
+                className="button button--dark"
+                disabled={!isAvailable || status.state === "syncing"}
+                onClick={() => void syncNow()}
+                type="button"
+              >
+                {syncActionLabel}
+              </button>
+            )}
+          </div>
         </aside>
         <button className="button button--ghost" onClick={() => void signOut()} type="button">Sign out</button>
       </div>
