@@ -16,7 +16,7 @@ import {
   type CompletedTimerSession,
 } from "../timer/timer-storage";
 import {
-  WORKSPACE_WEEKLY_GOAL_STORAGE_KEY,
+  getWorkspaceWeeklyGoalStorageKey,
   readWorkspaceWeeklyGoal,
   saveWorkspaceWeeklyGoal,
   type WorkspaceWeeklyGoal,
@@ -79,7 +79,7 @@ function canUseStorage() {
 
 function hasLocalWeeklyGoal() {
   if (!canUseStorage()) return false;
-  return window.localStorage.getItem(WORKSPACE_WEEKLY_GOAL_STORAGE_KEY) !== null;
+  return window.localStorage.getItem(getWorkspaceWeeklyGoalStorageKey()) !== null;
 }
 
 export function readLocalSyncSnapshot(): LocalSyncSnapshot {

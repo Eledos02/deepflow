@@ -1,7 +1,13 @@
+import { getScopedLocalDataStorageKey } from "../sync/local-data-scope";
+
 export const FOCUS_JOURNAL_STORAGE_KEY = "deepflow:focus-journal:v1";
 export const FOCUS_JOURNAL_UPDATED_EVENT = "deepflow:focus-journal-updated";
 export const MAX_FOCUS_JOURNAL_ENTRIES = 100;
 export const FREE_FOCUS_JOURNAL_VISIBLE_LIMIT = 20;
+
+export function getFocusJournalStorageKey() {
+  return getScopedLocalDataStorageKey("focus_journal");
+}
 
 export type FocusJournalEntry = {
   id: string;
@@ -137,7 +143,7 @@ export function readFocusJournalEntries(): FocusJournalEntry[] {
   if (!canUseStorage()) return [];
 
   try {
-    const raw = window.localStorage.getItem(FOCUS_JOURNAL_STORAGE_KEY);
+    const raw = window.localStorage.getItem(getFocusJournalStorageKey());
     if (!raw) return [];
     return parseFocusJournalEntries(JSON.parse(raw));
   } catch {
@@ -151,7 +157,7 @@ export function saveFocusJournalEntry(entry: FocusJournalEntry) {
   try {
     const nextEntries = addFocusJournalEntry(readFocusJournalEntries(), entry);
     window.localStorage.setItem(
-      FOCUS_JOURNAL_STORAGE_KEY,
+      getFocusJournalStorageKey(),
       JSON.stringify(nextEntries),
     );
     window.dispatchEvent(new Event(FOCUS_JOURNAL_UPDATED_EVENT));

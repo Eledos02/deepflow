@@ -1,13 +1,17 @@
 import type { TimerStatus } from "@/features/timer/use-timer";
+import { getScopedLocalDataStorageKey } from "../sync/local-data-scope";
 
 export const TIMER_STATE_PREFIX = "deepflow:timer-state:v1";
 const TIMER_PREFERENCES_PREFIX = "deepflow:timer-preferences:v1";
-const COMPLETED_SESSIONS_KEY = "deepflow:completed-sessions:v1";
 const AUDIO_PREFERENCES_KEY = "deepflow:audio-preferences:v1";
 const MAX_COMPLETED_SESSIONS = 2_000;
 
 export const TIMER_ANALYTICS_UPDATED_EVENT = "deepflow:timer-analytics-updated";
 export const TIMER_STATE_UPDATED_EVENT = "deepflow:timer-state-updated";
+
+export function getCompletedSessionsStorageKey() {
+  return getScopedLocalDataStorageKey("focus_sessions");
+}
 
 export type PersistedTimerState = {
   version: 1;
@@ -356,7 +360,7 @@ export function readCompletedSessions(): CompletedTimerSession[] {
   if (!canUseStorage()) return [];
 
   try {
-    const raw = window.localStorage.getItem(COMPLETED_SESSIONS_KEY);
+    const raw = window.localStorage.getItem(getCompletedSessionsStorageKey());
     if (!raw) return [];
 
     const value: unknown = JSON.parse(raw);
@@ -400,7 +404,7 @@ export function saveCompletedSession(session: CompletedTimerSession) {
 
   try {
     window.localStorage.setItem(
-      COMPLETED_SESSIONS_KEY,
+      getCompletedSessionsStorageKey(),
       JSON.stringify(nextSessions),
     );
     window.dispatchEvent(new Event(TIMER_ANALYTICS_UPDATED_EVENT));

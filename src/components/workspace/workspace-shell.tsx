@@ -28,7 +28,7 @@ type WorkspaceSection = (typeof workspaceSections)[number];
 export function WorkspaceShell() {
   const [activeSection, setActiveSection] =
     useState<WorkspaceSection>("Overview");
-  const { profile, user } = useAuth();
+  const { isLoading, profile, user } = useAuth();
   const {
     health,
     restore,
@@ -41,6 +41,19 @@ export function WorkspaceShell() {
     user && profile?.displayName
       ? getWorkspaceGreeting(profile.displayName)
       : "A calm canvas for focused thinking.";
+
+  if (isLoading) {
+    return (
+      <div className="shell workspace-shell">
+        <main className="workspace-main">
+          <div className="workspace-hero">
+            <h1>Checking your Workspace.</h1>
+            <p>DeepFlow is loading the right local data for this account.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="shell workspace-shell">

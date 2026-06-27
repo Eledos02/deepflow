@@ -2,12 +2,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   calculateTimerAnalytics,
+  getCompletedSessionsStorageKey,
+  readCompletedSessions,
   readAudioPreferences,
+  saveCompletedSession,
   writeAudioPreferences,
   type CompletedTimerSession,
 } from "./timer-storage";
+import { setLocalDataScopeForUser } from "../sync/local-data-scope";
 
 afterEach(() => {
+  setLocalDataScopeForUser(null);
   vi.unstubAllGlobals();
 });
 
@@ -92,6 +97,44 @@ describe("calculateTimerAnalytics", () => {
       focusSecondsToday: 0,
       currentStreak: 0,
     });
+  });
+});
+
+describe("completed session account isolation", () => {
+  it("does not show Account A sessions while Account B is active", () => {
+    const values = stubLocalStorage();
+
+    setLocalDataScopeForUser("account-a");
+    saveCompletedSession(session("account-a-session", Date.now()));
+    expect(getCompletedSessionsStorageKey()).toBe(
+      "deepflow:user:account-a:focus_sessions",
+    );
+
+    setLocalDataScopeForUser("account-b");
+    expect(readCompletedSessions()).toEqual([]);
+    saveCompletedSession(session("account-b-session", Date.now()));
+
+    expect(readCompletedSessions()).toEqual([
+      expect.objectContaining({ id: "account-b-session" }),
+    ]);
+    expect(JSON.parse(values.get("deepflow:user:account-a:focus_sessions") ?? "[]")).toEqual([
+      expect.objectContaining({ id: "account-a-session" }),
+    ]);
+    expect(JSON.parse(values.get("deepflow:user:account-b:focus_sessions") ?? "[]")).toEqual([
+      expect.objectContaining({ id: "account-b-session" }),
+    ]);
+  });
+
+  it("starts clean for a new account even when legacy global sessions exist", () => {
+    stubLocalStorage({
+      "deepflow:completed-sessions:v1": JSON.stringify([
+        session("legacy-session", Date.now()),
+      ]),
+    });
+
+    setLocalDataScopeForUser("new-account");
+
+    expect(readCompletedSessions()).toEqual([]);
   });
 });
 

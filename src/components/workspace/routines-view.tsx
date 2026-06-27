@@ -5,12 +5,17 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { getTimerPath, isConfiguredTimer } from "@/config/timers";
+import {
+  LOCAL_DATA_SCOPE_CHANGED_EVENT,
+  isActiveScopedLocalDataStorageKey,
+} from "@/features/sync/local-data-scope";
 import { useCloudSync } from "@/features/sync/cloud-sync-provider";
 import { writeRoutineSessionHandoff } from "@/features/timer/routine-session-handoff";
 import {
   MAX_FREE_WORKSPACE_ROUTINES,
   WORKSPACE_ROUTINE_COLORS,
   WORKSPACE_ROUTINE_TEMPLATES,
+  WORKSPACE_ROUTINES_UPDATED_EVENT,
   canCreateWorkspaceRoutine,
   createWorkspaceRoutine,
   deleteWorkspaceRoutine,
@@ -60,12 +65,26 @@ export function RoutinesView() {
   const hasNoSavedRoutines = hydrated && routines.length === 0;
 
   useEffect(() => {
-    const refreshId = window.setTimeout(() => {
+    const refresh = () => {
       setRoutines(readWorkspaceRoutines());
       setHydrated(true);
-    }, 0);
+    };
+    const refreshId = window.setTimeout(refresh, 0);
+    const handleStorage = (event: StorageEvent) => {
+      if (!isActiveScopedLocalDataStorageKey(event.key, ["focus_routines"])) return;
+      refresh();
+    };
 
-    return () => window.clearTimeout(refreshId);
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(WORKSPACE_ROUTINES_UPDATED_EVENT, refresh);
+    window.addEventListener(LOCAL_DATA_SCOPE_CHANGED_EVENT, refresh);
+
+    return () => {
+      window.clearTimeout(refreshId);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(WORKSPACE_ROUTINES_UPDATED_EVENT, refresh);
+      window.removeEventListener(LOCAL_DATA_SCOPE_CHANGED_EVENT, refresh);
+    };
   }, []);
 
   const saveRoutines = (nextRoutines: WorkspaceRoutine[]) => {

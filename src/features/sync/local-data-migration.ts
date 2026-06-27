@@ -8,7 +8,7 @@ import {
 import { mapLocalFocusSessionsToCloudRows } from "./local-to-cloud-mappers";
 import type { CloudSyncResult } from "./sync-types";
 import {
-  WORKSPACE_WEEKLY_GOAL_STORAGE_KEY,
+  getWorkspaceWeeklyGoalStorageKey,
 } from "../workspace/workspace-metrics";
 
 export const LOCAL_DATA_MIGRATION_KEY_PREFIX =
@@ -90,7 +90,7 @@ export function getLocalDataMigrationStorageKey(userId: string) {
 
 export function hasStoredWorkspaceGoal() {
   if (!canUseStorage()) return false;
-  return window.localStorage.getItem(WORKSPACE_WEEKLY_GOAL_STORAGE_KEY) !== null;
+  return window.localStorage.getItem(getWorkspaceWeeklyGoalStorageKey()) !== null;
 }
 
 export function getLocalDataMigrationSummary({

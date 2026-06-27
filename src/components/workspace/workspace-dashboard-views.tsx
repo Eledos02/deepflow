@@ -3,18 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  FOCUS_JOURNAL_STORAGE_KEY,
   FOCUS_JOURNAL_UPDATED_EVENT,
   readFocusJournalEntries,
   type FocusJournalEntry,
 } from "@/features/timer/focus-journal";
+import {
+  LOCAL_DATA_SCOPE_CHANGED_EVENT,
+  isActiveScopedLocalDataStorageKey,
+} from "@/features/sync/local-data-scope";
 import {
   TIMER_STATS_UPDATED_EVENT,
   loadStats,
   type TimerStats,
 } from "@/features/timer/timer-stats";
 import {
-  WORKSPACE_WEEKLY_GOAL_STORAGE_KEY,
   WORKSPACE_WEEKLY_GOAL_UPDATED_EVENT,
   calculateWorkspaceGoalProgress,
   readWorkspaceWeeklyGoal,
@@ -167,11 +169,11 @@ function useWorkspaceDashboardData() {
 
     const refreshId = window.setTimeout(refresh, 0);
     const handleStorage = (event: StorageEvent) => {
-      if (
-        event.key !== FOCUS_JOURNAL_STORAGE_KEY &&
-        event.key !== WORKSPACE_WEEKLY_GOAL_STORAGE_KEY &&
-        event.key !== "deepflow:timer-stats:v1"
-      ) {
+      if (!isActiveScopedLocalDataStorageKey(event.key, [
+        "focus_journal",
+        "focus_goal",
+        "timer_stats",
+      ])) {
         return;
       }
 
@@ -182,6 +184,7 @@ function useWorkspaceDashboardData() {
     window.addEventListener(FOCUS_JOURNAL_UPDATED_EVENT, refresh);
     window.addEventListener(TIMER_STATS_UPDATED_EVENT, refresh);
     window.addEventListener(WORKSPACE_WEEKLY_GOAL_UPDATED_EVENT, refresh);
+    window.addEventListener(LOCAL_DATA_SCOPE_CHANGED_EVENT, refresh);
 
     return () => {
       window.clearTimeout(refreshId);
@@ -189,6 +192,7 @@ function useWorkspaceDashboardData() {
       window.removeEventListener(FOCUS_JOURNAL_UPDATED_EVENT, refresh);
       window.removeEventListener(TIMER_STATS_UPDATED_EVENT, refresh);
       window.removeEventListener(WORKSPACE_WEEKLY_GOAL_UPDATED_EVENT, refresh);
+      window.removeEventListener(LOCAL_DATA_SCOPE_CHANGED_EVENT, refresh);
     };
   }, []);
 

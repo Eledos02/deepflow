@@ -1,7 +1,12 @@
-const TIMER_STATS_KEY = "deepflow:timer-stats:v1";
+import { getScopedLocalDataStorageKey } from "../sync/local-data-scope";
+
 const MAX_SESSION_HISTORY = 100;
 
 export const TIMER_STATS_UPDATED_EVENT = "deepflow:timer-stats-updated";
+
+export function getTimerStatsStorageKey() {
+  return getScopedLocalDataStorageKey("timer_stats");
+}
 
 export type TimerSessionHistoryEntry = {
   completedAt: string;
@@ -168,7 +173,7 @@ export function loadStats(nowMs = Date.now()): TimerStats {
   if (!canUseStorage()) return emptyStats;
 
   try {
-    const raw = window.localStorage.getItem(TIMER_STATS_KEY);
+    const raw = window.localStorage.getItem(getTimerStatsStorageKey());
     if (!raw) return emptyStats;
 
     const parsed = parseStats(JSON.parse(raw));
@@ -184,7 +189,7 @@ export function saveStats(stats: TimerStats) {
   if (!canUseStorage()) return;
 
   try {
-    window.localStorage.setItem(TIMER_STATS_KEY, JSON.stringify(stats));
+    window.localStorage.setItem(getTimerStatsStorageKey(), JSON.stringify(stats));
     window.dispatchEvent(new Event(TIMER_STATS_UPDATED_EVENT));
   } catch {
     // Session stats are useful, but storage issues must not interrupt timers.

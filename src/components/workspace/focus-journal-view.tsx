@@ -6,13 +6,16 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { CollapsibleSessionListControl } from "@/components/ui/collapsible-session-list-control";
 import { getVisibleSessionListItems } from "@/features/timer/collapsible-session-list";
 import {
-  FOCUS_JOURNAL_STORAGE_KEY,
   FOCUS_JOURNAL_UPDATED_EVENT,
   FREE_FOCUS_JOURNAL_VISIBLE_LIMIT,
   getVisibleFocusJournalEntries,
   readFocusJournalEntries,
   type FocusJournalEntry,
 } from "@/features/timer/focus-journal";
+import {
+  LOCAL_DATA_SCOPE_CHANGED_EVENT,
+  isActiveScopedLocalDataStorageKey,
+} from "@/features/sync/local-data-scope";
 
 type JournalGroup = {
   dateKey: string;
@@ -83,17 +86,19 @@ export function FocusJournalView() {
 
     const refreshId = window.setTimeout(refresh, 0);
     const handleStorage = (event: StorageEvent) => {
-      if (event.key !== FOCUS_JOURNAL_STORAGE_KEY) return;
+      if (!isActiveScopedLocalDataStorageKey(event.key, ["focus_journal"])) return;
       refresh();
     };
 
     window.addEventListener("storage", handleStorage);
     window.addEventListener(FOCUS_JOURNAL_UPDATED_EVENT, refresh);
+    window.addEventListener(LOCAL_DATA_SCOPE_CHANGED_EVENT, refresh);
 
     return () => {
       window.clearTimeout(refreshId);
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener(FOCUS_JOURNAL_UPDATED_EVENT, refresh);
+      window.removeEventListener(LOCAL_DATA_SCOPE_CHANGED_EVENT, refresh);
     };
   }, []);
 

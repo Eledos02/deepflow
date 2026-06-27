@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  getCompletedSessionsStorageKey,
   readCompletedSessions,
   TIMER_ANALYTICS_UPDATED_EVENT,
   type CompletedTimerSession,
@@ -23,7 +24,7 @@ export function useSessionJournal() {
     const initialRefreshId = window.setTimeout(refresh, 0);
 
     const handleStorage = (event: StorageEvent) => {
-      if (event.key?.startsWith("deepflow:completed-sessions")) refresh();
+      if (event.key === getCompletedSessionsStorageKey()) refresh();
     };
 
     window.addEventListener("storage", handleStorage);

@@ -13,11 +13,16 @@ import {
   restoreCloudDataToDevice,
   type CloudRestoreSnapshot,
 } from "./cloud-restore";
+import {
+  getScopedLocalDataStorageKey,
+  setLocalDataScopeForUser,
+} from "./local-data-scope";
 import type { TimerStats } from "@/features/timer/timer-stats";
 
 const userId = "00000000-0000-4000-8000-000000000001";
 
 afterEach(() => {
+  setLocalDataScopeForUser(null);
   vi.unstubAllGlobals();
 });
 
@@ -125,10 +130,10 @@ describe("cloud restore summary", () => {
       goalAvailable: true,
       hasData: true,
     });
-    expect(values.get("deepflow:completed-sessions:v1")).toBeUndefined();
-    expect(values.get("deepflow:focus-journal:v1")).toBeUndefined();
-    expect(values.get("deepflow:workspace-routines:v1")).toBeUndefined();
-    expect(values.get("deepflow:workspace-weekly-goal:v1")).toBeUndefined();
+    expect(values.get(getScopedLocalDataStorageKey("focus_sessions"))).toBeUndefined();
+    expect(values.get(getScopedLocalDataStorageKey("focus_journal"))).toBeUndefined();
+    expect(values.get(getScopedLocalDataStorageKey("focus_routines"))).toBeUndefined();
+    expect(values.get(getScopedLocalDataStorageKey("focus_goal"))).toBeUndefined();
   });
 
   it("detects cloud records missing from local data", () => {
@@ -209,6 +214,7 @@ describe("cloud restore summary", () => {
 describe("restoreCloudDataToDevice", () => {
   it("adds missing cloud sessions, routines, and goal without deleting local data", async () => {
     const values = stubLocalStorage();
+    setLocalDataScopeForUser(userId);
 
     const result = await restoreCloudDataToDevice({
       supabase: {} as never,
@@ -225,18 +231,20 @@ describe("restoreCloudDataToDevice", () => {
       routines: 1,
       goal: 1,
     });
-    expect(JSON.parse(values.get("deepflow:completed-sessions:v1") ?? "[]")).toHaveLength(1);
-    expect(JSON.parse(values.get("deepflow:focus-journal:v1") ?? "[]")).toHaveLength(1);
-    expect(JSON.parse(values.get("deepflow:workspace-routines:v1") ?? "[]")).toHaveLength(1);
-    expect(JSON.parse(values.get("deepflow:workspace-weekly-goal:v1") ?? "{}")).toEqual({
+    expect(JSON.parse(values.get(getScopedLocalDataStorageKey("focus_sessions")) ?? "[]")).toHaveLength(1);
+    expect(JSON.parse(values.get(getScopedLocalDataStorageKey("focus_journal")) ?? "[]")).toHaveLength(1);
+    expect(JSON.parse(values.get(getScopedLocalDataStorageKey("focus_routines")) ?? "[]")).toHaveLength(1);
+    expect(JSON.parse(values.get(getScopedLocalDataStorageKey("focus_goal")) ?? "{}")).toEqual({
       sessions: 12,
       minutes: 300,
     });
+    expect(values.get("deepflow:completed-sessions:v1")).toBeUndefined();
   });
 
   it("does not duplicate local records on repeated restore clicks", async () => {
     const values = stubLocalStorage();
     const cloudData = cloudSnapshot();
+    setLocalDataScopeForUser(userId);
 
     await restoreCloudDataToDevice({
       supabase: {} as never,
@@ -252,14 +260,15 @@ describe("restoreCloudDataToDevice", () => {
       hasStoredGoal: true,
     });
 
-    expect(JSON.parse(values.get("deepflow:completed-sessions:v1") ?? "[]")).toHaveLength(1);
-    expect(JSON.parse(values.get("deepflow:focus-journal:v1") ?? "[]")).toHaveLength(1);
-    expect(JSON.parse(values.get("deepflow:workspace-routines:v1") ?? "[]")).toHaveLength(1);
+    expect(JSON.parse(values.get(getScopedLocalDataStorageKey("focus_sessions")) ?? "[]")).toHaveLength(1);
+    expect(JSON.parse(values.get(getScopedLocalDataStorageKey("focus_journal")) ?? "[]")).toHaveLength(1);
+    expect(JSON.parse(values.get(getScopedLocalDataStorageKey("focus_routines")) ?? "[]")).toHaveLength(1);
   });
 
   it("does not overwrite an existing local goal", async () => {
+    setLocalDataScopeForUser(userId);
     const values = stubLocalStorage({
-      "deepflow:workspace-weekly-goal:v1": JSON.stringify({
+      [getScopedLocalDataStorageKey("focus_goal")]: JSON.stringify({
         sessions: 5,
         minutes: 100,
       }),
@@ -274,9 +283,36 @@ describe("restoreCloudDataToDevice", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(JSON.parse(values.get("deepflow:workspace-weekly-goal:v1") ?? "{}")).toEqual({
+    expect(JSON.parse(values.get(getScopedLocalDataStorageKey("focus_goal")) ?? "{}")).toEqual({
       sessions: 5,
       minutes: 100,
     });
+  });
+
+  it("restores account B cloud data only into account B scoped keys", async () => {
+    const values = stubLocalStorage({
+      "deepflow:user:account-a:focus_sessions": JSON.stringify([{ id: "account-a-session" }]),
+    });
+    setLocalDataScopeForUser("account-b");
+
+    await restoreCloudDataToDevice({
+      supabase: {} as never,
+      userId: "account-b",
+      cloudData: cloudSnapshot({
+        sessions: [cloudSession({ user_id: "account-b", local_id: "account-b-session" })],
+        goal: null,
+        routines: [],
+      }),
+      localData: localSnapshot(),
+      hasStoredGoal: false,
+    });
+
+    expect(values.get("deepflow:user:account-a:focus_sessions")).toBe(
+      JSON.stringify([{ id: "account-a-session" }]),
+    );
+    expect(JSON.parse(values.get("deepflow:user:account-b:focus_sessions") ?? "[]")).toEqual([
+      expect.objectContaining({ id: "account-b-session" }),
+    ]);
+    expect(values.get("deepflow:completed-sessions:v1")).toBeUndefined();
   });
 });

@@ -15,6 +15,7 @@ import {
   getSupabaseBrowserClient,
   getSupabaseBrowserConfig,
 } from "@/lib/supabase/browser";
+import { setLocalDataScopeForUser } from "@/features/sync/local-data-scope";
 
 import {
   parseProfile,
@@ -124,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(isConfigured);
 
   const syncUser = useCallback(async (nextUser: User | null) => {
+    setLocalDataScopeForUser(nextUser?.id ?? null);
     setUser(nextUser);
 
     if (!nextUser) {
@@ -201,6 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
 
     await supabase.auth.signOut();
+    setLocalDataScopeForUser(null);
     setUser(null);
     setProfile(null);
     setIsLoading(false);

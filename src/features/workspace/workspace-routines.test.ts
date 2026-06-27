@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { setLocalDataScopeForUser } from "../sync/local-data-scope";
 import {
   MAX_FREE_WORKSPACE_ROUTINES,
   WORKSPACE_ROUTINE_TEMPLATES,
@@ -7,10 +8,32 @@ import {
   createWorkspaceRoutine,
   deleteWorkspaceRoutine,
   parseWorkspaceRoutines,
+  readWorkspaceRoutines,
   updateWorkspaceRoutine,
+  writeWorkspaceRoutines,
 } from "./workspace-routines";
 
 const now = "2026-06-21T12:00:00.000Z";
+
+afterEach(() => {
+  setLocalDataScopeForUser(null);
+  vi.unstubAllGlobals();
+});
+
+function stubLocalStorage(initial: Record<string, string> = {}) {
+  const values = new Map(Object.entries(initial));
+  const localStorage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  };
+
+  vi.stubGlobal("window", {
+    dispatchEvent: vi.fn(),
+    localStorage,
+  });
+
+  return values;
+}
 
 function routine(id: string, name = id) {
   const created = createWorkspaceRoutine({
@@ -93,5 +116,26 @@ describe("workspace routines", () => {
   it("falls back safely when persisted routines are malformed", () => {
     expect(parseWorkspaceRoutines({ routines: [] })).toEqual([]);
     expect(parseWorkspaceRoutines([{ id: "broken", name: "" }])).toEqual([]);
+  });
+
+  it("does not show Account A routines while Account B is active", () => {
+    const values = stubLocalStorage();
+
+    setLocalDataScopeForUser("account-a");
+    writeWorkspaceRoutines([routine("account-a-routine")]);
+
+    setLocalDataScopeForUser("account-b");
+    expect(readWorkspaceRoutines()).toEqual([]);
+    writeWorkspaceRoutines([routine("account-b-routine")]);
+
+    expect(readWorkspaceRoutines()).toEqual([
+      expect.objectContaining({ id: "account-b-routine" }),
+    ]);
+    expect(JSON.parse(values.get("deepflow:user:account-a:focus_routines") ?? "[]")).toEqual([
+      expect.objectContaining({ id: "account-a-routine" }),
+    ]);
+    expect(JSON.parse(values.get("deepflow:user:account-b:focus_routines") ?? "[]")).toEqual([
+      expect.objectContaining({ id: "account-b-routine" }),
+    ]);
   });
 });

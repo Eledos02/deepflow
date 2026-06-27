@@ -1,12 +1,35 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { setLocalDataScopeForUser } from "../sync/local-data-scope";
 import {
   FREE_FOCUS_JOURNAL_VISIBLE_LIMIT,
   MAX_FOCUS_JOURNAL_ENTRIES,
   addFocusJournalEntry,
   createFocusJournalEntry,
   getVisibleFocusJournalEntries,
+  readFocusJournalEntries,
+  saveFocusJournalEntry,
 } from "./focus-journal";
+
+afterEach(() => {
+  setLocalDataScopeForUser(null);
+  vi.unstubAllGlobals();
+});
+
+function stubLocalStorage(initial: Record<string, string> = {}) {
+  const values = new Map(Object.entries(initial));
+  const localStorage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  };
+
+  vi.stubGlobal("window", {
+    dispatchEvent: vi.fn(),
+    localStorage,
+  });
+
+  return values;
+}
 
 function entry(id: string, index = 0) {
   return createFocusJournalEntry({
@@ -95,5 +118,26 @@ describe("focus journal", () => {
 
     expect(entries).toHaveLength(1);
     expect(entries[0].completedAt).toBe(new Date(2026, 5, 18, 10).toISOString());
+  });
+
+  it("does not show Account A journal entries while Account B is active", () => {
+    const values = stubLocalStorage();
+
+    setLocalDataScopeForUser("account-a");
+    saveFocusJournalEntry(entry("account-a-entry"));
+
+    setLocalDataScopeForUser("account-b");
+    expect(readFocusJournalEntries()).toEqual([]);
+    saveFocusJournalEntry(entry("account-b-entry"));
+
+    expect(readFocusJournalEntries()).toEqual([
+      expect.objectContaining({ id: "account-b-entry" }),
+    ]);
+    expect(JSON.parse(values.get("deepflow:user:account-a:focus_journal") ?? "[]")).toEqual([
+      expect.objectContaining({ id: "account-a-entry" }),
+    ]);
+    expect(JSON.parse(values.get("deepflow:user:account-b:focus_journal") ?? "[]")).toEqual([
+      expect.objectContaining({ id: "account-b-entry" }),
+    ]);
   });
 });

@@ -3,11 +3,16 @@ import {
   WORKSPACE_NOTE_COLORS,
   type WorkspaceNoteColor,
 } from "./workspace-notes";
+import { getScopedLocalDataStorageKey } from "../sync/local-data-scope";
 
 export const WORKSPACE_ROUTINES_STORAGE_KEY = "deepflow:workspace-routines:v1";
 export const WORKSPACE_ROUTINES_UPDATED_EVENT =
   "deepflow:workspace-routines-updated";
 export const MAX_FREE_WORKSPACE_ROUTINES = 3;
+
+export function getWorkspaceRoutinesStorageKey() {
+  return getScopedLocalDataStorageKey("focus_routines");
+}
 
 export const WORKSPACE_ROUTINE_TEMPLATES = [
   {
@@ -206,7 +211,7 @@ export function readWorkspaceRoutines(): WorkspaceRoutine[] {
   if (!canUseStorage()) return [];
 
   try {
-    const raw = window.localStorage.getItem(WORKSPACE_ROUTINES_STORAGE_KEY);
+    const raw = window.localStorage.getItem(getWorkspaceRoutinesStorageKey());
     return raw ? parseWorkspaceRoutines(JSON.parse(raw)) : [];
   } catch {
     return [];
@@ -218,7 +223,7 @@ export function writeWorkspaceRoutines(routines: WorkspaceRoutine[]) {
 
   try {
     window.localStorage.setItem(
-      WORKSPACE_ROUTINES_STORAGE_KEY,
+      getWorkspaceRoutinesStorageKey(),
       JSON.stringify(parseWorkspaceRoutines(routines)),
     );
     window.dispatchEvent(new Event(WORKSPACE_ROUTINES_UPDATED_EVENT));

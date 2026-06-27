@@ -1,10 +1,15 @@
 import type { FocusJournalEntry } from "@/features/timer/focus-journal";
 import type { TimerStats } from "@/features/timer/timer-stats";
+import { getScopedLocalDataStorageKey } from "../sync/local-data-scope";
 
 export const WORKSPACE_WEEKLY_GOAL_STORAGE_KEY =
   "deepflow:workspace-weekly-goal:v1";
 export const WORKSPACE_WEEKLY_GOAL_UPDATED_EVENT =
   "deepflow:workspace-weekly-goal-updated";
+
+export function getWorkspaceWeeklyGoalStorageKey() {
+  return getScopedLocalDataStorageKey("focus_goal");
+}
 
 export const DEFAULT_WORKSPACE_WEEKLY_GOAL = {
   sessions: 10,
@@ -198,7 +203,7 @@ export function readWorkspaceWeeklyGoal(): WorkspaceWeeklyGoal {
   if (!canUseStorage()) return DEFAULT_WORKSPACE_WEEKLY_GOAL;
 
   try {
-    const raw = window.localStorage.getItem(WORKSPACE_WEEKLY_GOAL_STORAGE_KEY);
+    const raw = window.localStorage.getItem(getWorkspaceWeeklyGoalStorageKey());
     if (!raw) return DEFAULT_WORKSPACE_WEEKLY_GOAL;
     return parseWorkspaceWeeklyGoal(JSON.parse(raw));
   } catch {
@@ -211,7 +216,7 @@ export function saveWorkspaceWeeklyGoal(goal: WorkspaceWeeklyGoal) {
 
   try {
     window.localStorage.setItem(
-      WORKSPACE_WEEKLY_GOAL_STORAGE_KEY,
+      getWorkspaceWeeklyGoalStorageKey(),
       JSON.stringify(normalizeGoal(goal)),
     );
     window.dispatchEvent(new Event(WORKSPACE_WEEKLY_GOAL_UPDATED_EVENT));

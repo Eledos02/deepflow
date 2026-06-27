@@ -13,7 +13,6 @@ import {
 
 import { useAuth } from "@/features/auth/auth-provider";
 import {
-  FOCUS_JOURNAL_STORAGE_KEY,
   FOCUS_JOURNAL_UPDATED_EVENT,
 } from "@/features/timer/focus-journal";
 import {
@@ -23,11 +22,9 @@ import {
   TIMER_STATS_UPDATED_EVENT,
 } from "@/features/timer/timer-stats";
 import {
-  WORKSPACE_WEEKLY_GOAL_STORAGE_KEY,
   WORKSPACE_WEEKLY_GOAL_UPDATED_EVENT,
 } from "@/features/workspace/workspace-metrics";
 import {
-  WORKSPACE_ROUTINES_STORAGE_KEY,
   WORKSPACE_ROUTINES_UPDATED_EVENT,
 } from "@/features/workspace/workspace-routines";
 import {
@@ -39,6 +36,7 @@ import {
   deleteCloudRoutine,
   syncDeepFlowData,
 } from "./cloud-sync";
+import { isActiveScopedLocalDataStorageKey } from "./local-data-scope";
 import {
   deriveCloudSyncHealth,
   emptyCloudSyncHealthMetadata,
@@ -91,14 +89,6 @@ const localDataEvents = [
   WORKSPACE_WEEKLY_GOAL_UPDATED_EVENT,
   WORKSPACE_ROUTINES_UPDATED_EVENT,
 ] as const;
-
-const localDataStorageKeys = new Set([
-  "deepflow:completed-sessions:v1",
-  "deepflow:timer-stats:v1",
-  FOCUS_JOURNAL_STORAGE_KEY,
-  WORKSPACE_WEEKLY_GOAL_STORAGE_KEY,
-  WORKSPACE_ROUTINES_STORAGE_KEY,
-]);
 
 const emptyMigrationState: LocalDataMigrationState = {
   status: "not_started",
@@ -338,7 +328,13 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     };
 
     const handleStorage = (event: StorageEvent) => {
-      if (!event.key || !localDataStorageKeys.has(event.key)) return;
+      if (!isActiveScopedLocalDataStorageKey(event.key, [
+        "focus_sessions",
+        "timer_stats",
+        "focus_journal",
+        "focus_goal",
+        "focus_routines",
+      ])) return;
       handleLocalDataUpdated();
     };
 

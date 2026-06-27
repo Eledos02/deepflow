@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  LOCAL_DATA_SCOPE_CHANGED_EVENT,
+  isActiveScopedLocalDataStorageKey,
+} from "@/features/sync/local-data-scope";
+import {
   readCompletedSessions,
   saveCompletedSession,
   TIMER_ANALYTICS_UPDATED_EVENT,
@@ -42,17 +46,17 @@ export function useTimerAnalytics() {
     const initialRefreshId = window.setTimeout(refresh, 0);
 
     const handleStorage = (event: StorageEvent) => {
-      if (
-        event.key?.startsWith("deepflow:completed-sessions") ||
-        event.key?.startsWith("deepflow:timer-stats")
-      ) {
-        refresh();
-      }
+      if (!isActiveScopedLocalDataStorageKey(event.key, [
+        "focus_sessions",
+        "timer_stats",
+      ])) return;
+      refresh();
     };
 
     window.addEventListener("storage", handleStorage);
     window.addEventListener(TIMER_ANALYTICS_UPDATED_EVENT, refresh);
     window.addEventListener(TIMER_STATS_UPDATED_EVENT, refresh);
+    window.addEventListener(LOCAL_DATA_SCOPE_CHANGED_EVENT, refresh);
     const intervalId = window.setInterval(refresh, 60_000);
 
     return () => {
@@ -60,6 +64,7 @@ export function useTimerAnalytics() {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener(TIMER_ANALYTICS_UPDATED_EVENT, refresh);
       window.removeEventListener(TIMER_STATS_UPDATED_EVENT, refresh);
+      window.removeEventListener(LOCAL_DATA_SCOPE_CHANGED_EVENT, refresh);
       window.clearInterval(intervalId);
     };
   }, [refresh]);

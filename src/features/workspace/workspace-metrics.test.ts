@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { FocusJournalEntry } from "@/features/timer/focus-journal";
 import type { TimerStats } from "@/features/timer/timer-stats";
+import { setLocalDataScopeForUser } from "../sync/local-data-scope";
 
 import {
   DEFAULT_WORKSPACE_WEEKLY_GOAL,
@@ -9,6 +10,8 @@ import {
   calculateWorkspaceMetrics,
   getCurrentWeekJournalEntries,
   parseWorkspaceWeeklyGoal,
+  readWorkspaceWeeklyGoal,
+  saveWorkspaceWeeklyGoal,
 } from "./workspace-metrics";
 
 function entry(
@@ -40,6 +43,26 @@ function stats(overrides: Partial<TimerStats> = {}): TimerStats {
     sessionHistory: [],
     ...overrides,
   };
+}
+
+afterEach(() => {
+  setLocalDataScopeForUser(null);
+  vi.unstubAllGlobals();
+});
+
+function stubLocalStorage(initial: Record<string, string> = {}) {
+  const values = new Map(Object.entries(initial));
+  const localStorage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  };
+
+  vi.stubGlobal("window", {
+    dispatchEvent: vi.fn(),
+    localStorage,
+  });
+
+  return values;
 }
 
 describe("workspace metrics", () => {
@@ -146,5 +169,26 @@ describe("workspace metrics", () => {
   it("normalizes invalid weekly goals to the default goal", () => {
     expect(parseWorkspaceWeeklyGoal({ sessions: -1, minutes: "nope" }))
       .toEqual(DEFAULT_WORKSPACE_WEEKLY_GOAL);
+  });
+
+  it("does not show Account A goal while Account B is active", () => {
+    const values = stubLocalStorage();
+
+    setLocalDataScopeForUser("account-a");
+    saveWorkspaceWeeklyGoal({ sessions: 12, minutes: 300 });
+
+    setLocalDataScopeForUser("account-b");
+    expect(readWorkspaceWeeklyGoal()).toEqual(DEFAULT_WORKSPACE_WEEKLY_GOAL);
+    saveWorkspaceWeeklyGoal({ sessions: 5, minutes: 100 });
+
+    expect(readWorkspaceWeeklyGoal()).toEqual({ sessions: 5, minutes: 100 });
+    expect(JSON.parse(values.get("deepflow:user:account-a:focus_goal") ?? "{}")).toEqual({
+      sessions: 12,
+      minutes: 300,
+    });
+    expect(JSON.parse(values.get("deepflow:user:account-b:focus_goal") ?? "{}")).toEqual({
+      sessions: 5,
+      minutes: 100,
+    });
   });
 });

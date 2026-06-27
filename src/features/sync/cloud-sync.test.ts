@@ -7,6 +7,10 @@ import {
   syncDeepFlowData,
   type LocalSyncSnapshot,
 } from "./cloud-sync";
+import {
+  getScopedLocalDataStorageKey,
+  setLocalDataScopeForUser,
+} from "./local-data-scope";
 
 const userId = "00000000-0000-4000-8000-000000000001";
 
@@ -110,6 +114,7 @@ function createSupabaseMock({ failTable }: { failTable?: string } = {}) {
 
 describe("cloud sync service", () => {
   afterEach(() => {
+    setLocalDataScopeForUser(null);
     vi.unstubAllGlobals();
   });
 
@@ -227,6 +232,7 @@ describe("cloud sync service", () => {
 
   it("does not auto-restore cloud data during default sync on a new device", async () => {
     const values = stubLocalStorage();
+    setLocalDataScopeForUser(userId);
     const supabase = {
       from() {
         return {
@@ -248,9 +254,10 @@ describe("cloud sync service", () => {
     });
 
     expect(result.ok).toBe(true);
+    expect(values.get(getScopedLocalDataStorageKey("focus_sessions"))).toBeUndefined();
+    expect(values.get(getScopedLocalDataStorageKey("focus_journal"))).toBeUndefined();
+    expect(values.get(getScopedLocalDataStorageKey("focus_routines"))).toBeUndefined();
+    expect(values.get(getScopedLocalDataStorageKey("focus_goal"))).toBeUndefined();
     expect(values.get("deepflow:completed-sessions:v1")).toBeUndefined();
-    expect(values.get("deepflow:focus-journal:v1")).toBeUndefined();
-    expect(values.get("deepflow:workspace-routines:v1")).toBeUndefined();
-    expect(values.get("deepflow:workspace-weekly-goal:v1")).toBeUndefined();
   });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { TimerStats } from "@/features/timer/timer-stats";
 
@@ -6,10 +6,51 @@ import {
   getEffectiveLocalDataMigrationState,
   getLocalDataMigrationStorageKey,
   getLocalDataMigrationSummary,
+  saveLocalDataToAccount,
 } from "./local-data-migration";
 import type { LocalSyncSnapshot } from "./cloud-sync";
+import { setLocalDataScopeForUser } from "./local-data-scope";
 
 const userId = "00000000-0000-4000-8000-000000000001";
+
+type UpsertCall = {
+  table: string;
+  rows: unknown;
+};
+
+afterEach(() => {
+  setLocalDataScopeForUser(null);
+  vi.unstubAllGlobals();
+});
+
+function stubLocalStorage(initial: Record<string, string> = {}) {
+  const values = new Map(Object.entries(initial));
+  const localStorage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  };
+
+  vi.stubGlobal("window", { localStorage });
+  return values;
+}
+
+function createSupabaseMock() {
+  const upserts: UpsertCall[] = [];
+
+  return {
+    upserts,
+    supabase: {
+      from(table: string) {
+        return {
+          upsert(rows: unknown) {
+            upserts.push({ table, rows });
+            return Promise.resolve({ error: null });
+          },
+        };
+      },
+    },
+  };
+}
 
 function emptyStats(): TimerStats {
   return {
@@ -152,5 +193,45 @@ describe("local data migration", () => {
       status: "error",
       error: "forced failure",
     });
+  });
+
+  it("does not upload another account's scoped local data", async () => {
+    stubLocalStorage({
+      "deepflow:user:account-a:focus_sessions": JSON.stringify([{
+        id: "account-a-session",
+        completedAtMs: Date.parse("2026-06-20T14:00:00.000Z"),
+        durationSeconds: 25 * 60,
+        timerKind: "focus",
+        countsAsFocus: true,
+      }]),
+      "deepflow:user:account-a:focus_journal": JSON.stringify([{
+        id: "account-a-session",
+        title: "Account A work",
+        intention: "Account A work",
+        durationMinutes: 25,
+        timerType: "Focus Timer",
+        completedAt: "2026-06-20T14:00:00.000Z",
+        sourcePath: "/tools/focus-timer",
+      }]),
+      "deepflow:user:account-a:focus_routines": JSON.stringify([{
+        id: "account-a-routine",
+        name: "Account A routine",
+        durationMinutes: 25,
+        intention: "",
+        color: "soft-lime",
+        createdAt: "2026-06-20T14:00:00.000Z",
+        updatedAt: "2026-06-20T14:00:00.000Z",
+      }]),
+    });
+    const { supabase, upserts } = createSupabaseMock();
+
+    setLocalDataScopeForUser("account-b");
+    const result = await saveLocalDataToAccount({
+      supabase: supabase as never,
+      userId: "account-b",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(upserts).toEqual([]);
   });
 });
