@@ -5,6 +5,7 @@ import { siteConfig } from "./site";
 describe("site navigation", () => {
   it("keeps every public timer route discoverable in the Timers menu", () => {
     expect(siteConfig.timerNavigation).toEqual([
+      { label: "All Timers", href: "/timers" },
       { label: "Focus Timer", href: "/tools/focus-timer" },
       { label: "Countdown Timer", href: "/tools/countdown-timer" },
       { label: "Study Timer", href: "/tools/study-timer" },

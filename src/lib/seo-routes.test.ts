@@ -22,6 +22,12 @@ describe("indexable route registry", () => {
     expect(paths).not.toContain("/tools/pomodoro-timer");
   });
 
+  it("includes the public timers hub in the sitemap registry", () => {
+    const paths = getIndexableRoutes().map((route) => route.path);
+
+    expect(paths).toContain("/timers");
+  });
+
   it("does not emit duplicate or non-canonical paths", () => {
     const paths = getIndexableRoutes().map((route) => route.path);
 

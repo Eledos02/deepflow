@@ -21,6 +21,19 @@ const pageMetadataInputs: MetadataInput[] = [
     keywords: ["focus workspace", "deep work", "focus timer", "weekly goals"],
   },
   {
+    title: "Free Online Focus Timers - DeepFlow",
+    description:
+      "Choose a calm online timer for focus sessions, study blocks, Pomodoro work, ADHD-friendly focus, breathing breaks, and short tasks.",
+    path: "/timers",
+    keywords: [
+      "online timer",
+      "focus timer",
+      "study timer",
+      "pomodoro timer",
+      "ADHD timer",
+    ],
+  },
+  {
     title: "DeepFlow Pricing and Founding Member Updates",
     description:
       "DeepFlow is free to start. Founding Member access is coming soon, and pricing will be introduced after the free core experience is stable.",

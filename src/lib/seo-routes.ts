@@ -10,6 +10,7 @@ export type IndexableRoute = {
 
 const staticRoutes = [
   { path: "/", changeFrequency: "weekly", priority: 1 },
+  { path: "/timers", changeFrequency: "weekly", priority: 0.95 },
   { path: "/adhd-timer", changeFrequency: "monthly", priority: 0.9 },
   { path: "/pomodoro-timer", changeFrequency: "monthly", priority: 0.95 },
   { path: "/guides", changeFrequency: "weekly", priority: 0.85 },

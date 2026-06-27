@@ -38,6 +38,7 @@ export const siteConfig = {
     { label: "Pricing", href: "/pricing" },
   ],
   timerNavigation: [
+    { label: "All Timers", href: "/timers" },
     { label: "Focus Timer", href: "/tools/focus-timer" },
     { label: "Countdown Timer", href: "/tools/countdown-timer" },
     { label: "Study Timer", href: "/tools/study-timer" },
