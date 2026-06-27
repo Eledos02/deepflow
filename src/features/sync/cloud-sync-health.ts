@@ -265,12 +265,16 @@ export function deriveCloudSyncHealth({
     restore.status === "error" ||
     normalizedMetadata.lastErrorCode === "check_failed"
   ) {
+    const isSyncFailure = normalizedMetadata.lastErrorCode === "save_failed";
+
     return {
       kind: "error",
-      title: "Cloud status unavailable",
-      body: "Could not check cloud status right now. Your local data is safe.",
+      title: isSyncFailure ? "Cloud sync unavailable" : "Cloud status unavailable",
+      body: isSyncFailure
+        ? "Could not sync right now. Your local data is still safe on this device."
+        : "Could not check cloud status right now. Your local data is safe.",
       statusLine: "Try again when you are ready.",
-      workspaceStatus: "Cloud status unavailable",
+      workspaceStatus: isSyncFailure ? "Cloud sync unavailable" : "Cloud status unavailable",
       lastCheckedLabel,
       lastSavedLabel,
       lastRestoredLabel,

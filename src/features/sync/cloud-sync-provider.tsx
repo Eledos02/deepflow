@@ -90,6 +90,10 @@ const localDataEvents = [
   WORKSPACE_ROUTINES_UPDATED_EVENT,
 ] as const;
 
+type RunSyncOptions = {
+  updateSaveMetadata?: boolean;
+};
+
 const emptyMigrationState: LocalDataMigrationState = {
   status: "not_started",
   summary: {
@@ -214,7 +218,9 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     );
   }, [isAvailable, updateHealthMetadata, user]);
 
-  const runSync = useCallback(async () => {
+  const runSync = useCallback(async ({
+    updateSaveMetadata = false,
+  }: RunSyncOptions = {}) => {
     if (!isAvailable || !user) {
       setStatus((currentStatus) => ({
         ...currentStatus,
@@ -249,13 +255,22 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
         error: null,
       });
       updateHealthMetadata({
+        ...(updateSaveMetadata
+          ? {
+              lastCheckedAt: completedAt,
+              lastSavedAt: completedAt,
+              lastSaveStatus: "completed" as const,
+            }
+          : {}),
         lastErrorCode: null,
       });
       void refreshRestore();
       return;
     }
 
+    const failedAt = new Date().toISOString();
     updateHealthMetadata({
+      ...(updateSaveMetadata ? { lastCheckedAt: failedAt } : {}),
       lastSaveStatus: "error",
       lastErrorCode: "save_failed",
     });
@@ -550,6 +565,11 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     metadata: healthMetadata,
   }), [healthMetadata, isAvailable, migration, restore, status, user]);
 
+  const syncNow = useCallback(
+    () => runSync({ updateSaveMetadata: true }),
+    [runSync],
+  );
+
   const value = useMemo<CloudSyncContextValue>(() => ({
     status,
     statusLabel: getCloudSyncStatusLabel(status.state),
@@ -558,7 +578,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     isAuthenticated: Boolean(user),
     migration,
     restore,
-    syncNow: runSync,
+    syncNow,
     saveDeviceDataToAccount,
     restoreCloudData,
     dismissCloudRestore,
@@ -571,9 +591,9 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     migration,
     restore,
     restoreCloudData,
-    runSync,
     saveDeviceDataToAccount,
     status,
+    syncNow,
     user,
   ]);
 

@@ -147,6 +147,96 @@ describe("cloud sync health status", () => {
     expect(health.lastSavedLabel).toBe("Today, 2:41 PM");
   });
 
+  it("manual sync success updates last saved and checked metadata", () => {
+    stubLocalStorage({
+      [getCloudSyncHealthStorageKey(userId)]: JSON.stringify({
+        ...emptyCloudSyncHealthMetadata,
+        lastSavedAt: savedAt,
+        lastCheckedAt: savedAt,
+      }),
+    });
+
+    const metadata = mergeCloudSyncHealthMetadata(userId, {
+      lastSavedAt: now.toISOString(),
+      lastCheckedAt: now.toISOString(),
+      lastSaveStatus: "completed",
+      lastErrorCode: null,
+    });
+    const health = deriveCloudSyncHealth({
+      isAuthenticated: true,
+      isAvailable: true,
+      migration: migrationState({
+        status: "completed",
+        summary: {
+          sessionsFound: 1,
+          routinesFound: 1,
+          goalFound: false,
+          hasData: true,
+        },
+      }),
+      restore: restoreState(),
+      status: syncStatus({ state: "synced", lastSyncedAt: now.toISOString() }),
+      metadata,
+      now,
+    });
+
+    expect(metadata.lastSavedAt).toBe(now.toISOString());
+    expect(metadata.lastCheckedAt).toBe(now.toISOString());
+    expect(metadata.lastSaveStatus).toBe("completed");
+    expect(health.lastSavedLabel).toBe("Just now");
+    expect(health.lastCheckedLabel).toBe("Just now");
+    expect(health.statusLine).toBe("Saved to cloud just now.");
+  });
+
+  it("Account Cloud Backup status reflects refreshed metadata after sync", () => {
+    const before = deriveCloudSyncHealth({
+      isAuthenticated: true,
+      isAvailable: true,
+      migration: migrationState({
+        status: "completed",
+        summary: {
+          sessionsFound: 1,
+          routinesFound: 0,
+          goalFound: false,
+          hasData: true,
+        },
+      }),
+      restore: restoreState(),
+      status: syncStatus({ state: "synced", lastSyncedAt: savedAt }),
+      metadata: {
+        ...emptyCloudSyncHealthMetadata,
+        lastSavedAt: savedAt,
+        lastCheckedAt: savedAt,
+      },
+      now,
+    });
+    const after = deriveCloudSyncHealth({
+      isAuthenticated: true,
+      isAvailable: true,
+      migration: migrationState({
+        status: "completed",
+        summary: {
+          sessionsFound: 1,
+          routinesFound: 0,
+          goalFound: false,
+          hasData: true,
+        },
+      }),
+      restore: restoreState(),
+      status: syncStatus({ state: "synced", lastSyncedAt: now.toISOString() }),
+      metadata: {
+        ...emptyCloudSyncHealthMetadata,
+        lastSavedAt: now.toISOString(),
+        lastCheckedAt: now.toISOString(),
+        lastSaveStatus: "completed",
+      },
+      now,
+    });
+
+    expect(before.statusLine).toBe("Saved to cloud today at 2:41 PM.");
+    expect(after.statusLine).toBe("Saved to cloud just now.");
+  });
+
   it("shows restore available when cloud has data missing locally", () => {
     const health = deriveCloudSyncHealth({
       isAuthenticated: true,
@@ -263,6 +353,46 @@ describe("cloud sync health status", () => {
 
     expect(health.kind).toBe("error");
     expect(health.body).toBe("Could not check cloud status right now. Your local data is safe.");
+  });
+
+  it("manual sync failure keeps last saved stale and shows safe sync error copy", () => {
+    stubLocalStorage({
+      [getCloudSyncHealthStorageKey(userId)]: JSON.stringify({
+        ...emptyCloudSyncHealthMetadata,
+        lastSavedAt: savedAt,
+      }),
+    });
+
+    const metadata = mergeCloudSyncHealthMetadata(userId, {
+      lastCheckedAt: now.toISOString(),
+      lastSaveStatus: "error",
+      lastErrorCode: "save_failed",
+    });
+    const health = deriveCloudSyncHealth({
+      isAuthenticated: true,
+      isAvailable: true,
+      migration: migrationState({
+        status: "completed",
+        summary: {
+          sessionsFound: 1,
+          routinesFound: 1,
+          goalFound: false,
+          hasData: true,
+        },
+      }),
+      restore: restoreState(),
+      status: syncStatus({ state: "error", lastSyncedAt: savedAt }),
+      metadata,
+      now,
+    });
+
+    expect(metadata.lastSavedAt).toBe(savedAt);
+    expect(health.kind).toBe("error");
+    expect(health.lastSavedLabel).toBe("Today, 2:41 PM");
+    expect(health.lastCheckedLabel).toBe("Just now");
+    expect(health.body).toBe(
+      "Could not sync right now. Your local data is still safe on this device.",
+    );
   });
 
   it("formats saved, checked, and restored timestamps without raw ISO strings", () => {

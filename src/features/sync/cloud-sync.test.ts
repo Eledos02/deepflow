@@ -196,6 +196,26 @@ describe("cloud sync service", () => {
     ]);
   });
 
+  it("treats a manual sync no-op as successful without creating cloud rows", async () => {
+    const { supabase, upserts } = createSupabaseMock();
+
+    const result = await syncDeepFlowData({
+      supabase,
+      userId,
+      localData: emptySnapshot(),
+      mergeCloudToLocal: false,
+      syncGoal: false,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.summary).toMatchObject({
+      focusSessions: 0,
+      goals: 0,
+      routines: 0,
+    });
+    expect(upserts).toEqual([]);
+  });
+
   it("returns an error result when Supabase fails without throwing", async () => {
     const { supabase } = createSupabaseMock({ failTable: "focus_sessions" });
 
