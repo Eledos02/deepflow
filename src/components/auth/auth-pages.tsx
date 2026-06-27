@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
 import { useAuth } from "@/features/auth/auth-provider";
+import {
+  PASSWORD_RESET_EXPIRED_MESSAGE,
+  PASSWORD_RESET_SENT_MESSAGE,
+  PASSWORD_UPDATE_SUCCESS_MESSAGE,
+  getPasswordResetRedirectTo,
+  sendPasswordResetLink,
+  updateRecoveredPassword,
+} from "@/features/auth/password-recovery";
 import { getAvatarInitial, validateDisplayName } from "@/features/auth/profile";
 import { useCloudSync } from "@/features/sync/cloud-sync-provider";
 import { getCloudSyncCardState } from "@/features/sync/sync-status";
@@ -193,12 +201,170 @@ export function LoginPageContent() {
           <input autoComplete="email" id="login-email" inputMode="email" onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required type="email" value={email} />
           <label htmlFor="login-password">Password</label>
           <input autoComplete="current-password" id="login-password" onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+          <Link className="auth-form__subtle-link" href="/forgot-password">Forgot your password?</Link>
           {error ? <p className="auth-form__error" role="alert">{error}</p> : null}
           <button className="button button--dark button--full" disabled={isSubmitting} type="submit">
             {isSubmitting ? "Signing in…" : "Sign in"}
           </button>
         </form>
         <p className="auth-card__footer">New to DeepFlow? <Link href="/signup">Create an account</Link></p>
+      </div>
+    </section>
+  );
+}
+
+export function ForgotPasswordPageContent() {
+  const { isConfigured, isLoading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSent, setIsSent] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    const result = await sendPasswordResetLink({
+      email,
+      redirectTo: getPasswordResetRedirectTo(window.location),
+    });
+    setIsSubmitting(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setError("");
+    setIsSent(true);
+  };
+
+  if (isLoading) return <AuthLoading />;
+  if (!isConfigured) return <section className="auth-page"><AuthUnavailable /></section>;
+
+  return (
+    <section className="auth-page">
+      <div className="auth-card">
+        <span className="eyebrow">Password recovery</span>
+        <h1>Reset your password.</h1>
+        <p>Enter the email for your DeepFlow account and we will send a reset link.</p>
+        {isSent ? (
+          <div className="auth-message" role="status">
+            <strong>Check your inbox.</strong>
+            <p>{PASSWORD_RESET_SENT_MESSAGE}</p>
+          </div>
+        ) : (
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <label htmlFor="forgot-password-email">Email address</label>
+            <input
+              autoComplete="email"
+              id="forgot-password-email"
+              inputMode="email"
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (error) setError("");
+              }}
+              placeholder="you@example.com"
+              required
+              type="email"
+              value={email}
+            />
+            {error ? <p className="auth-form__error" role="alert">{error}</p> : null}
+            <button className="button button--dark button--full" disabled={isSubmitting} type="submit">
+              {isSubmitting ? "Sending reset link..." : "Send reset link"}
+            </button>
+          </form>
+        )}
+        <p className="auth-card__footer">Remembered it? <Link href="/login">Sign in</Link></p>
+      </div>
+    </section>
+  );
+}
+
+export function ResetPasswordPageContent() {
+  const { isConfigured, isLoading, user } = useAuth();
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpdated, setIsUpdated] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    const result = await updateRecoveredPassword({ password, confirmation });
+    setIsSubmitting(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setError("");
+    setIsUpdated(true);
+    setPassword("");
+    setConfirmation("");
+  };
+
+  if (isLoading) return <AuthLoading />;
+  if (!isConfigured) return <section className="auth-page"><AuthUnavailable /></section>;
+  if (!user) {
+    return (
+      <section className="auth-page">
+        <div className="auth-card auth-message">
+          <strong>{PASSWORD_RESET_EXPIRED_MESSAGE}</strong>
+          <p>The reset link may have already been used or may be too old.</p>
+          <Link className="button button--dark" href="/forgot-password">Request a new link</Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="auth-page">
+      <div className="auth-card">
+        <span className="eyebrow">Password recovery</span>
+        <h1>Choose a new password.</h1>
+        <p>Use a password you do not use anywhere else.</p>
+        {isUpdated ? (
+          <div className="auth-message" role="status">
+            <strong>{PASSWORD_UPDATE_SUCCESS_MESSAGE}</strong>
+            <p>Your DeepFlow account is ready again.</p>
+            <Link className="button button--dark" href="/workspace">Continue to DeepFlow</Link>
+          </div>
+        ) : (
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <label htmlFor="reset-password-new">New password</label>
+            <input
+              autoComplete="new-password"
+              id="reset-password-new"
+              minLength={8}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                if (error) setError("");
+              }}
+              required
+              type="password"
+              value={password}
+            />
+            <label htmlFor="reset-password-confirm">Confirm password</label>
+            <input
+              autoComplete="new-password"
+              id="reset-password-confirm"
+              minLength={8}
+              onChange={(event) => {
+                setConfirmation(event.target.value);
+                if (error) setError("");
+              }}
+              required
+              type="password"
+              value={confirmation}
+            />
+            {error ? <p className="auth-form__error" role="alert">{error}</p> : null}
+            <button className="button button--dark button--full" disabled={isSubmitting} type="submit">
+              {isSubmitting ? "Updating password..." : "Update password"}
+            </button>
+          </form>
+        )}
       </div>
     </section>
   );

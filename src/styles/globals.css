@@ -6834,6 +6834,21 @@ a:focus-visible {
   font-weight: 650;
 }
 
+.auth-form__subtle-link {
+  justify-self: start;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-decoration-color: rgba(89, 102, 95, 0.25);
+  text-underline-offset: 3px;
+}
+
+.auth-form__subtle-link:hover {
+  color: var(--ink);
+  text-decoration-color: rgba(19, 32, 25, 0.42);
+}
+
 .auth-card__footer,
 .auth-card__note {
   margin: 23px 0 0;
@@ -6875,6 +6890,10 @@ a:focus-visible {
 .auth-message p {
   margin: 8px 0 0;
   font-size: 0.9rem;
+}
+
+.auth-message .button {
+  margin-top: 18px;
 }
 
 .auth-card .auth-message {
