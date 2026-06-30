@@ -468,10 +468,22 @@ export function AccountPageContent() {
             </button>
           </form>
         </div>
-        <div className="account-detail-grid">
-          <article><span>Member since</span><strong>{memberSince}</strong></article>
-          <article><span>Current plan</span><strong>Free</strong></article>
-          <article><span>Founding member</span><strong>Not active yet</strong></article>
+        <div className="account-detail-grid account-detail-grid--billing">
+          <article>
+            <span>Member since</span>
+            <strong>{memberSince}</strong>
+          </article>
+          <article>
+            <span>Current plan</span>
+            <strong>Free</strong>
+            <p>DeepFlow&apos;s free core is available while paid plans are being prepared.</p>
+          </article>
+          <article>
+            <span>Founding member</span>
+            <strong>Coming soon</strong>
+            <p>Founding Member access will open after billing is ready.</p>
+            <Link href="/pricing#founding-member">Join updates</Link>
+          </article>
         </div>
         <aside className="account-cloud-backup-card" data-state={health.kind}>
           <div className="account-cloud-backup-card__heading">

@@ -119,6 +119,12 @@ export async function saveWaitlistSubmission(
   config: SupabaseConfig,
   fetcher: FetchLike = fetch,
 ): Promise<WaitlistSaveResult> {
+  const insertPayload = {
+    email: submission.email,
+    source: submission.source,
+    plan: submission.plan,
+  };
+
   const response = await fetcher(
     `${config.url}/rest/v1/waitlist`,
     {
@@ -126,22 +132,20 @@ export async function saveWaitlistSubmission(
       headers: {
         ...supabaseHeaders(config),
         "Content-Type": "application/json",
-        Prefer: "return=representation",
+        Prefer: "return=minimal",
       },
-      body: JSON.stringify(submission),
+      body: JSON.stringify(insertPayload),
     },
   );
 
   if (response.ok) {
-    const payload: unknown = await response.json();
-    const record = Array.isArray(payload) ? parseWaitlistRecord(payload[0]) : null;
-
-    if (record) return { ok: true as const, record };
-
     return {
-      ok: false as const,
-      status: 502,
-      responseBody: "Supabase insert response did not include a waitlist row.",
+      ok: true as const,
+      record: {
+        email: submission.email,
+        welcome_email_sent_at: null,
+        welcome_email_error: null,
+      },
     };
   }
 

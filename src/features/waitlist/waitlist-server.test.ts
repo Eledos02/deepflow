@@ -39,15 +39,9 @@ describe("waitlist server", () => {
     expect(normalizeSupabaseUrl("not-a-url")).toBeNull();
   });
 
-  it("inserts a waitlist row and returns delivery state", async () => {
+  it("inserts a waitlist row without requesting a readable row back", async () => {
     const fetcher = vi.fn().mockResolvedValue(
-      Response.json([
-        {
-          email: "member@example.com",
-          welcome_email_sent_at: null,
-          welcome_email_error: null,
-        },
-      ]),
+      new Response(null, { status: 201 }),
     );
     const result = await saveWaitlistSubmission(
       submission,
@@ -67,7 +61,12 @@ describe("waitlist server", () => {
       "https://project.supabase.co/rest/v1/waitlist",
       expect.objectContaining({
         headers: expect.objectContaining({
-          Prefer: "return=representation",
+          Prefer: "return=minimal",
+        }),
+        body: JSON.stringify({
+          email: "member@example.com",
+          source: "pricing",
+          plan: "founding_member",
         }),
       }),
     );

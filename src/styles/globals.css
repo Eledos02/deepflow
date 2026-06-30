@@ -7277,6 +7277,33 @@ a:focus-visible {
   font-size: 0.92rem;
 }
 
+.account-detail-grid--billing article {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+
+.account-detail-grid--billing span {
+  margin-bottom: 0;
+}
+
+.account-detail-grid--billing p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.account-detail-grid--billing a {
+  width: fit-content;
+  color: #45663b;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: rgba(69, 102, 59, 0.3);
+  text-underline-offset: 3px;
+}
+
 @media (max-width: 720px) {
   .account-cloud-backup-card__heading {
     align-items: stretch;

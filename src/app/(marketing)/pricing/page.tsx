@@ -27,7 +27,7 @@ const freeFeatures = [
 
 const foundingNotes = [
   "Founding Member access is coming soon",
-  "Pricing will be shared before anything paid opens",
+  "Pricing will be introduced after billing is ready",
   "No checkout, billing, or payment flow is active yet",
   "The free core experience remains the priority",
 ];
@@ -42,7 +42,8 @@ export default function PricingPage() {
           <h1>Start free. Founder access comes later.</h1>
           <p>
             DeepFlow is focused on making the free core experience stable
-            before introducing supporter access. There is no checkout today.
+            before introducing supporter access. Billing is being prepared, and
+            there is no checkout today.
           </p>
         </div>
         <div className="pricing-grid">
@@ -104,8 +105,8 @@ export default function PricingPage() {
                 introduce supporter access.
               </p>
               <p className="founding-waitlist__subtext">
-                No payment today. Pricing will be introduced after the free core
-                experience is stable.
+                No payment today. Pricing will be introduced after billing is
+                ready and the free core experience is stable.
               </p>
             </div>
             <FoundingMemberWaitlist source="pricing_founding_member" />
