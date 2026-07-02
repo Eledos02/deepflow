@@ -27,7 +27,7 @@ export const siteConfig = {
   name: "DeepFlow",
   title: "DeepFlow - Calm Focus Workspace for Deep Work",
   description:
-    "DeepFlow helps you plan focused work sessions, build routines, track weekly goals, and reflect in a calm, distraction-light workspace.",
+    "DeepFlow is a calm focus workspace with focus timers, routines, goals, a private Focus Journal, and quiet insights for deep work.",
   socialImage: "/deepflow-og.png",
   url: normalizeSiteUrl(productionSiteUrl),
   email: "hello@deepflownow.com",

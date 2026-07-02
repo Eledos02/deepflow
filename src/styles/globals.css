@@ -707,10 +707,19 @@ a:focus-visible {
 
 .hero__lede {
   max-width: 510px;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
   color: var(--ink-soft);
   font-size: 1.15rem;
   line-height: 1.7;
+}
+
+.hero__positioning {
+  max-width: 500px;
+  margin: 0 0 28px;
+  color: #4b5c46;
+  font-size: 0.94rem;
+  font-weight: 750;
+  line-height: 1.55;
 }
 
 .hero__actions {
@@ -781,6 +790,36 @@ a:focus-visible {
   color: var(--muted);
   font-size: 0.76rem;
   line-height: 1.5;
+}
+
+.hero-feature-row {
+  display: grid;
+  max-width: 640px;
+  margin-top: 28px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.hero-feature-row article {
+  min-height: 108px;
+  padding: 16px;
+  border: 1px solid rgba(23, 35, 25, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 254, 250, 0.54);
+}
+
+.hero-feature-row strong {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ink);
+  font-size: 0.84rem;
+}
+
+.hero-feature-row p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.55;
 }
 
 .hero__product {
@@ -1782,6 +1821,29 @@ a:focus-visible {
 
 .text-arrow-link:hover svg {
   transform: translateX(3px);
+}
+
+.home-link-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.home-link-cluster a {
+  min-height: 34px;
+  padding: 8px 11px;
+  border: 1px solid rgba(23, 35, 25, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 254, 250, 0.62);
+  color: #405044;
+  font-size: 0.72rem;
+  font-weight: 780;
+}
+
+.home-link-cluster a:hover {
+  border-color: rgba(23, 35, 25, 0.18);
+  background: rgba(255, 254, 250, 0.86);
 }
 
 .dashboard-preview {
@@ -7485,9 +7547,18 @@ a:focus-visible {
     margin-inline: auto;
   }
 
+  .hero__positioning {
+    margin-inline: auto;
+  }
+
   .hero__actions,
   .hero__trust {
     justify-content: center;
+  }
+
+  .hero-feature-row {
+    margin-inline: auto;
+    text-align: left;
   }
 
   .hero__waitlist {
@@ -7778,6 +7849,19 @@ a:focus-visible {
     width: 100%;
   }
 
+  .hero-feature-row {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-feature-row article {
+    min-height: auto;
+  }
+
+  .home-link-cluster a {
+    flex: 1 1 calc(50% - 8px);
+    text-align: center;
+  }
+
   .timers-hub-hero {
     padding: 58px 0 54px;
   }
@@ -7806,6 +7890,9 @@ a:focus-visible {
 
   .founding-waitlist__form--compact .founding-waitlist__control .button {
     width: 100%;
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.2;
   }
 
   .product-window {

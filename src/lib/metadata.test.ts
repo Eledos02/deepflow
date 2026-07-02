@@ -16,9 +16,15 @@ const pageMetadataInputs: MetadataInput[] = [
   {
     title: "DeepFlow - Calm Focus Workspace for Deep Work",
     description:
-      "DeepFlow helps you plan focused work sessions, build routines, track weekly goals, and reflect on your focus rhythm in a calm, distraction-light workspace.",
+      "DeepFlow is a calm focus workspace with focus timers, routines, goals, a private Focus Journal, and quiet insights for deep work.",
     path: "/",
-    keywords: ["focus workspace", "deep work", "focus timer", "weekly goals"],
+    keywords: [
+      "focus workspace",
+      "deep work",
+      "focus timer",
+      "focus journal",
+      "calm productivity app",
+    ],
   },
   {
     title: "Free Online Focus Timers - DeepFlow",

@@ -22,28 +22,53 @@ import { createMetadata } from "@/lib/metadata";
 export const metadata = createMetadata({
   title: "DeepFlow - Calm Focus Workspace for Deep Work",
   description:
-    "DeepFlow helps you plan focused work sessions, build routines, track weekly goals, and reflect on your focus rhythm in a calm, distraction-light workspace.",
+    "DeepFlow is a calm focus workspace with focus timers, routines, goals, a private Focus Journal, and quiet insights for deep work.",
   path: "/",
-  keywords: ["focus workspace", "deep work", "focus timer", "weekly goals"],
+  keywords: [
+    "focus workspace",
+    "deep work",
+    "focus timer",
+    "focus journal",
+    "calm productivity app",
+  ],
 });
 
 const focusTool = timerTools[0];
 
+const heroFeatures = [
+  {
+    title: "Start a timer",
+    description: "Name one task and begin without an account.",
+  },
+  {
+    title: "Save what you finished",
+    description: "Completed sessions become your private Focus Journal.",
+  },
+  {
+    title: "Build repeatable routines",
+    description: "Save the focus blocks you return to often.",
+  },
+  {
+    title: "See your rhythm",
+    description: "Notice your best focus windows without noisy analytics.",
+  },
+];
+
 const productBenefits = [
   {
-    title: "Start with one clear next action",
+    title: "Writers finishing drafts",
     description:
-      "Name the work, choose a length that feels possible, and let the timer hold the boundary.",
+      "Protect the next scene, essay section, or revision pass without turning writing into a dashboard.",
   },
   {
-    title: "Keep the whole practice in one place",
+    title: "Developers protecting coding blocks",
     description:
-      "Completed sessions become a private journal, calm notes, routines, goals, and a clearer workspace.",
+      "Give one implementation, review, or debugging task enough quiet time to become real progress.",
   },
   {
-    title: "Learn your natural rhythm",
+    title: "Students and independent builders",
     description:
-      "Notice your strongest focus windows, steady habits, and momentum without turning attention into a score.",
+      "Study, ship, and return tomorrow with a calmer record of what was started and completed.",
   },
 ];
 
@@ -58,45 +83,48 @@ export default function HomePage() {
           <div className="hero__copy">
             <span className="announcement">
               <SparkIcon width={16} height={16} />
-              Your attention is worth protecting
+              Your attention is worth protecting.
             </span>
-            <h1>
-              Focus better.
-              <br />
-              <em>Finish what matters.</em>
-            </h1>
+            <h1>A calm focus workspace for deep work.</h1>
             <p className="hero__lede">
-              DeepFlow is a calm focus workspace for timed work sessions,
-              routines, goals, and reflection - designed to help you stay with
-              one meaningful task at a time.
+              Start a focus timer, protect one meaningful task, and turn
+              completed sessions into a private journal, routines, goals, and
+              quiet insights.
+            </p>
+            <p className="hero__positioning">
+              Not just a timer - a calm system for building a focus practice.
             </p>
             <div className="hero__actions">
               <Link className="button button--dark button--large" href="/workspace">
-                Start focusing
+                Start a free focus session
                 <ArrowIcon />
               </Link>
               <Link className="button button--ghost button--large" href="/signup">
-                Create free account
+                Create account for cloud backup
               </Link>
-            </div>
-            <div className="hero__waitlist">
-              <span>Founding Member updates</span>
-              <FoundingMemberWaitlist source="homepage_hero" variant="compact" />
             </div>
             <div className="hero__trust">
               <span>
                 <CheckIcon width={17} height={17} />
-                No signup to start
+                No account required to start
               </span>
               <span>
                 <ShieldIcon width={17} height={17} />
-                Private by default
+                Local-first privacy
               </span>
             </div>
             <p className="hero__local-note">
-              Use it without an account. Sign in when you want cloud backup
+              No account required to start. Sign in when you want cloud backup
               across devices.
             </p>
+            <div className="hero-feature-row" aria-label="What you can do in DeepFlow">
+              {heroFeatures.map((feature) => (
+                <article key={feature.title}>
+                  <strong>{feature.title}</strong>
+                  <p>{feature.description}</p>
+                </article>
+              ))}
+            </div>
           </div>
           <div className="hero__product">
             <div className="product-window">
@@ -125,7 +153,7 @@ export default function HomePage() {
 
       <section className="proof-strip" aria-label="DeepFlow principles">
         <div className="shell proof-strip__inner">
-          <span>Built for</span>
+          <span>Built for serious work alone</span>
           <strong>Writers</strong>
           <i />
           <strong>Developers</strong>
@@ -141,13 +169,17 @@ export default function HomePage() {
           <div className="section-heading product-section__heading">
             <div>
               <span className="eyebrow">What DeepFlow is</span>
-              <h2>DeepFlow is a calm workspace for focused work.</h2>
+              <h2>A focus workspace for productivity without distraction.</h2>
             </div>
             <div className="product-section__intro">
               <p>
-                Start a timer, save routines, set weekly goals, reflect in the
-                Focus Journal, and review insights without turning your work
-                into a noisy dashboard.
+                DeepFlow helps you begin one task, finish one session, and
+                return tomorrow with less friction.
+              </p>
+              <p>
+                Use the focus timer when you need a clean start. Use the Focus
+                Journal, routines, goals, and insights when you want your focus
+                practice to become repeatable.
               </p>
               <Link className="text-arrow-link" href="/workspace">
                 Explore the Workspace
@@ -157,6 +189,14 @@ export default function HomePage() {
                 Try the ADHD-friendly timer
                 <ArrowIcon />
               </Link>
+              <div className="home-link-cluster" aria-label="DeepFlow tools and guides">
+                <Link href="/tools/focus-timer">Focus timer</Link>
+                <Link href="/tools/pomodoro-timer">Pomodoro timer</Link>
+                <Link href="/tools/study-timer">Study timer</Link>
+                <Link href="/adhd-timer">ADHD-friendly timer</Link>
+                <Link href="/guides">Deep work guides</Link>
+                <Link href="/pricing">Pricing notes</Link>
+              </div>
             </div>
           </div>
           <ProductPreview />
@@ -193,14 +233,13 @@ export default function HomePage() {
         <div className="shell">
           <div className="section-heading section-heading--split">
             <div>
-              <span className="eyebrow">For scattered attention</span>
-              <h2>Make the next focused session easier to begin.</h2>
+              <span className="eyebrow">Who it is for</span>
+              <h2>Built for people doing serious work alone.</h2>
             </div>
             <p>
-              DeepFlow is for people who feel pulled between tabs, tasks, and
-              half-finished ideas. It gives important work a clear beginning, a
-              protected middle, and enough reflection to return with less
-              friction.
+              Writers, developers, students, founders, and independent builders
+              use DeepFlow when progress needs quiet structure instead of team
+              dashboards, streak pressure, or noisy productivity analytics.
             </p>
           </div>
           <BenefitGrid items={productBenefits} />
@@ -211,7 +250,7 @@ export default function HomePage() {
         <div className="shell">
           <div className="section-heading section-heading--center">
             <span className="eyebrow">A complete focus practice</span>
-            <h2>Keep the timer simple. Let the system grow around it.</h2>
+            <h2>Keep the focus timer simple. Let the calm productivity app grow around it.</h2>
           </div>
           <div className="product-pillars__grid">
             <article>
