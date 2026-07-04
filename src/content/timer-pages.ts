@@ -24,6 +24,7 @@ export type TimerInternalLink = {
 
 export type TimerPageContent = {
   title: string;
+  seoTitle?: string;
   description: string;
   keywords: string[];
   intro: string[];
@@ -36,6 +37,7 @@ export type TimerPageContent = {
 };
 
 type TimerEditorialProfile = Omit<TimerPageContent, "title" | "keywords"> & {
+  title?: string;
   searchTerms: string[];
 };
 
@@ -47,7 +49,7 @@ const sharedLinks = {
       "Plan repeatable concentration blocks and keep a local record of completed focus sessions.",
   },
   pomodoro: {
-    href: "/pomodoro-timer",
+    href: "/tools/pomodoro-timer",
     label: "Pomodoro Timer",
     description:
       "Alternate focused work with intentional breaks using a complete Pomodoro workflow.",
@@ -886,16 +888,20 @@ const timerProfiles = {
     internalLinks: [sharedLinks.focus, sharedLinks.deepWork, sharedLinks.pomodoroGuide],
   },
   60: {
+    title: "60 minute timer for deep work",
+    seoTitle: "60 Minute Timer for Deep Work",
     description:
-      "Use a free 60 minute timer for one hour focus blocks, strategic work, meeting preparation, study sessions, and substantial planning.",
+      "Start a 60-minute focus session for deep work, studying, writing, or coding with DeepFlow's calm online timer.",
     searchTerms: [
+      "60 minute focus timer",
+      "deep work timer",
       "one hour focus timer",
       "60 minute meeting prep timer",
       "one hour planning timer",
     ],
     intro: [
-      "A sixty-minute timer gives you a full hour for work that deserves a deliberate appointment. It is useful for strategic planning, meeting preparation, proposal review, focused study, budget work, and substantial decisions that need more space than a quick sprint. The hour feels familiar on a calendar, but it still needs a defined outcome to stay productive.",
-      "Use this timer when the work includes multiple related stages: gather context, think through options, produce a recommendation, and capture the next action. The countdown creates the outer boundary while your internal structure keeps the hour from dissolving into open tabs, loose notes, and reactive messages.",
+      "A 60 minute timer gives deep work a familiar calendar-sized boundary. Use it for studying, writing, coding, planning, research, and other longer focus blocks that need more continuity than a quick sprint.",
+      "DeepFlow keeps the one-hour session calm and easy to start. Name one task, press start, and let the countdown protect the working middle while your completed session stays in local history.",
     ],
     useCases: [
       "one hour focus blocks",
@@ -944,9 +950,9 @@ const timerProfiles = {
     ],
     sections: [
       {
-        title: "What can you do in sixty minutes?",
+        title: "What can you do in a 60 minute focus session?",
         paragraphs: [
-          "A one-hour timer can hold a complete strategic pass: review the current state, identify constraints, compare options, choose the most useful direction, and write the next step. It can also prepare you for an important meeting by turning scattered thoughts into an agenda, questions, decision points, and a concise briefing note.",
+          "A 60 minute timer can hold a complete deep work pass: review the current state, identify constraints, compare options, choose the most useful direction, and write the next step. It can also support coding, writing, research, and study when the task needs sustained context.",
           "For study, sixty minutes can contain a lesson-length session with retrieval, correction, and synthesis. For professional work, it can support budget review, roadmap planning, client preparation, or a careful quality pass before sending something important. The common factor is that the session ends with an artifact or decision, not just time spent near the task.",
         ],
       },
@@ -1220,11 +1226,11 @@ const timerProfiles = {
 } satisfies Record<TimerMinutes, TimerEditorialProfile>;
 
 export function getTimerPageContent(minutes: TimerMinutes): TimerPageContent {
-  const profile = timerProfiles[minutes];
+  const profile: TimerEditorialProfile = timerProfiles[minutes];
 
   return {
     ...profile,
-    title: `${minutes} Minute Timer`,
+    title: profile.title ?? `${minutes} Minute Timer`,
     keywords: [
       `${minutes} minute timer`,
       `${minutes} min timer`,

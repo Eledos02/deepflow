@@ -9,7 +9,7 @@ describe("site navigation", () => {
       { label: "Focus Timer", href: "/tools/focus-timer" },
       { label: "Countdown Timer", href: "/tools/countdown-timer" },
       { label: "Study Timer", href: "/tools/study-timer" },
-      { label: "Pomodoro Timer", href: "/pomodoro-timer" },
+      { label: "Pomodoro Timer", href: "/tools/pomodoro-timer" },
       { label: "ADHD Timer", href: "/adhd-timer" },
     ]);
   });

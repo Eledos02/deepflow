@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { timers } from "../config/timers";
 import { guides } from "../content/guides";
-import { pomodoroPage } from "../content/pomodoro-page";
 import { getTimerPageContent } from "../content/timer-pages";
 import { getTimerToolPath, timerTools } from "../content/timer-tools";
 import {
@@ -58,20 +57,12 @@ const pageMetadataInputs: MetadataInput[] = [
       "deep work guides",
     ],
   },
-  {
-    title: pomodoroPage.title,
-    description: pomodoroPage.description,
-    path: "/pomodoro-timer",
-    keywords: [...pomodoroPage.keywords],
-  },
-  ...timerTools
-    .filter((tool) => tool.slug !== "pomodoro-timer")
-    .map((tool) => ({
-      title: tool.seoTitle ?? `${tool.shortTitle} Timer - Free Online Timer`,
-      description: tool.description,
-      path: getTimerToolPath(tool.slug),
-      keywords: tool.keywords,
-    })),
+  ...timerTools.map((tool) => ({
+    title: tool.seoTitle ?? `${tool.shortTitle} Timer - Free Online Timer`,
+    description: tool.description,
+    path: getTimerToolPath(tool.slug),
+    keywords: tool.keywords,
+  })),
   ...guides.map((guide) => ({
     title: guide.title,
     description: guide.description,
@@ -82,7 +73,7 @@ const pageMetadataInputs: MetadataInput[] = [
     const content = getTimerPageContent(minutes);
 
     return {
-      title: `${content.title} - Free Online Countdown`,
+      title: content.seoTitle ?? `${content.title} - Free Online Countdown`,
       description: content.description,
       path: `/timer/${minutes}`,
       keywords: content.keywords,

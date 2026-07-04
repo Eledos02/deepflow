@@ -16,35 +16,82 @@ export type TimerTool = {
   faqs: FaqItem[];
   seoTitle?: string;
   sections?: Array<{ title: string; paragraphs: string[] }>;
+  internalLinks?: Array<{ href: string; label: string; description: string }>;
 };
 
 export const timerTools: TimerTool[] = [
   {
     slug: "focus-timer",
     kind: "focus",
-    eyebrow: "Deep work timer",
-    title: "Make space for your best work",
+    eyebrow: "Online focus timer",
+    title: "Free focus timer for deep work",
     shortTitle: "Focus",
+    seoTitle: "Focus Timer - Free Online Timer for Deep Work",
     description:
-      "A distraction-free focus timer designed for deliberate, uninterrupted work.",
+      "Use DeepFlow's free focus timer to start one task, protect a deep work session, and save what you finished in a private Focus Journal.",
     defaultMinutes: 50,
     presets: [25, 50, 90],
-    keywords: ["focus timer", "deep work timer", "study timer", "work timer"],
+    keywords: [
+      "focus timer",
+      "online focus timer",
+      "free focus timer",
+      "deep work timer",
+      "work timer",
+      "task timer",
+      "focus session timer",
+    ],
     benefits: [
       {
-        title: "One clear commitment",
+        title: "Start one task quickly",
         description:
-          "Choose a meaningful block of time and give one task your full attention.",
+          "Name the work, choose a session length, and begin without creating an account.",
       },
       {
-        title: "Built for flow",
+        title: "Keep a private record",
         description:
-          "A quiet interface keeps the clock visible without competing with your work.",
+          "Completed focus sessions are saved locally so your Focus Journal can show what you finished.",
       },
       {
-        title: "Accurate in the background",
+        title: "Stay out of noisy analytics",
         description:
-          "Deadline-based timing stays reliable when you switch tabs or lock your screen.",
+          "DeepFlow keeps the timer calm, readable, and useful without turning focus into a score.",
+      },
+    ],
+    sections: [
+      {
+        title: "What is a focus timer?",
+        paragraphs: [
+          "A focus timer is a simple boundary for one meaningful task. Instead of trying to manage the whole day at once, you decide what deserves attention now, choose a realistic interval, and protect that commitment until the timer ends.",
+          "DeepFlow keeps the focus timer free to start and intentionally quiet. The page gives you the clock, an intention field, sound and notification controls, and a local record of completed sessions without requiring an account before you begin.",
+        ],
+      },
+      {
+        title: "How to use this focus timer",
+        paragraphs: [
+          "Write the result you want from the session before pressing start. A useful intention is concrete enough to recognize later, such as draft the introduction, review one pull request, solve five practice problems, or outline the next launch email.",
+          "When the session ends, take a real break and capture the next action. Completed sessions can become part of your private Focus Journal, so tomorrow's work starts with less friction.",
+        ],
+      },
+      {
+        title: "Best session lengths for focused work",
+        paragraphs: [
+          "Use 25 minutes when starting feels difficult or when the task is compact. Use 50 or 60 minutes for writing, coding, planning, and study blocks that need more continuity. Reserve 90 minutes for prepared deep work with a clear recovery break afterward.",
+          "The best focus session timer is the one you can repeat without draining your attention. DeepFlow gives you flexible presets because deep work, admin, study, and creative production do not all fit the same container.",
+        ],
+      },
+      {
+        title: "Focus timer vs Pomodoro timer",
+        paragraphs: [
+          "A Pomodoro timer usually follows a structured rhythm of 25 minutes of work and short breaks. A flexible focus timer is better when the task needs a longer runway, when you want one uninterrupted block, or when your energy calls for a different session length.",
+          "Both approaches can support deep work. Use Pomodoro when you need a repeatable work-break cadence, and use the focus timer when one task needs a protected container without extra ceremony.",
+        ],
+      },
+      {
+        title: "Why DeepFlow is more than a timer",
+        paragraphs: [
+          "A simple timer can start a session, but DeepFlow helps the session become a practice. Your completed work can feed a private Focus Journal, repeatable routines, weekly goals, and quiet insights about when focused work actually happens.",
+          "You can use the focus timer locally without an account. Creating an account is optional and useful when you want cloud backup for sessions, routines, and goals across devices.",
+        ],
       },
     ],
     faqs: [
@@ -52,6 +99,16 @@ export const timerTools: TimerTool[] = [
         question: "How long should a deep work session be?",
         answer:
           "Start with 50 minutes if you are building focus endurance. Experienced practitioners often use 60 to 90 minute sessions, followed by a real break.",
+      },
+      {
+        question: "Is this focus timer free?",
+        answer:
+          "Yes. You can start a focus session, set an intention, pause, resume, and complete the timer without creating an account.",
+      },
+      {
+        question: "Do I need an account to use the Focus Journal?",
+        answer:
+          "No. Completed sessions are saved locally in your browser. An account is only needed when you want optional cloud backup across devices.",
       },
       {
         question: "Can I use this focus timer for studying?",
@@ -64,22 +121,69 @@ export const timerTools: TimerTool[] = [
           "Yes. DeepFlow calculates time from a fixed deadline instead of counting browser ticks, which avoids common background-tab drift.",
       },
     ],
+    internalLinks: [
+      {
+        href: "/workspace",
+        label: "DeepFlow Workspace",
+        description:
+          "Open the local-first workspace for Focus Journal, routines, goals, insights, and notes.",
+      },
+      {
+        href: "/tools/pomodoro-timer",
+        label: "Pomodoro Timer",
+        description:
+          "Use structured work and break cycles when you want a repeatable 25 minute rhythm.",
+      },
+      {
+        href: "/tools/study-timer",
+        label: "Study Timer",
+        description:
+          "Plan reading, revision, assignments, and active recall sessions with less friction.",
+      },
+      {
+        href: "/tools/countdown-timer",
+        label: "Countdown Timer",
+        description:
+          "Choose a simple countdown for meetings, breaks, chores, and short task blocks.",
+      },
+      {
+        href: "/adhd-timer",
+        label: "ADHD-friendly Timer",
+        description:
+          "Start smaller when attention feels hard to gather. DeepFlow is not a medical tool.",
+      },
+      {
+        href: "/guides/focus-better",
+        label: "How to Focus Better",
+        description:
+          "Build practical habits that make concentration less dependent on willpower.",
+      },
+      {
+        href: "/guides/deep-work",
+        label: "Deep Work Guide",
+        description:
+          "Learn how to prepare, protect, and recover from demanding focus sessions.",
+      },
+    ],
   },
   {
     slug: "pomodoro-timer",
     kind: "pomodoro",
     eyebrow: "Pomodoro timer",
-    title: "Build momentum, one interval at a time",
+    title: "Free Pomodoro timer for focused work",
     shortTitle: "Pomodoro",
+    seoTitle: "Pomodoro Timer - Free Online Pomodoro for Focus",
     description:
-      "A simple Pomodoro timer for focused 25-minute work sessions and restorative breaks.",
+      "Start a calm Pomodoro timer for focused work, studying, or writing. Use DeepFlow to protect one task and build a repeatable focus rhythm.",
     defaultMinutes: 25,
     presets: [25, 5, 15],
     keywords: [
       "pomodoro timer",
+      "pomodoro timer online",
+      "pomodoro technique timer",
+      "free pomodoro timer",
+      "online pomodoro",
       "25 minute timer",
-      "productivity timer",
-      "study pomodoro",
     ],
     benefits: [
       {
@@ -98,11 +202,51 @@ export const timerTools: TimerTool[] = [
           "Completed focus sessions are counted locally as a lightweight measure of momentum.",
       },
     ],
+    sections: [
+      {
+        title: "What is the Pomodoro technique?",
+        paragraphs: [
+          "The Pomodoro Technique is a work-and-break rhythm: choose one task, focus for a defined interval, then take a deliberate recovery break. The classic pattern uses 25 minutes of focused work and a 5 minute break, with a longer break after several rounds.",
+          "DeepFlow keeps the Pomodoro timer online and calm. You can start with the classic focus interval, switch to short or long breaks, and keep the session centered on one clear intention.",
+        ],
+      },
+      {
+        title: "How a Pomodoro session works",
+        paragraphs: [
+          "Before the timer starts, write the outcome you want from this round. During the focus interval, treat unrelated thoughts as notes for later rather than instructions to switch tasks. When the alert sounds, stop cleanly and take the break seriously.",
+          "A Pomodoro session works best when the break is restorative rather than another stream of input. Stand up, rest your eyes, drink water, or move briefly before beginning the next focus round.",
+        ],
+      },
+      {
+        title: "Pomodoro timer vs flexible focus timer",
+        paragraphs: [
+          "Use Pomodoro when resistance is high, when you want frequent recovery, or when a 25 minute container makes the task easier to begin. The structure is useful for studying, writing, admin, and repeatable daily work.",
+          "Use a flexible focus timer when the task needs more continuity, such as coding, deep writing, strategy, or research. DeepFlow links both approaches so you can choose the rhythm that fits the work instead of forcing every task into one method.",
+        ],
+      },
+      {
+        title: "How DeepFlow supports focus beyond one Pomodoro",
+        paragraphs: [
+          "DeepFlow is more than a free Pomodoro timer. Completed sessions can build a private Focus Journal, show weekly momentum, and help you return to routines that work without turning attention into a noisy productivity dashboard.",
+          "You can use the Pomodoro timer without signing in. Creating an account is optional and useful when you want cloud backup for sessions, routines, and goals across devices.",
+        ],
+      },
+    ],
     faqs: [
       {
         question: "What is the Pomodoro Technique?",
         answer:
           "It is a time-management method that alternates focused work intervals, traditionally 25 minutes, with short breaks. After several sessions, you take a longer break.",
+      },
+      {
+        question: "Is this Pomodoro timer free?",
+        answer:
+          "Yes. You can use the focus and break intervals, local session history, sound alert, and browser notifications without creating an account.",
+      },
+      {
+        question: "When should I use Pomodoro instead of a longer focus timer?",
+        answer:
+          "Use Pomodoro when you want frequent breaks or need help starting. Use a longer focus timer when writing, coding, research, or deep work needs more uninterrupted context.",
       },
       {
         question: "Do I have to use 25-minute sessions?",
@@ -113,6 +257,44 @@ export const timerTools: TimerTool[] = [
         question: "How many Pomodoro sessions should I do?",
         answer:
           "A common cycle is four focus sessions with short breaks, followed by a 15 to 30 minute break. Adjust the cycle to the difficulty of your work.",
+      },
+    ],
+    internalLinks: [
+      {
+        href: "/tools/focus-timer",
+        label: "Focus Timer",
+        description:
+          "Open a flexible focus session when one task needs a longer protected block.",
+      },
+      {
+        href: "/tools/study-timer",
+        label: "Study Timer",
+        description:
+          "Use study-focused sessions for reading, recall, revision, and assignments.",
+      },
+      {
+        href: "/timer/25",
+        label: "25 Minute Timer",
+        description:
+          "Open the classic Pomodoro-length focus interval as a simple countdown.",
+      },
+      {
+        href: "/timer/50",
+        label: "50 Minute Timer",
+        description:
+          "Try an extended 50/10 rhythm when a task needs more continuity.",
+      },
+      {
+        href: "/guides/pomodoro-technique",
+        label: "Pomodoro Technique Guide",
+        description:
+          "Learn how to adapt the classic method without losing its useful rhythm.",
+      },
+      {
+        href: "/guides/deep-work-vs-pomodoro",
+        label: "Deep Work vs Pomodoro",
+        description:
+          "Compare structured Pomodoro cycles with longer deep work sessions.",
       },
     ],
   },
@@ -260,9 +442,7 @@ export function getTimerTool(slug: string) {
 }
 
 export function getTimerToolPath(slug: string) {
-  return slug === "pomodoro-timer"
-    ? "/pomodoro-timer"
-    : `/tools/${slug}`;
+  return `/tools/${slug}`;
 }
 
 export function getTimerToolContentWordCount(tool: TimerTool) {

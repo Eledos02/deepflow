@@ -15,11 +15,11 @@ describe("indexable route registry", () => {
     }
   });
 
-  it("uses the dedicated Pomodoro route as the canonical indexable URL", () => {
+  it("uses the tool Pomodoro route as the canonical indexable URL", () => {
     const paths = getIndexableRoutes().map((route) => route.path);
 
-    expect(paths).toContain("/pomodoro-timer");
-    expect(paths).not.toContain("/tools/pomodoro-timer");
+    expect(paths).toContain("/tools/pomodoro-timer");
+    expect(paths).not.toContain("/pomodoro-timer");
   });
 
   it("includes the public timers hub in the sitemap registry", () => {

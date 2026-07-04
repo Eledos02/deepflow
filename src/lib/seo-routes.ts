@@ -12,7 +12,6 @@ const staticRoutes = [
   { path: "/", changeFrequency: "weekly", priority: 1 },
   { path: "/timers", changeFrequency: "weekly", priority: 0.95 },
   { path: "/adhd-timer", changeFrequency: "monthly", priority: 0.9 },
-  { path: "/pomodoro-timer", changeFrequency: "monthly", priority: 0.95 },
   { path: "/guides", changeFrequency: "weekly", priority: 0.85 },
   { path: "/pricing", changeFrequency: "monthly", priority: 0.7 },
 ] satisfies IndexableRoute[];
@@ -21,7 +20,6 @@ export function getIndexableRoutes(): IndexableRoute[] {
   return [
     ...staticRoutes,
     ...timerTools
-      .filter((tool) => tool.slug !== "pomodoro-timer")
       .map((tool) => ({
         path: getTimerToolPath(tool.slug),
         changeFrequency: "monthly" as const,

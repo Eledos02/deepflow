@@ -45,7 +45,7 @@ export async function generateMetadata({
   const content = getTimerPageContent(minutes);
 
   return createMetadata({
-    title: `${content.title} - Free Online Countdown`,
+    title: content.seoTitle ?? `${content.title} - Free Online Countdown`,
     description: content.description,
     path: getTimerPath(minutes),
     keywords: content.keywords,

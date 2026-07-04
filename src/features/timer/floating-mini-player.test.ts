@@ -36,7 +36,7 @@ describe("floating mini player helpers", () => {
 
     expect(getFloatingTimerMeta("tool:pomodoro-timer", 25 * 60)).toMatchObject({
       label: "Pomodoro",
-      path: "/pomodoro-timer",
+      path: "/tools/pomodoro-timer",
       timerKind: "pomodoro",
     });
 
