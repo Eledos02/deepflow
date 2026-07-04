@@ -28,6 +28,12 @@ describe("indexable route registry", () => {
     expect(paths).toContain("/timers");
   });
 
+  it("includes public legal pages in the sitemap registry", () => {
+    const paths = getIndexableRoutes().map((route) => route.path);
+
+    expect(paths).toEqual(expect.arrayContaining(["/terms", "/privacy"]));
+  });
+
   it("does not emit duplicate or non-canonical paths", () => {
     const paths = getIndexableRoutes().map((route) => route.path);
 

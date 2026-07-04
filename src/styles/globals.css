@@ -4316,6 +4316,90 @@ a:focus-visible {
   margin: 0 0 10px;
 }
 
+.legal-hero .guide-meta {
+  margin-top: 28px;
+}
+
+.legal-body > section {
+  margin-bottom: 56px;
+}
+
+.legal-body h2 {
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+}
+
+.legal-disclaimer {
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  margin: 0 0 56px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.legal-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.legal-list li {
+  color: #3f4c45;
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  line-height: 1.75;
+}
+
+.legal-cross-link {
+  margin: 72px 0 42px;
+}
+
+.legal-cross-link a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(246, 239, 224, 0.7)),
+    var(--white);
+  box-shadow: 0 18px 50px rgba(18, 43, 32, 0.05);
+}
+
+.legal-cross-link span {
+  display: grid;
+  gap: 8px;
+}
+
+.legal-cross-link strong {
+  color: var(--ink);
+  font-size: 1.08rem;
+}
+
+.legal-cross-link small {
+  max-width: 620px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.legal-cross-link svg {
+  width: 20px;
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+  transition: transform 180ms ease;
+}
+
+.legal-cross-link a:hover svg {
+  transform: translateX(4px);
+}
+
 .pricing-page {
   position: relative;
   overflow: hidden;

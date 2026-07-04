@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { timers } from "../config/timers";
 import { guides } from "../content/guides";
+import { privacyPage, termsPage } from "../content/legal-pages";
 import { getTimerPageContent } from "../content/timer-pages";
 import { getTimerToolPath, timerTools } from "../content/timer-tools";
 import {
@@ -44,6 +45,20 @@ const pageMetadataInputs: MetadataInput[] = [
       "DeepFlow is free to start. Founding Member access is coming soon, and pricing will be introduced after the free core experience is stable.",
     path: "/pricing",
     keywords: ["DeepFlow pricing", "Founding Member", "focus workspace"],
+  },
+  {
+    title: termsPage.title,
+    description:
+      "Read DeepFlow's Terms of Service for accounts, billing readiness, cancellations, refunds, acceptable use, and local-first data behavior.",
+    path: "/terms",
+    keywords: ["DeepFlow terms", "terms of service", "DeepFlow legal"],
+  },
+  {
+    title: privacyPage.title,
+    description:
+      "Read DeepFlow's Privacy Policy for account data, local-first browser storage, cloud backup, payments, email, analytics, and cookies.",
+    path: "/privacy",
+    keywords: ["DeepFlow privacy", "privacy policy", "local-first data"],
   },
   {
     title: "DeepFlow Guides — Focus, Pomodoro, Study & Deep Work",

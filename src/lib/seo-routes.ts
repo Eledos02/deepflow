@@ -14,6 +14,8 @@ const staticRoutes = [
   { path: "/adhd-timer", changeFrequency: "monthly", priority: 0.9 },
   { path: "/guides", changeFrequency: "weekly", priority: 0.85 },
   { path: "/pricing", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/terms", changeFrequency: "monthly", priority: 0.4 },
+  { path: "/privacy", changeFrequency: "monthly", priority: 0.4 },
 ] satisfies IndexableRoute[];
 
 export function getIndexableRoutes(): IndexableRoute[] {
