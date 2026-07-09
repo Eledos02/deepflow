@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { BillingCheckoutButton } from "@/components/marketing/billing-checkout-button";
 import { FoundingMemberWaitlist } from "@/components/marketing/founding-member-waitlist";
 import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import {
@@ -11,9 +12,9 @@ import {
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "DeepFlow Pricing and Founding Member Updates",
+  title: "DeepFlow Pricing",
   description:
-    "DeepFlow is free to start. Founding Member access is coming soon, and pricing will be introduced after the free core experience is stable.",
+    "DeepFlow is free to start, with optional Monthly, Annual, and limited Founding Member subscriptions managed through Stripe.",
   path: "/pricing",
   keywords: ["DeepFlow pricing", "Founding Member", "focus workspace"],
 });
@@ -25,11 +26,25 @@ const freeFeatures = [
   "Notes Canvas and layout data remain local-only for now",
 ];
 
-const foundingNotes = [
-  "Founding Member access is coming soon",
-  "Pricing will be introduced after billing is ready",
-  "No checkout, billing, or payment flow is active yet",
-  "The free core experience remains the priority",
+const monthlyFeatures = [
+  "Support DeepFlow's focused product roadmap",
+  "Use account cloud backup for sessions, routines, and goals",
+  "Manage billing through the Stripe customer portal",
+  "Keep the free local-first core available",
+];
+
+const annualFeatures = [
+  "Lower yearly price for the same DeepFlow account features",
+  "Stripe-managed subscription and renewal",
+  "Cloud backup remains explicit and user-controlled",
+  "Notes Canvas stays local-only for now",
+];
+
+const founderFeatures = [
+  "Limited yearly launch price",
+  "Founder subscription is managed through Stripe",
+  "Available only while the launch offer remains open",
+  "No lifetime-plan claim or local data changes",
 ];
 
 export default function PricingPage() {
@@ -39,11 +54,11 @@ export default function PricingPage() {
       <div className="shell">
         <div className="pricing-heading">
           <span className="eyebrow">Pricing</span>
-          <h1>Start free. Founder access comes later.</h1>
+          <h1>Start free. Upgrade only if it helps.</h1>
           <p>
-            DeepFlow is focused on making the free core experience stable
-            before introducing supporter access. Billing is being prepared, and
-            there is no checkout today.
+            DeepFlow&apos;s local-first core remains free. Optional paid plans
+            are handled through Stripe and never change cloud restore, sync, or
+            Notes Canvas behavior.
           </p>
         </div>
         <div className="pricing-grid">
@@ -64,23 +79,66 @@ export default function PricingPage() {
               ))}
             </ul>
           </article>
-          <article className="price-card price-card--featured">
-            <span className="price-card__badge">No checkout</span>
-            <span className="price-card__eyebrow">Coming soon</span>
-            <span className="price-card__label">Founding Member</span>
-            <strong className="price-card__status">Coming soon</strong>
+          <article className="price-card">
+            <span className="price-card__eyebrow">Monthly</span>
+            <span className="price-card__label">DeepFlow Monthly</span>
+            <strong className="price-card__status">$4.99/mo</strong>
             <p>
-              Early supporter access will open after the free core experience
-              is stable.
+              A flexible monthly subscription for people who want to support
+              DeepFlow while keeping account backup available.
             </p>
-            <a className="button button--light button--full" href="#founding-member">
-              Join updates
-            </a>
+            <BillingCheckoutButton plan="monthly">
+              Choose monthly
+            </BillingCheckoutButton>
+            <ul>
+              {monthlyFeatures.map((feature) => (
+                <li key={feature}>
+                  <CheckIcon />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </article>
+          <article className="price-card">
+            <span className="price-card__eyebrow">Annual</span>
+            <span className="price-card__label">DeepFlow Annual</span>
+            <strong className="price-card__status">$39/yr</strong>
+            <p>
+              A yearly subscription for people who know DeepFlow belongs in
+              their focus rhythm.
+            </p>
+            <BillingCheckoutButton plan="annual">
+              Choose annual
+            </BillingCheckoutButton>
+            <ul>
+              {annualFeatures.map((feature) => (
+                <li key={feature}>
+                  <CheckIcon />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </article>
+          <article className="price-card price-card--featured">
+            <span className="price-card__badge">Limited</span>
+            <span className="price-card__eyebrow">Launch price</span>
+            <span className="price-card__label">Founding Member</span>
+            <strong className="price-card__status">$29/yr</strong>
+            <p>
+              A limited yearly launch price for early supporters. Availability
+              is checked on the server before checkout opens.
+            </p>
+            <BillingCheckoutButton
+              className="button button--light button--full"
+              plan="founder"
+            >
+              Choose Founder
+            </BillingCheckoutButton>
             <small className="price-card__note">
-              Payments are not active yet.
+              If the launch price is closed, checkout will not open.
             </small>
             <ul>
-              {foundingNotes.map((feature) => (
+              {founderFeatures.map((feature) => (
                 <li key={feature}>
                   <CheckIcon />
                   {feature}
@@ -99,14 +157,14 @@ export default function PricingPage() {
               <span className="founding-waitlist__badge">
                 Limited early access
               </span>
-              <h2 id="founding-member-title">Founding Member access is coming soon.</h2>
+              <h2 id="founding-member-title">Founding Member launch updates.</h2>
               <p className="founding-waitlist__description">
-                Join the list if you want an update when DeepFlow is ready to
-                introduce supporter access.
+                Join the list if you want updates about launch pricing,
+                billing changes, and what DeepFlow is building next.
               </p>
               <p className="founding-waitlist__subtext">
-                No payment today. Pricing will be introduced after billing is
-                ready and the free core experience is stable.
+                Checkout is handled through Stripe. Waitlist signup never
+                creates a subscription.
               </p>
             </div>
             <FoundingMemberWaitlist source="pricing_founding_member" />
@@ -130,8 +188,8 @@ export default function PricingPage() {
           <article>
             <TargetIcon />
             <div>
-              <strong>Pricing will be clear before it opens</strong>
-              <p>No billing is active, and no plan is required to start.</p>
+              <strong>Billing status comes from Stripe webhooks</strong>
+              <p>Checkout redirects never activate paid access by themselves.</p>
             </div>
           </article>
         </div>

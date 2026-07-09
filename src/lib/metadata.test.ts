@@ -40,9 +40,9 @@ const pageMetadataInputs: MetadataInput[] = [
     ],
   },
   {
-    title: "DeepFlow Pricing and Founding Member Updates",
+    title: "DeepFlow Pricing",
     description:
-      "DeepFlow is free to start. Founding Member access is coming soon, and pricing will be introduced after the free core experience is stable.",
+      "DeepFlow is free to start, with optional Monthly, Annual, and limited Founding Member subscriptions managed through Stripe.",
     path: "/pricing",
     keywords: ["DeepFlow pricing", "Founding Member", "focus workspace"],
   },

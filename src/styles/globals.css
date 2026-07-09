@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   --ink: #132019;
   --ink-soft: #394941;
@@ -4540,6 +4542,24 @@ a:focus-visible {
   font-size: 0.72rem;
   line-height: 1.5;
   text-align: center;
+}
+
+.billing-action {
+  display: grid;
+  gap: 10px;
+}
+
+.billing-action__error {
+  margin: 0;
+  color: #a7503f;
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.price-card--featured .billing-action__error {
+  color: #ffd0c5;
 }
 
 .price-card ul {

@@ -1,8 +1,7 @@
 # Stripe Webhook Events
 
-V7.6 adds the webhook route shape but does not process live events yet. V7.7
-should verify Stripe signatures, store event IDs, and update billing tables from
-server-confirmed Stripe state.
+V7.7 verifies Stripe signatures, stores event IDs, and updates billing tables
+from server-confirmed Stripe state.
 
 ## Events To Handle
 
@@ -10,6 +9,7 @@ server-confirmed Stripe state.
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
+- `invoice.payment_succeeded`
 - `invoice.paid`
 - `invoice.payment_failed`
 

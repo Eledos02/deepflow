@@ -1,7 +1,3 @@
-import { billingNotActiveResponse } from "../../../../features/billing/billing-route-responses";
+export { POST } from "../../stripe/checkout/route";
 
 export const runtime = "nodejs";
-
-export async function POST() {
-  return billingNotActiveResponse();
-}

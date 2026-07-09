@@ -358,8 +358,8 @@ export default function HomePage() {
           <div className="home-waitlist">
             <div>
               <span className="eyebrow">Founder teaser</span>
-              <h2 id="home-waitlist-title">Founding Member access is coming soon.</h2>
-              <p>Pricing will be introduced after the free core experience is stable.</p>
+              <h2 id="home-waitlist-title">Founding Member launch updates.</h2>
+              <p>Join for availability notes and product updates. Checkout is separate.</p>
             </div>
             <FoundingMemberWaitlist source="homepage_final_cta" variant="compact" />
           </div>

@@ -41,6 +41,6 @@ describe("homepage SEO and conversion copy", () => {
     }
 
     expect(homepage).toContain('source="homepage_final_cta"');
-    expect(homepage).toContain("Founding Member access is coming soon.");
+    expect(homepage).toContain("Founding Member launch updates.");
   });
 });

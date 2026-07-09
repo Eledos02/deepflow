@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
+import { AccountBillingPanel } from "@/components/auth/account-billing-panel";
 import { useAuth } from "@/features/auth/auth-provider";
 import {
   PASSWORD_RESET_EXPIRED_MESSAGE,
@@ -473,17 +474,7 @@ export function AccountPageContent() {
             <span>Member since</span>
             <strong>{memberSince}</strong>
           </article>
-          <article>
-            <span>Current plan</span>
-            <strong>Free</strong>
-            <p>DeepFlow&apos;s free core is available while paid plans are being prepared.</p>
-          </article>
-          <article>
-            <span>Founding member</span>
-            <strong>Coming soon</strong>
-            <p>Founding Member access will open after billing is ready.</p>
-            <Link href="/pricing#founding-member">Join updates</Link>
-          </article>
+          <AccountBillingPanel />
         </div>
         <aside className="account-cloud-backup-card" data-state={health.kind}>
           <div className="account-cloud-backup-card__heading">

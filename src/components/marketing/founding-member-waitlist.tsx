@@ -143,8 +143,8 @@ export function FoundingMemberWaitlist({
         </strong>
         <p>
           {isDuplicate
-            ? "No payment is needed today. We'll email you before lifetime access opens."
-            : "No payment today. We'll email you before $19 lifetime access opens, so you can decide before the launch price expires."}
+            ? "No payment is needed to stay on the update list."
+            : "No payment today. We'll email you about Founder availability and product updates."}
         </p>
         {emailSent ? (
           <p className="founding-waitlist__email-hint">
@@ -201,7 +201,7 @@ export function FoundingMemberWaitlist({
       ) : (
         <p className="founding-waitlist__privacy">
           No payment today. We&apos;ll only use this email for Founding Member
-          access updates.
+          availability and product updates.
         </p>
       )}
     </form>

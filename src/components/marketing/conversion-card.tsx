@@ -9,10 +9,10 @@ type ConversionCardProps = {
 const content = {
   homepage: {
     eyebrow: "Founding Member updates",
-    title: "The free core comes first.",
+    title: "Choose the plan that fits your rhythm.",
     description:
-      "DeepFlow will introduce pricing after the focus workspace is stable, honest, and useful without pressure.",
-    action: "See pricing notes",
+      "DeepFlow stays free to start, with optional Stripe-managed plans for people who want account billing.",
+    action: "See pricing",
   },
   tool: {
     eyebrow: "Keep the momentum",
@@ -54,7 +54,7 @@ export function ConversionCard({ placement }: ConversionCardProps) {
           {copy.action}
           <ArrowIcon />
         </Link>
-        <span>No checkout today. Founding access opens soon.</span>
+        <span>Checkout and billing management are handled through Stripe.</span>
       </div>
     </aside>
   );

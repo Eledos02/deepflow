@@ -1,12 +1,12 @@
 # Stripe Billing Architecture
 
-V7.6 prepares DeepFlow billing without activating Checkout. The free core
+V7.7 activates DeepFlow billing in Stripe sandbox/test mode. The free core
 experience remains available, and billing state must fail closed to Free.
 
 ## Scope
 
-- Prepare Stripe subscription architecture for a future V7.7 Checkout sprint.
-- Do not redirect users to Stripe Checkout yet.
+- Use Stripe Checkout for subscription signup.
+- Use Stripe Customer Portal for billing management.
 - Do not grant paid access from client-side URL parameters.
 - Do not use billing state to block existing timers, Workspace, Focus Journal,
   Routines, Goals, Insights, Cloud Restore, or account cloud backup.
@@ -95,7 +95,7 @@ request body.
 - Add authenticated Checkout route implementation.
 - Create Stripe customer if missing.
 - Store `billing_customers` with server-only credentials.
-- Create Checkout Session with `STRIPE_FOUNDER_PRICE_ID`.
+- Create Checkout Session with server-side Monthly, Annual, or Founder Price IDs.
 - Add success/cancel URLs.
 - Implement webhook verification and idempotency.
 - Upsert `billing_subscriptions` from webhook events.
