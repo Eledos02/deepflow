@@ -26,6 +26,7 @@ import {
   inferFocusCategory,
 } from "@/features/timer/session-journal";
 import { getProgress } from "@/features/timer/timer-engine";
+import { getTimerDisplayClassName } from "@/features/timer/timer-display";
 import { getVisibleSessionListItems } from "@/features/timer/collapsible-session-list";
 import {
   requestTimerNotificationPermission,
@@ -466,6 +467,7 @@ export function TimerExperience({
     "--timer-option-index": activeOptionIndex,
     ...scrollIndicatorStyle,
   } as CSSProperties;
+  const formattedRemainingTime = formatDuration(timer.remainingSeconds);
 
   return (
     <section
@@ -553,7 +555,7 @@ export function TimerExperience({
         aria-valuemax={timer.totalSeconds}
         aria-valuemin={0}
         aria-valuenow={timer.totalSeconds - timer.remainingSeconds}
-        aria-valuetext={`${formatDuration(timer.remainingSeconds)} remaining`}
+        aria-valuetext={`${formattedRemainingTime} remaining`}
         className="timer-ring"
         role="progressbar"
         style={ringStyle}
@@ -561,11 +563,11 @@ export function TimerExperience({
         <div className="timer-ring__inner">
           <span className="timer-ring__label">{timerLabel}</span>
           <output
-            className="timer-display"
+            className={getTimerDisplayClassName(formattedRemainingTime)}
             aria-atomic="true"
             aria-live={timer.status === "completed" ? "polite" : "off"}
           >
-            {formatDuration(timer.remainingSeconds)}
+            {formattedRemainingTime}
           </output>
           <span className="timer-ring__status">
             {timer.status === "completed"

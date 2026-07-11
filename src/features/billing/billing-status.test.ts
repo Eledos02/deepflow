@@ -85,4 +85,36 @@ describe("billing status helpers", () => {
       canUseFounderFeatures: false,
     });
   });
+
+  it("keeps paid access active when cancellation is scheduled for period end", async () => {
+    const scheduledSubscription = subscription({
+      cancelAtPeriodEnd: true,
+      currentPeriodEnd: "2026-08-11T00:00:00.000Z",
+    });
+
+    await expect(getBillingStatusForUser(userId, {
+      lookupSubscription: async () => scheduledSubscription,
+    })).resolves.toMatchObject({
+      status: "active",
+      isPaid: true,
+      subscription: {
+        cancelAtPeriodEnd: true,
+        currentPeriodEnd: "2026-08-11T00:00:00.000Z",
+      },
+    });
+  });
+
+  it("fails closed after Stripe marks the subscription canceled", async () => {
+    await expect(getBillingStatusForUser(userId, {
+      lookupSubscription: async () => subscription({
+        status: "canceled",
+        cancelAtPeriodEnd: true,
+      }),
+    })).resolves.toMatchObject({
+      status: "canceled",
+      planLabel: "Free",
+      isPaid: false,
+      canUseFounderFeatures: false,
+    });
+  });
 });

@@ -452,8 +452,8 @@ export function AccountPageContent() {
           <h1>Your DeepFlow account.</h1>
           <p>A simple identity for your focus rhythm.</p>
         </div>
-        <div className="account-profile-card">
-          <div className="account-profile-card__identity">
+        <section className="account-profile-section" aria-label="Profile details">
+          <div className="account-profile-section__identity">
             <span className="account-avatar" aria-hidden="true">{getAvatarInitial(profile?.displayName, user.email)}</span>
             <div>
               <strong>{profile?.displayName || "DeepFlow member"}</strong>
@@ -468,7 +468,7 @@ export function AccountPageContent() {
               {isSaving ? "Saving…" : saved ? "Saved" : "Save name"}
             </button>
           </form>
-        </div>
+        </section>
         <div className="account-detail-grid account-detail-grid--billing">
           <article>
             <span>Member since</span>

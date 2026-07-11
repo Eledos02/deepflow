@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { getBillingAccessToken } from "@/components/marketing/billing-checkout-button";
+import { getAccountBillingPresentation } from "@/features/billing/account-billing-presentation";
 
 type BillingPlanPayload = {
   status: string;
@@ -30,22 +31,10 @@ function formatPeriodEnd(value: string | null | undefined) {
   if (Number.isNaN(date.getTime())) return null;
 
   return new Intl.DateTimeFormat(undefined, {
-    month: "short",
+    month: "long",
     day: "numeric",
     year: "numeric",
   }).format(date);
-}
-
-function billingStatusCopy(plan: BillingPlanPayload | null) {
-  if (!plan) return "Checking billing status...";
-  if (plan.isPaid) {
-    if (plan.cancelAtPeriodEnd) return "Cancels at period end";
-    return "Active";
-  }
-  if (plan.status === "past_due" || plan.status === "unpaid") {
-    return "Payment issue";
-  }
-  return "Free";
 }
 
 export function AccountBillingPanel() {
@@ -138,14 +127,19 @@ export function AccountBillingPanel() {
   };
 
   const periodEnd = formatPeriodEnd(plan?.currentPeriodEnd);
+  const presentation = getAccountBillingPresentation(plan, periodEnd);
 
   return (
     <>
       <article>
         <span>Current plan</span>
         <strong>{isLoading ? "Checking..." : plan?.label ?? "Free"}</strong>
-        <p>{billingStatusCopy(plan)}</p>
-        {periodEnd ? <p>Current period ends {periodEnd}.</p> : null}
+        <p>{presentation.statusLine}</p>
+        {presentation.periodLine ? (
+          <p data-cancellation-scheduled={presentation.hasScheduledCancellation || undefined}>
+            {presentation.periodLine}
+          </p>
+        ) : null}
       </article>
       <article>
         <span>Billing</span>

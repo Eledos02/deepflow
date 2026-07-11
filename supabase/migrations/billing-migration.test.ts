@@ -7,6 +7,13 @@ const migration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260627_create_billing_tables.sql"),
   "utf8",
 );
+const serviceRoleMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260711_grant_billing_service_role.sql",
+  ),
+  "utf8",
+);
 
 describe("billing migration", () => {
   it("creates billing customer, subscription, and event tables", () => {
@@ -44,5 +51,27 @@ describe("billing migration", () => {
     expect(migration).not.toContain("grant update");
     expect(migration).not.toContain("grant delete");
     expect(migration).not.toContain(" to anon");
+  });
+});
+
+describe("billing service role migration", () => {
+  it("grants only the required billing table privileges to service_role", () => {
+    for (const table of [
+      "billing_customers",
+      "billing_subscriptions",
+      "billing_events",
+    ]) {
+      expect(serviceRoleMigration).toMatch(
+        new RegExp(
+          `grant\\s+select,\\s*insert,\\s*update\\s+on table\\s+public\\.${table}\\s+to service_role;`,
+          "i",
+        ),
+      );
+    }
+
+    expect(serviceRoleMigration).not.toMatch(/\b(delete|truncate|references|trigger)\b/i);
+    expect(serviceRoleMigration).not.toMatch(/\bto\s+(anon|authenticated)\b/i);
+    expect(serviceRoleMigration).not.toMatch(/disable\s+row\s+level\s+security/i);
+    expect(serviceRoleMigration).not.toMatch(/\b(drop|revoke)\b/i);
   });
 });

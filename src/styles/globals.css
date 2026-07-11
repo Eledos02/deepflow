@@ -1501,12 +1501,20 @@ a:focus-visible {
 }
 
 .timer-display {
+  max-width: 84%;
   margin: 2px 0 5px;
   font-size: clamp(3.2rem, 6vw, 4.5rem);
   font-variant-numeric: tabular-nums;
   font-weight: 380;
   letter-spacing: -0.07em;
   line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.timer-display--compact {
+  font-size: clamp(2.7rem, 5vw, 3.45rem);
+  letter-spacing: -0.055em;
 }
 
 .timer-controls {
@@ -6549,14 +6557,14 @@ a:focus-visible {
     border-radius: 22px;
   }
 
-  .account-profile-card,
+  .account-profile-section,
   .account-detail-grid {
     grid-template-columns: 1fr;
   }
 
-  .account-profile-card {
+  .account-profile-section {
     gap: 20px;
-    padding: 20px;
+    padding-bottom: 24px;
   }
 }
 
@@ -7453,17 +7461,16 @@ a:focus-visible {
   padding-bottom: 8px;
 }
 
-.account-profile-card {
+.account-profile-section {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(250px, 0.8fr);
   gap: 28px;
-  padding: 24px;
-  border: 1px solid rgba(19, 32, 25, 0.06);
-  border-radius: 20px;
-  background: rgba(247, 245, 239, 0.72);
+  align-items: center;
+  padding: 4px 0 28px;
+  border-bottom: 1px solid rgba(19, 32, 25, 0.09);
 }
 
-.account-profile-card__identity {
+.account-profile-section__identity {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -7475,18 +7482,30 @@ a:focus-visible {
   font-size: 1rem;
 }
 
-.account-profile-card__identity > div > strong,
-.account-profile-card__identity > div > span {
+.account-profile-section__identity > div > strong,
+.account-profile-section__identity > div > span {
   display: block;
 }
 
-.account-profile-card__identity > div > span {
+.account-profile-section__identity > div > span {
   margin-top: 2px;
   color: var(--muted);
   font-size: 0.8rem;
 }
 
-.account-profile-card .auth-form {
+.account-profile-section .auth-form {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  margin-top: 0;
+}
+
+.account-profile-section .auth-form label,
+.account-profile-section .auth-form .auth-form__error {
+  grid-column: 1 / -1;
+}
+
+.account-profile-section .auth-form .button {
+  min-height: 50px;
   margin-top: 0;
 }
 
@@ -7507,19 +7526,19 @@ a:focus-visible {
 .account-cloud-backup-card {
   display: grid;
   gap: 16px;
-  border-color: rgba(107, 130, 72, 0.08);
-  background:
-    linear-gradient(135deg, rgba(223, 255, 145, 0.18), rgba(255, 254, 250, 0.7));
+  border-color: rgba(35, 58, 46, 0.13);
+  background: rgba(249, 246, 237, 0.88);
+  box-shadow: 0 12px 30px rgba(36, 49, 39, 0.035);
 }
 
 .account-cloud-backup-card[data-state="error"] {
-  background: rgba(255, 248, 235, 0.72);
+  border-color: rgba(121, 82, 52, 0.15);
+  background: rgba(251, 246, 235, 0.9);
 }
 
 .account-cloud-backup-card[data-state="restore-available"] {
-  border-color: rgba(107, 130, 72, 0.16);
-  background:
-    linear-gradient(135deg, rgba(216, 238, 229, 0.48), rgba(255, 254, 250, 0.72));
+  border-color: rgba(35, 74, 57, 0.18);
+  background: rgba(247, 245, 237, 0.94);
 }
 
 .account-cloud-backup-card__heading {
@@ -7547,7 +7566,11 @@ a:focus-visible {
 }
 
 .account-cloud-backup-card__heading > span {
+  display: inline-flex;
+  min-height: 34px;
   max-width: 220px;
+  align-items: center;
+  justify-content: center;
   padding: 8px 11px;
   border: 1px solid rgba(19, 32, 25, 0.06);
   border-radius: 999px;
@@ -7556,7 +7579,7 @@ a:focus-visible {
   font-size: 0.72rem;
   font-weight: 800;
   line-height: 1.35;
-  text-align: right;
+  text-align: center;
 }
 
 .account-cloud-backup-card small {
@@ -7583,6 +7606,9 @@ a:focus-visible {
 .account-cloud-backup-card__metrics div,
 .account-cloud-backup-card__restore div,
 .account-cloud-backup-card__timeline div {
+  display: grid;
+  grid-template-rows: minmax(2.5em, auto) auto;
+  align-content: start;
   padding: 12px;
   border: 1px solid rgba(19, 32, 25, 0.045);
   border-radius: 12px;
@@ -7592,6 +7618,8 @@ a:focus-visible {
 .account-cloud-backup-card__metrics dt,
 .account-cloud-backup-card__restore dt,
 .account-cloud-backup-card__timeline dt {
+  display: flex;
+  align-items: flex-end;
   margin-bottom: 4px;
   color: var(--muted);
   font-size: 0.64rem;
@@ -7607,6 +7635,7 @@ a:focus-visible {
   color: var(--ink);
   font-size: 0.92rem;
   font-weight: 800;
+  line-height: 1.2;
 }
 
 .account-cloud-backup-card__actions {
@@ -7668,7 +7697,16 @@ a:focus-visible {
 
   .account-cloud-backup-card__heading > span {
     max-width: 100%;
-    text-align: left;
+    text-align: center;
+  }
+
+  .account-profile-section .auth-form {
+    grid-template-columns: 1fr;
+  }
+
+  .account-profile-section .auth-form label,
+  .account-profile-section .auth-form .auth-form__error {
+    grid-column: auto;
   }
 
   .account-cloud-backup-card__actions .button {
@@ -8377,6 +8415,10 @@ a:focus-visible {
 
   .timer-display {
     font-size: 3.2rem;
+  }
+
+  .timer-display--compact {
+    font-size: clamp(2.55rem, 12vw, 2.85rem);
   }
 
   .proof-strip__inner {
