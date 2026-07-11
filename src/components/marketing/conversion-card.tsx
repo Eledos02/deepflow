@@ -41,6 +41,15 @@ export function ConversionCard({ placement }: ConversionCardProps) {
 
   return (
     <aside className="conversion-card" data-placement={placement}>
+      {placement === "homepage" ? (
+        <div className="conversion-card__atmosphere" aria-hidden="true">
+          <span className="conversion-card__glow conversion-card__glow--primary" />
+          <span className="conversion-card__glow conversion-card__glow--secondary" />
+          <span className="conversion-card__sweep" />
+          <span className="conversion-card__contours" />
+          <span className="conversion-card__grain" />
+        </div>
+      ) : null}
       <div>
         <span className="conversion-card__icon">
           <SparkIcon />

@@ -303,15 +303,21 @@ export default function HomePage() {
         <div className="shell workflow-grid">
           <div className="workflow-visual">
             <div className="orbit orbit--outer" />
-            <div className="orbit orbit--inner" />
+            <div className="orbit orbit--middle" />
             <div className="workflow-clock">
               <TimerIcon width={34} height={34} />
               <strong>50:00</strong>
               <span>Deep work</span>
             </div>
-            <span className="orbit-label orbit-label--one">Plan</span>
-            <span className="orbit-label orbit-label--two">Focus</span>
-            <span className="orbit-label orbit-label--three">Recover</span>
+            <div className="orbit-track orbit-track--inner">
+              <span className="orbit-label">Focus</span>
+            </div>
+            <div className="orbit-track orbit-track--middle">
+              <span className="orbit-label">Plan</span>
+            </div>
+            <div className="orbit-track orbit-track--outer">
+              <span className="orbit-label">Recover</span>
+            </div>
           </div>
           <div className="workflow-copy">
             <span className="eyebrow">A repeatable practice</span>
