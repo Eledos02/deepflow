@@ -182,8 +182,19 @@ describe("Notes Canvas rendering", () => {
       'event.button !== 0 || event.pointerType === "touch"',
     );
     expect(normalCanvasRule).not.toContain("touch-action: none");
-    expect(component).not.toContain("activeTouchPointsRef");
     expect(component).not.toContain("startWorkspaceTouchPan");
+  });
+
+  it("combines two expanded-canvas touch pointers into focal pinch zoom and pan", () => {
+    expect(component).toContain("activeTouchPointersRef");
+    expect(component).toContain("pinchGestureRef");
+    expect(component).toContain("startWorkspacePinchGesture(");
+    expect(component).toContain("updateWorkspacePinchGesture(");
+    expect(component).toContain('if (!isCanvasExpanded || event.pointerType !== "touch")');
+    expect(component).toContain("releaseCanvasInteractions(true)");
+    expect(component).toContain("canvasRef.current?.setPointerCapture(pointerId)");
+    expect(component).toContain("setViewport(viewportRef.current)");
+    expect(component).not.toContain("user-scalable=no");
   });
 
   it("restores page scroll and releases interactions on minimize or Escape", () => {

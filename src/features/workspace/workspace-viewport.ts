@@ -13,6 +13,18 @@ export type WorkspaceViewportPoint = {
   y: number;
 };
 
+export type WorkspaceTouchPointer = WorkspaceViewportPoint & {
+  pointerId: number;
+};
+
+export type WorkspacePinchGesture = {
+  initialCentroid: WorkspaceViewportPoint;
+  initialDistance: number;
+  initialViewport: WorkspaceViewport;
+  pointerIds: readonly [number, number];
+  worldFocalPoint: WorkspaceViewportPoint;
+};
+
 export const DEFAULT_WORKSPACE_VIEWPORT: WorkspaceViewport = {
   x: 0,
   y: 0,
@@ -68,6 +80,68 @@ export function zoomWorkspaceViewport(
   return {
     x: Math.round(focalPoint.x - (focalPoint.x - viewport.x) * zoomRatio),
     y: Math.round(focalPoint.y - (focalPoint.y - viewport.y) * zoomRatio),
+    zoom,
+  };
+}
+
+function getPinchGeometry(
+  first: WorkspaceTouchPointer,
+  second: WorkspaceTouchPointer,
+) {
+  const deltaX = second.x - first.x;
+  const deltaY = second.y - first.y;
+
+  return {
+    centroid: {
+      x: (first.x + second.x) / 2,
+      y: (first.y + second.y) / 2,
+    },
+    distance: Math.hypot(deltaX, deltaY),
+  };
+}
+
+export function startWorkspacePinchGesture(
+  pointers: readonly WorkspaceTouchPointer[],
+  viewport: WorkspaceViewport,
+): WorkspacePinchGesture | null {
+  const [first, second] = pointers;
+  if (!first || !second) return null;
+
+  const { centroid, distance } = getPinchGeometry(first, second);
+  if (distance <= 0) return null;
+
+  return {
+    initialCentroid: centroid,
+    initialDistance: distance,
+    initialViewport: { ...viewport },
+    pointerIds: [first.pointerId, second.pointerId],
+    worldFocalPoint: {
+      x: (centroid.x - viewport.x) / viewport.zoom,
+      y: (centroid.y - viewport.y) / viewport.zoom,
+    },
+  };
+}
+
+export function updateWorkspacePinchGesture(
+  gesture: WorkspacePinchGesture,
+  pointers: readonly WorkspaceTouchPointer[],
+): WorkspaceViewport | null {
+  const first = pointers.find(
+    (pointer) => pointer.pointerId === gesture.pointerIds[0],
+  );
+  const second = pointers.find(
+    (pointer) => pointer.pointerId === gesture.pointerIds[1],
+  );
+  if (!first || !second) return null;
+
+  const { centroid, distance } = getPinchGeometry(first, second);
+  const zoom = clampWorkspaceZoom(
+    gesture.initialViewport.zoom * (distance / gesture.initialDistance),
+  );
+
+  return {
+    x: Math.round(centroid.x - gesture.worldFocalPoint.x * zoom),
+    y: Math.round(centroid.y - gesture.worldFocalPoint.y * zoom),
     zoom,
   };
 }

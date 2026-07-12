@@ -53,8 +53,12 @@ import {
   MIN_WORKSPACE_ZOOM,
   readWorkspaceViewport,
   resetWorkspaceViewport,
+  startWorkspacePinchGesture,
+  updateWorkspacePinchGesture,
   writeWorkspaceViewport,
   zoomWorkspaceViewport,
+  type WorkspacePinchGesture,
+  type WorkspaceTouchPointer,
   type WorkspaceViewport,
 } from "@/features/workspace/workspace-viewport";
 import {
@@ -214,6 +218,10 @@ export function NotesCanvas() {
   const dragStateRef = useRef<DragState | null>(null);
   const resizeStateRef = useRef<ResizeState | null>(null);
   const panStateRef = useRef<PanState | null>(null);
+  const activeTouchPointersRef = useRef(
+    new Map<number, WorkspaceTouchPointer>(),
+  );
+  const pinchGestureRef = useRef<WorkspacePinchGesture | null>(null);
   const connectionDragRef = useRef<ConnectionCaptureState | null>(null);
   const expandedScrollPositionRef = useRef({ x: 0, y: 0 });
   const selectionBoxRef = useRef<SelectionBoxState | null>(null);
@@ -1041,34 +1049,143 @@ export function NotesCanvas() {
     setViewport(defaultViewport);
   };
 
-  const releaseCanvasInteractions = useCallback(() => {
-    const dragState = dragStateRef.current;
-    if (dragState?.element.hasPointerCapture(dragState.pointerId)) {
-      dragState.element.releasePointerCapture(dragState.pointerId);
+  const releaseCanvasInteractions = useCallback(
+    (preserveTouchPointers = false) => {
+      const dragState = dragStateRef.current;
+      if (dragState?.element.hasPointerCapture(dragState.pointerId)) {
+        dragState.element.releasePointerCapture(dragState.pointerId);
+      }
+      dragStateRef.current = null;
+
+      const resizeState = resizeStateRef.current;
+      if (resizeState?.element.hasPointerCapture(resizeState.pointerId)) {
+        resizeState.element.releasePointerCapture(resizeState.pointerId);
+      }
+      resizeStateRef.current = null;
+
+      if (connectionDragRef.current) cancelActiveConnection();
+
+      const selectionBoxState = selectionBoxRef.current;
+      if (selectionBoxState) {
+        releaseCanvasPointerCapture(selectionBoxState.pointerId);
+      }
+      selectionBoxRef.current = null;
+      setSelectionBox(null);
+
+      const panState = panStateRef.current;
+      if (panState) releaseCanvasPointerCapture(panState.pointerId);
+      panStateRef.current = null;
+      setViewport(viewportRef.current);
+      setIsPanning(false);
+
+      if (!preserveTouchPointers) {
+        for (const pointerId of activeTouchPointersRef.current.keys()) {
+          releaseCanvasPointerCapture(pointerId);
+        }
+        activeTouchPointersRef.current.clear();
+        pinchGestureRef.current = null;
+      }
+    },
+    [cancelActiveConnection],
+  );
+
+  const getCanvasTouchPointer = (
+    event: PointerEvent<HTMLDivElement>,
+  ): WorkspaceTouchPointer | null => {
+    const bounds = canvasRef.current?.getBoundingClientRect();
+    if (!bounds) return null;
+
+    return {
+      pointerId: event.pointerId,
+      x: event.clientX - bounds.left,
+      y: event.clientY - bounds.top,
+    };
+  };
+
+  const startCanvasTouchGesture = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isCanvasExpanded || event.pointerType !== "touch") return false;
+
+    const activePointers = activeTouchPointersRef.current;
+    if (activePointers.size >= 2 && !activePointers.has(event.pointerId)) {
+      event.preventDefault();
+      event.stopPropagation();
+      return true;
     }
-    dragStateRef.current = null;
 
-    const resizeState = resizeStateRef.current;
-    if (resizeState?.element.hasPointerCapture(resizeState.pointerId)) {
-      resizeState.element.releasePointerCapture(resizeState.pointerId);
+    const pointer = getCanvasTouchPointer(event);
+    if (!pointer) return false;
+    activePointers.set(event.pointerId, pointer);
+    if (activePointers.size < 2) return false;
+
+    const gesture = startWorkspacePinchGesture(
+      [...activePointers.values()],
+      viewportRef.current,
+    );
+    if (!gesture) return false;
+
+    event.preventDefault();
+    event.stopPropagation();
+    releaseCanvasInteractions(true);
+    pinchGestureRef.current = gesture;
+    try {
+      for (const pointerId of gesture.pointerIds) {
+        canvasRef.current?.setPointerCapture(pointerId);
+      }
+    } catch {
+      for (const pointerId of gesture.pointerIds) {
+        releaseCanvasPointerCapture(pointerId);
+      }
+      activePointers.clear();
+      pinchGestureRef.current = null;
+      setIsPanning(false);
+      return true;
     }
-    resizeStateRef.current = null;
+    setIsPanning(true);
+    return true;
+  };
 
-    if (connectionDragRef.current) cancelActiveConnection();
-
-    const selectionBoxState = selectionBoxRef.current;
-    if (selectionBoxState) {
-      releaseCanvasPointerCapture(selectionBoxState.pointerId);
+  const moveCanvasTouchGesture = (event: PointerEvent<HTMLDivElement>) => {
+    const activePointers = activeTouchPointersRef.current;
+    if (event.pointerType !== "touch" || !activePointers.has(event.pointerId)) {
+      return pinchGestureRef.current !== null;
     }
-    selectionBoxRef.current = null;
-    setSelectionBox(null);
 
-    const panState = panStateRef.current;
-    if (panState) releaseCanvasPointerCapture(panState.pointerId);
-    panStateRef.current = null;
+    const pointer = getCanvasTouchPointer(event);
+    if (pointer) activePointers.set(event.pointerId, pointer);
+
+    const gesture = pinchGestureRef.current;
+    if (!gesture) return false;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const nextViewport = updateWorkspacePinchGesture(
+      gesture,
+      [...activePointers.values()],
+    );
+    if (nextViewport) applyViewport(nextViewport);
+    return true;
+  };
+
+  const endCanvasTouchGesture = (event: PointerEvent<HTMLDivElement>) => {
+    const activePointers = activeTouchPointersRef.current;
+    const wasTracked = activePointers.has(event.pointerId);
+    const gesture = pinchGestureRef.current;
+    const wasPinching = gesture !== null;
+
+    if (!wasTracked) return wasPinching;
+    activePointers.delete(event.pointerId);
+    if (!wasPinching) return false;
+
+    event.preventDefault();
+    event.stopPropagation();
+    for (const pointerId of gesture.pointerIds) {
+      releaseCanvasPointerCapture(pointerId);
+    }
+    pinchGestureRef.current = null;
     setViewport(viewportRef.current);
     setIsPanning(false);
-  }, [cancelActiveConnection]);
+    return true;
+  };
 
   const minimizeCanvas = useCallback(() => {
     releaseCanvasInteractions();
@@ -1216,6 +1333,13 @@ export function NotesCanvas() {
     ) {
       canvasRef.current.releasePointerCapture(selectionBoxState.pointerId);
     }
+    for (const pointerId of activeTouchPointersRef.current.keys()) {
+      if (canvasRef.current?.hasPointerCapture(pointerId)) {
+        canvasRef.current.releasePointerCapture(pointerId);
+      }
+    }
+    activeTouchPointersRef.current.clear();
+    pinchGestureRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -1329,19 +1453,27 @@ export function NotesCanvas() {
           data-panning={isPanning}
           data-empty={notes.length === 0}
           onPointerCancel={(event) => {
-            endPan(event);
-            endSelectionBox(event);
+            if (!endCanvasTouchGesture(event)) {
+              endPan(event);
+              endSelectionBox(event);
+            }
           }}
           onDoubleClick={handleCanvasDoubleClick}
-          onPointerDownCapture={startPan}
+          onPointerDownCapture={(event) => {
+            if (!startCanvasTouchGesture(event)) startPan(event);
+          }}
           onPointerDown={startSelectionBox}
           onPointerMove={(event) => {
-            panCanvas(event);
-            moveSelectionBox(event);
+            if (!moveCanvasTouchGesture(event)) {
+              panCanvas(event);
+              moveSelectionBox(event);
+            }
           }}
           onPointerUp={(event) => {
-            endPan(event);
-            endSelectionBox(event);
+            if (!endCanvasTouchGesture(event)) {
+              endPan(event);
+              endSelectionBox(event);
+            }
           }}
           ref={canvasRef}
         >
