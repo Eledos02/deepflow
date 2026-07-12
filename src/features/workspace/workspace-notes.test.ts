@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_WORKSPACE_NOTE_HEIGHT,
+  DEFAULT_WORKSPACE_NOTE_WIDTH,
+  MAX_WORKSPACE_NOTE_HEIGHT,
+  MAX_WORKSPACE_NOTE_WIDTH,
   MAX_FREE_WORKSPACE_NOTES,
+  MIN_WORKSPACE_NOTE_HEIGHT,
+  MIN_WORKSPACE_NOTE_WIDTH,
+  WORKSPACE_NOTES_STORAGE_KEY,
   canCreateWorkspaceNote,
   createWorkspaceNote,
   deleteWorkspaceNote,
   parseWorkspaceNotes,
+  resizeWorkspaceNoteDimensions,
   updateWorkspaceNote,
 } from "./workspace-notes";
 
@@ -25,6 +33,8 @@ describe("workspace notes", () => {
       color: "warm-cream",
       x: 20,
       y: 41,
+      width: DEFAULT_WORKSPACE_NOTE_WIDTH,
+      height: DEFAULT_WORKSPACE_NOTE_HEIGHT,
       createdAt: "2026-06-18T12:00:00.000Z",
       updatedAt: "2026-06-18T12:00:00.000Z",
     });
@@ -58,7 +68,120 @@ describe("workspace notes", () => {
       title: "Untitled note",
       text: "Old local note",
       color: "warm-cream",
+      width: DEFAULT_WORKSPACE_NOTE_WIDTH,
+      height: DEFAULT_WORKSPACE_NOTE_HEIGHT,
     });
+  });
+
+  it("loads valid persisted note dimensions", () => {
+    const note = createWorkspaceNote({
+      id: "sized-note",
+      now: "2026-06-18T12:00:00.000Z",
+      position: { x: 12, y: 18 },
+      width: 440,
+      height: 360,
+    });
+
+    expect(parseWorkspaceNotes([note])[0]).toMatchObject({
+      width: 440,
+      height: 360,
+    });
+  });
+
+  it("falls back safely when persisted dimensions are invalid", () => {
+    const base = createWorkspaceNote({
+      id: "invalid-size",
+      now: "2026-06-18T12:00:00.000Z",
+      position: { x: 12, y: 18 },
+    });
+    const parsed = parseWorkspaceNotes([{
+      ...base,
+      width: -10,
+      height: "huge",
+    }]);
+
+    expect(parsed[0]).toMatchObject({
+      width: DEFAULT_WORKSPACE_NOTE_WIDTH,
+      height: DEFAULT_WORKSPACE_NOTE_HEIGHT,
+    });
+  });
+
+  it("resizes horizontally, vertically, and diagonally", () => {
+    expect(resizeWorkspaceNoteDimensions({
+      width: 280,
+      height: 220,
+      deltaX: 40,
+      deltaY: 0,
+      zoom: 1,
+    })).toEqual({ width: 320, height: 220 });
+    expect(resizeWorkspaceNoteDimensions({
+      width: 280,
+      height: 220,
+      deltaX: 0,
+      deltaY: 50,
+      zoom: 1,
+    })).toEqual({ width: 280, height: 270 });
+    expect(resizeWorkspaceNoteDimensions({
+      width: 280,
+      height: 220,
+      deltaX: 80,
+      deltaY: 60,
+      zoom: 1,
+    })).toEqual({ width: 360, height: 280 });
+  });
+
+  it("enforces minimum and maximum dimensions", () => {
+    expect(resizeWorkspaceNoteDimensions({
+      width: 280,
+      height: 220,
+      deltaX: -1_000,
+      deltaY: -1_000,
+      zoom: 1,
+    })).toEqual({
+      width: MIN_WORKSPACE_NOTE_WIDTH,
+      height: MIN_WORKSPACE_NOTE_HEIGHT,
+    });
+    expect(resizeWorkspaceNoteDimensions({
+      width: 280,
+      height: 220,
+      deltaX: 10_000,
+      deltaY: 10_000,
+      zoom: 1,
+    })).toEqual({
+      width: MAX_WORKSPACE_NOTE_WIDTH,
+      height: MAX_WORKSPACE_NOTE_HEIGHT,
+    });
+  });
+
+  it.each([
+    [0.75, 80],
+    [1, 60],
+    [1.25, 48],
+    [1.5, 40],
+  ])("converts screen resize deltas at %s zoom", (zoom, expectedDelta) => {
+    expect(resizeWorkspaceNoteDimensions({
+      width: 280,
+      height: 220,
+      deltaX: 60,
+      deltaY: 60,
+      zoom,
+    })).toEqual({
+      width: 280 + expectedDelta,
+      height: 220 + expectedDelta,
+    });
+  });
+
+  it("persists dimensions through the existing local storage schema", () => {
+    const note = createWorkspaceNote({
+      id: "persisted-size",
+      position: { x: 20, y: 40 },
+      width: 515,
+      height: 405,
+    });
+    const reloaded = parseWorkspaceNotes(JSON.parse(JSON.stringify([note])));
+
+    expect(WORKSPACE_NOTES_STORAGE_KEY).toBe("deepflow:workspace-notes:v1");
+    expect(reloaded[0]).toMatchObject({ width: 515, height: 405 });
   });
 
   it("preserves intentionally empty note titles", () => {

@@ -14,6 +14,16 @@ import {
 
 import { CheckIcon } from "@/components/ui/icons";
 import {
+  cancelWorkspaceConnectionDrag,
+  completeWorkspaceConnectionDrag,
+  getWorkspaceConnectionAnchor,
+  getWorkspaceConnectionPreviewPath,
+  moveWorkspaceConnectionDrag,
+  startWorkspaceConnectionDrag,
+  type WorkspaceConnectionDragSession,
+  type WorkspaceConnectionEndpoint,
+} from "@/features/workspace/workspace-connection-interaction";
+import {
   MAX_FREE_WORKSPACE_CONNECTIONS,
   WORKSPACE_CONNECTION_SIDES,
   addWorkspaceConnection,
@@ -30,6 +40,7 @@ import {
   canCreateWorkspaceNote,
   createWorkspaceNote,
   readWorkspaceNotes,
+  resizeWorkspaceNoteDimensions,
   updateWorkspaceNote,
   writeWorkspaceNotes,
   type WorkspaceNoteColor,
@@ -84,18 +95,22 @@ type DragState = {
   startPointerY: number;
 };
 
+type ResizeState = {
+  noteId: string;
+  pointerId: number;
+  startHeight: number;
+  startPointerX: number;
+  startPointerY: number;
+  startWidth: number;
+};
+
 type SelectionBoxState = WorkspaceSelectionRect & {
   pointerId: number;
 };
 
-type ConnectionSource = {
-  noteId: string;
-  side: WorkspaceConnectionSide;
-};
-
-type ConnectionDragState = {
-  pointerId: number;
-  source: ConnectionSource;
+type ConnectionCaptureState = {
+  element: HTMLButtonElement;
+  session: WorkspaceConnectionDragSession;
 };
 
 type PanState = {
@@ -118,12 +133,12 @@ function getAutoConnectionSide(
   otherNote: WorkspaceNote,
 ): WorkspaceConnectionSide {
   const noteCenter = {
-    x: note.x + WORKSPACE_NOTE_WIDTH / 2,
-    y: note.y + WORKSPACE_NOTE_HEIGHT / 2,
+    x: note.x + note.width / 2,
+    y: note.y + note.height / 2,
   };
   const otherCenter = {
-    x: otherNote.x + WORKSPACE_NOTE_WIDTH / 2,
-    y: otherNote.y + WORKSPACE_NOTE_HEIGHT / 2,
+    x: otherNote.x + otherNote.width / 2,
+    y: otherNote.y + otherNote.height / 2,
   };
   const deltaX = otherCenter.x - noteCenter.x;
   const deltaY = otherCenter.y - noteCenter.y;
@@ -135,31 +150,6 @@ function getAutoConnectionSide(
   return deltaY >= 0 ? "bottom" : "top";
 }
 
-function getConnectionAnchor(
-  note: WorkspaceNote,
-  side: WorkspaceConnectionSide,
-) {
-  if (side === "top") {
-    return { x: note.x + WORKSPACE_NOTE_WIDTH / 2, y: note.y };
-  }
-
-  if (side === "right") {
-    return {
-      x: note.x + WORKSPACE_NOTE_WIDTH,
-      y: note.y + WORKSPACE_NOTE_HEIGHT / 2,
-    };
-  }
-
-  if (side === "bottom") {
-    return {
-      x: note.x + WORKSPACE_NOTE_WIDTH / 2,
-      y: note.y + WORKSPACE_NOTE_HEIGHT,
-    };
-  }
-
-  return { x: note.x, y: note.y + WORKSPACE_NOTE_HEIGHT / 2 };
-}
-
 function getConnectionPath(
   fromNote: WorkspaceNote,
   toNote: WorkspaceNote,
@@ -168,15 +158,15 @@ function getConnectionPath(
 ): { midpoint: { x: number; y: number }; path: string } {
   const resolvedFromSide = fromSide ?? getAutoConnectionSide(fromNote, toNote);
   const resolvedToSide = toSide ?? getAutoConnectionSide(toNote, fromNote);
-  const start = getConnectionAnchor(fromNote, resolvedFromSide);
-  const end = getConnectionAnchor(toNote, resolvedToSide);
+  const start = getWorkspaceConnectionAnchor(fromNote, resolvedFromSide);
+  const end = getWorkspaceConnectionAnchor(toNote, resolvedToSide);
   const fromCenter = {
-    x: fromNote.x + WORKSPACE_NOTE_WIDTH / 2,
-    y: fromNote.y + WORKSPACE_NOTE_HEIGHT / 2,
+    x: fromNote.x + fromNote.width / 2,
+    y: fromNote.y + fromNote.height / 2,
   };
   const toCenter = {
-    x: toNote.x + WORKSPACE_NOTE_WIDTH / 2,
-    y: toNote.y + WORKSPACE_NOTE_HEIGHT / 2,
+    x: toNote.x + toNote.width / 2,
+    y: toNote.y + toNote.height / 2,
   };
   const distanceX = Math.abs(end.x - start.x);
   const distanceY = Math.abs(end.y - start.y);
@@ -195,21 +185,6 @@ function getConnectionPath(
   };
 }
 
-function getConnectionPreviewPath(
-  note: WorkspaceNote,
-  side: WorkspaceConnectionSide,
-  end: WorkspacePoint,
-) {
-  const start = getConnectionAnchor(note, side);
-  const distanceX = Math.abs(end.x - start.x);
-  const distanceY = Math.abs(end.y - start.y);
-  const lift = Math.min(90, Math.max(28, distanceX * 0.12 + distanceY * 0.08));
-  const controlX = start.x + (end.x - start.x) * 0.5;
-  const controlY = start.y + (end.y - start.y) * 0.5 - lift;
-
-  return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`;
-}
-
 export function NotesCanvas() {
   const [notes, setNotes] = useState<WorkspaceNote[]>([]);
   const [connections, setConnections] = useState<WorkspaceConnection[]>([]);
@@ -217,8 +192,8 @@ export function NotesCanvas() {
   const [viewport, setViewport] = useState<WorkspaceViewport>(
     DEFAULT_WORKSPACE_VIEWPORT,
   );
-  const [connectionSource, setConnectionSource] =
-    useState<ConnectionSource | null>(null);
+  const [connectionDragSession, setConnectionDragSession] =
+    useState<WorkspaceConnectionDragSession | null>(null);
   const [selectedConnectionId, setSelectedConnectionId] = useState<
     string | null
   >(null);
@@ -227,16 +202,15 @@ export function NotesCanvas() {
   const [isMultiColorPaletteOpen, setIsMultiColorPaletteOpen] =
     useState(false);
   const [enteringNoteIds, setEnteringNoteIds] = useState<string[]>([]);
-  const [connectionPreviewEnd, setConnectionPreviewEnd] =
-    useState<WorkspacePoint | null>(null);
   const [selectionBox, setSelectionBox] = useState<SelectionBoxState | null>(
     null,
   );
   const canvasRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef<DragState | null>(null);
+  const resizeStateRef = useRef<ResizeState | null>(null);
   const panStateRef = useRef<PanState | null>(null);
-  const connectionDragRef = useRef<ConnectionDragState | null>(null);
+  const connectionDragRef = useRef<ConnectionCaptureState | null>(null);
   const selectionBoxRef = useRef<SelectionBoxState | null>(null);
   const selectedNoteIdsRef = useRef<string[]>([]);
   const noteTitleRefs = useRef(new Map<string, HTMLInputElement>());
@@ -374,19 +348,19 @@ export function NotesCanvas() {
     ? normalizeWorkspaceSelectionRect(selectionBox)
     : null;
   const connectionPreviewPath = useMemo(() => {
-    if (!connectionSource || !connectionPreviewEnd) return null;
+    if (!connectionDragSession) return null;
 
     const sourceNote = notes.find(
-      (note) => note.id === connectionSource.noteId,
+      (note) => note.id === connectionDragSession.source.noteId,
     );
     if (!sourceNote) return null;
 
-    return getConnectionPreviewPath(
+    return getWorkspaceConnectionPreviewPath(
       sourceNote,
-      connectionSource.side,
-      connectionPreviewEnd,
+      connectionDragSession.source.side,
+      connectionDragSession.previewEnd,
     );
-  }, [connectionPreviewEnd, connectionSource, notes]);
+  }, [connectionDragSession, notes]);
 
   const updateNoteTitle = (id: string, title: string) => {
     setNotes((currentNotes) =>
@@ -435,9 +409,11 @@ export function NotesCanvas() {
       .map((note) =>
         createWorkspaceNote({
           color: note.color,
+          height: note.height,
           position: { x: note.x + 28, y: note.y + 28 },
           text: note.text,
           title: note.title,
+          width: note.width,
         }),
       );
 
@@ -458,11 +434,14 @@ export function NotesCanvas() {
     setConnections((currentConnections) =>
       removeConnectionsForSelectedWorkspaceNotes(currentConnections, noteIds),
     );
-    setConnectionSource((currentSource) =>
-      currentSource && noteIds.includes(currentSource.noteId)
-        ? null
-        : currentSource,
-    );
+    const connectionCapture = connectionDragRef.current;
+    if (
+      connectionCapture &&
+      noteIds.includes(connectionCapture.session.source.noteId)
+    ) {
+      connectionDragRef.current = null;
+      setConnectionDragSession(null);
+    }
     setSelectedConnectionId(null);
     setNoteSelection([]);
   }, [setNoteSelection]);
@@ -497,25 +476,63 @@ export function NotesCanvas() {
     selectNote(noteId, event.shiftKey);
   };
 
-  const completeConnection = (
-    source: ConnectionSource,
-    noteId: string,
-    side: WorkspaceConnectionSide,
-  ) => {
-    if (source.noteId === noteId) return;
+  const getConnectionEndpointAtClientPoint = (
+    clientX: number,
+    clientY: number,
+  ): WorkspaceConnectionEndpoint | null => {
+    const target = document
+      .elementFromPoint(clientX, clientY)
+      ?.closest<HTMLButtonElement>(
+        "[data-connection-note-id][data-connection-side]",
+      );
+    const noteId = target?.dataset.connectionNoteId;
+    const side = target?.dataset.connectionSide;
 
-    setConnections((currentConnections) =>
-      addWorkspaceConnection(
-        currentConnections,
-        source.noteId,
-        noteId,
-        source.side,
-        side,
-      ),
-    );
-    setConnectionSource(null);
-    setConnectionPreviewEnd(null);
+    if (
+      !noteId ||
+      !side ||
+      !WORKSPACE_CONNECTION_SIDES.includes(side as WorkspaceConnectionSide)
+    ) {
+      return null;
+    }
+
+    return { noteId, side: side as WorkspaceConnectionSide };
   };
+
+  const getConnectionDragUpdate = (
+    session: WorkspaceConnectionDragSession,
+    clientX: number,
+    clientY: number,
+  ) => {
+    const pointerPoint = getWorldPointFromClient(clientX, clientY);
+    if (!pointerPoint) return session;
+
+    const target = getConnectionEndpointAtClientPoint(clientX, clientY);
+    const targetNote = target
+      ? notes.find((note) => note.id === target.noteId)
+      : null;
+    const previewEnd = targetNote && target
+      ? getWorkspaceConnectionAnchor(targetNote, target.side)
+      : pointerPoint;
+
+    return moveWorkspaceConnectionDrag(session, previewEnd, target);
+  };
+
+  const cancelActiveConnection = useCallback(() => {
+    const connectionCapture = connectionDragRef.current;
+    if (
+      connectionCapture?.element.hasPointerCapture(
+        connectionCapture.session.pointerId,
+      )
+    ) {
+      connectionCapture.element.releasePointerCapture(
+        connectionCapture.session.pointerId,
+      );
+    }
+
+    connectionDragRef.current = cancelWorkspaceConnectionDrag();
+    setConnectionDragSession(cancelWorkspaceConnectionDrag());
+  }, []);
 
   const startConnectionDrag = (
     event: PointerEvent<HTMLButtonElement>,
@@ -526,92 +543,84 @@ export function NotesCanvas() {
 
     event.preventDefault();
     event.stopPropagation();
-    const currentSource = connectionSource;
-
-    if (currentSource && currentSource.noteId !== noteId) {
-      completeConnection(currentSource, noteId, side);
-      return;
-    }
-
-    if (!currentSource && !canCreateWorkspaceConnection(connections)) return;
+    if (!canCreateWorkspaceConnection(connections)) return;
 
     const source = { noteId, side };
     const previewPoint = getWorldPointFromClient(event.clientX, event.clientY);
-    setConnectionSource(source);
-    setConnectionPreviewEnd(previewPoint);
+    if (!previewPoint) return;
+
+    const session = startWorkspaceConnectionDrag(
+      event.pointerId,
+      source,
+      previewPoint,
+    );
     event.currentTarget.setPointerCapture(event.pointerId);
-    connectionDragRef.current = { pointerId: event.pointerId, source };
+    connectionDragRef.current = { element: event.currentTarget, session };
+    setConnectionDragSession(session);
   };
 
   const moveConnectionDrag = (event: PointerEvent<HTMLButtonElement>) => {
-    const connectionDrag = connectionDragRef.current;
-    if (!connectionDrag || connectionDrag.pointerId !== event.pointerId) return;
+    const connectionCapture = connectionDragRef.current;
+    if (
+      !connectionCapture ||
+      connectionCapture.session.pointerId !== event.pointerId
+    ) {
+      return;
+    }
 
-    setConnectionPreviewEnd(
-      getWorldPointFromClient(event.clientX, event.clientY),
+    event.preventDefault();
+    event.stopPropagation();
+    const session = getConnectionDragUpdate(
+      connectionCapture.session,
+      event.clientX,
+      event.clientY,
     );
+    connectionCapture.session = session;
+    setConnectionDragSession(session);
   };
 
   const endConnectionDrag = (event: PointerEvent<HTMLButtonElement>) => {
-    const connectionDrag = connectionDragRef.current;
-    if (!connectionDrag || connectionDrag.pointerId !== event.pointerId) return;
+    const connectionCapture = connectionDragRef.current;
+    if (
+      !connectionCapture ||
+      connectionCapture.session.pointerId !== event.pointerId
+    ) {
+      return;
+    }
 
+    event.preventDefault();
+    event.stopPropagation();
+    const session = getConnectionDragUpdate(
+      connectionCapture.session,
+      event.clientX,
+      event.clientY,
+    );
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
     connectionDragRef.current = null;
-    setConnectionPreviewEnd(null);
+    setConnectionDragSession(null);
 
-    const target = document
-      .elementFromPoint(event.clientX, event.clientY)
-      ?.closest<HTMLButtonElement>("[data-connection-note-id][data-connection-side]");
-    const noteId = target?.dataset.connectionNoteId;
-    const side = target?.dataset.connectionSide;
-
-    if (
-      noteId &&
-      side &&
-      WORKSPACE_CONNECTION_SIDES.includes(side as WorkspaceConnectionSide)
-    ) {
-      completeConnection(
-        connectionDrag.source,
-        noteId,
-        side as WorkspaceConnectionSide,
+    const completed = completeWorkspaceConnectionDrag(session);
+    if (completed) {
+      setConnections((currentConnections) =>
+        addWorkspaceConnection(
+          currentConnections,
+          completed.source.noteId,
+          completed.target.noteId,
+          completed.source.side,
+          completed.target.side,
+        ),
       );
     }
   };
 
   const cancelConnectionDrag = (event: PointerEvent<HTMLButtonElement>) => {
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    connectionDragRef.current = null;
-    setConnectionPreviewEnd(null);
-  };
+    if (connectionDragRef.current?.session.pointerId !== event.pointerId) return;
 
-  const connectNote = (noteId: string, side: WorkspaceConnectionSide) => {
-    setConnectionSource((currentSource) => {
-      if (!currentSource && !canCreateWorkspaceConnection(connections)) {
-        return null;
-      }
-      if (!currentSource) return { noteId, side };
-      if (currentSource.noteId === noteId && currentSource.side === side) {
-        return null;
-      }
-      if (currentSource.noteId === noteId) return { noteId, side };
-
-      setConnections((currentConnections) =>
-        addWorkspaceConnection(
-          currentConnections,
-          currentSource.noteId,
-          noteId,
-          currentSource.side,
-          side,
-        ),
-      );
-
-      return null;
-    });
+    event.preventDefault();
+    event.stopPropagation();
+    cancelActiveConnection();
   };
 
   const deleteSelectedConnection = () => {
@@ -625,6 +634,12 @@ export function NotesCanvas() {
 
   useEffect(() => {
     const handleSelectionKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape" && connectionDragRef.current) {
+        event.preventDefault();
+        cancelActiveConnection();
+        return;
+      }
+
       const target = event.target;
       const isEditing =
         target instanceof HTMLInputElement ||
@@ -662,7 +677,12 @@ export function NotesCanvas() {
     window.addEventListener("keydown", handleSelectionKeyDown);
 
     return () => window.removeEventListener("keydown", handleSelectionKeyDown);
-  }, [removeNotes, selectedConnectionId, setNoteSelection]);
+  }, [
+    cancelActiveConnection,
+    removeNotes,
+    selectedConnectionId,
+    setNoteSelection,
+  ]);
 
   const handleConnectionKeyDown = (
     event: KeyboardEvent<SVGPathElement>,
@@ -713,6 +733,56 @@ export function NotesCanvas() {
 
     event.currentTarget.releasePointerCapture(event.pointerId);
     dragStateRef.current = null;
+  };
+
+  const startResize = (
+    event: PointerEvent<HTMLButtonElement>,
+    note: WorkspaceNote,
+  ) => {
+    if (event.button !== 0) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    selectNote(note.id, false);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeStateRef.current = {
+      noteId: note.id,
+      pointerId: event.pointerId,
+      startHeight: note.height,
+      startPointerX: event.clientX,
+      startPointerY: event.clientY,
+      startWidth: note.width,
+    };
+  };
+
+  const resizeNote = (event: PointerEvent<HTMLButtonElement>) => {
+    const resizeState = resizeStateRef.current;
+    if (!resizeState || resizeState.pointerId !== event.pointerId) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const dimensions = resizeWorkspaceNoteDimensions({
+      width: resizeState.startWidth,
+      height: resizeState.startHeight,
+      deltaX: event.clientX - resizeState.startPointerX,
+      deltaY: event.clientY - resizeState.startPointerY,
+      zoom: viewportRef.current.zoom,
+    });
+    setNotes((currentNotes) =>
+      updateWorkspaceNote(currentNotes, resizeState.noteId, dimensions),
+    );
+  };
+
+  const endResize = (event: PointerEvent<HTMLButtonElement>) => {
+    const resizeState = resizeStateRef.current;
+    if (!resizeState || resizeState.pointerId !== event.pointerId) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    resizeStateRef.current = null;
   };
 
   const getWorldPointFromClient = useCallback((
@@ -1017,18 +1087,27 @@ export function NotesCanvas() {
                 className="workspace-connections"
               >
                 {visibleConnections.map((connection) => (
-                  <path
-                    aria-label="Select note connection"
-                    d={connection.path}
+                  <g
                     data-selected={selectedConnectionId === connection.id}
                     key={connection.id}
-                    onClick={() => setSelectedConnectionId(connection.id)}
-                    onKeyDown={(event) =>
-                      handleConnectionKeyDown(event, connection.id)
-                    }
-                    role="button"
-                    tabIndex={0}
-                  />
+                  >
+                    <path
+                      aria-hidden="true"
+                      className="workspace-connection__line"
+                      d={connection.path}
+                    />
+                    <path
+                      aria-label="Select note connection"
+                      className="workspace-connection__hit-area"
+                      d={connection.path}
+                      onClick={() => setSelectedConnectionId(connection.id)}
+                      onKeyDown={(event) =>
+                        handleConnectionKeyDown(event, connection.id)
+                      }
+                      role="button"
+                      tabIndex={0}
+                    />
+                  </g>
                 ))}
               </svg>
             ) : null}
@@ -1077,93 +1156,127 @@ export function NotesCanvas() {
                 key={note.id}
                 onPointerDown={(event) => handleNotePointerDown(event, note.id)}
                 style={{
-                  transform: `translate3d(${note.x}px, ${note.y}px, 0)`,
+                  height: `${note.height}px`,
+                  left: `${note.x}px`,
+                  top: `${note.y}px`,
+                  width: `${note.width}px`,
                 }}
               >
-              <div className="workspace-note__surface">
-              <div className="workspace-note__connection-nodes" aria-label="Note connection handles">
-                {WORKSPACE_CONNECTION_SIDES.map((side) => (
-                  <button
-                    aria-label={`Connect from ${side} side`}
-                    aria-pressed={
-                      connectionSource?.noteId === note.id &&
-                      connectionSource.side === side
-                    }
-                    className="workspace-note__connection-node"
-                    data-connection-note-id={note.id}
-                    data-connection-side={side}
-                    data-side={side}
-                    key={side}
-                    onClick={(event) => {
-                      if (event.detail === 0) connectNote(note.id, side);
-                    }}
-                    onPointerCancel={cancelConnectionDrag}
-                    onPointerDown={(event) =>
-                      startConnectionDrag(event, note.id, side)
-                    }
-                    onPointerMove={moveConnectionDrag}
-                    onPointerUp={endConnectionDrag}
-                    type="button"
-                  />
-                ))}
-              </div>
-              <div
-                aria-label="Drag note"
-                className="workspace-note__handle"
-                onPointerCancel={endDrag}
-                onPointerDown={(event) => startDrag(event, note)}
-                onPointerMove={moveNote}
-                onPointerUp={endDrag}
-              >
-                <span className="workspace-note__grip">
-                  <span aria-hidden="true" className="workspace-note__grip-icon" />
-                </span>
                 <div
-                  aria-label="Note color"
-                  className="workspace-note__colors"
-                  onPointerDown={(event) => event.stopPropagation()}
+                  className="workspace-note__surface"
+                  onAnimationEnd={() =>
+                    setEnteringNoteIds((currentIds) =>
+                      currentIds.filter((id) => id !== note.id)
+                    )
+                  }
                 >
-                  {WORKSPACE_NOTE_COLORS.map((color) => (
+                  <div
+                    aria-label="Note connection handles"
+                    className="workspace-note__connection-nodes"
+                  >
+                    {WORKSPACE_CONNECTION_SIDES.map((side) => (
+                      <button
+                        aria-label={`Connect from ${side} side`}
+                        aria-pressed={
+                          connectionDragSession?.source.noteId === note.id &&
+                          connectionDragSession.source.side === side
+                        }
+                        className="workspace-note__connection-node"
+                        data-connection-note-id={note.id}
+                        data-connection-side={side}
+                        data-connection-target={
+                          connectionDragSession?.target?.noteId === note.id &&
+                          connectionDragSession.target.side === side
+                        }
+                        data-side={side}
+                        key={side}
+                        onPointerCancel={cancelConnectionDrag}
+                        onPointerDown={(event) =>
+                          startConnectionDrag(event, note.id, side)
+                        }
+                        onPointerMove={moveConnectionDrag}
+                        onPointerUp={endConnectionDrag}
+                        type="button"
+                      />
+                    ))}
+                  </div>
+                  <div
+                    aria-label="Drag note"
+                    className="workspace-note__handle"
+                    onPointerCancel={endDrag}
+                    onPointerDown={(event) => startDrag(event, note)}
+                    onPointerMove={moveNote}
+                    onPointerUp={endDrag}
+                  >
+                    <span className="workspace-note__grip">
+                      <span
+                        aria-hidden="true"
+                        className="workspace-note__grip-icon"
+                      />
+                    </span>
+                    <div
+                      aria-label="Note color"
+                      className="workspace-note__colors"
+                      onPointerDown={(event) => event.stopPropagation()}
+                    >
+                      {WORKSPACE_NOTE_COLORS.map((color) => (
+                        <button
+                          aria-label={`Use ${color.label}`}
+                          aria-pressed={note.color === color.id}
+                          className="workspace-note__color"
+                          data-color={color.id}
+                          key={color.id}
+                          onClick={() => updateNoteColor(note.id, color.id)}
+                          type="button"
+                        />
+                      ))}
+                    </div>
                     <button
-                      aria-label={`Use ${color.label}`}
-                      aria-pressed={note.color === color.id}
-                      className="workspace-note__color"
-                      data-color={color.id}
-                      key={color.id}
-                      onClick={() => updateNoteColor(note.id, color.id)}
+                      aria-label="Delete note"
+                      onClick={() => removeNote(note.id)}
+                      onPointerDown={(event) => event.stopPropagation()}
                       type="button"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  <input
+                    aria-label="Note title"
+                    className="workspace-note__title"
+                    maxLength={80}
+                    onChange={(event) =>
+                      updateNoteTitle(note.id, event.target.value)
+                    }
+                    placeholder="Name this idea"
+                    ref={(element) => {
+                      if (element) noteTitleRefs.current.set(note.id, element);
+                      else noteTitleRefs.current.delete(note.id);
+                    }}
+                    type="text"
+                    value={note.title}
+                  />
+                  <div className="workspace-note__body-wrap">
+                    <textarea
+                      aria-label={`${note.title} body`}
+                      className="workspace-note__body"
+                      maxLength={1_000}
+                      onChange={(event) =>
+                        updateNoteText(note.id, event.target.value)
+                      }
+                      placeholder="Write your thought..."
+                      value={note.text}
                     />
-                  ))}
+                  </div>
                 </div>
                 <button
-                  aria-label="Delete note"
-                  onClick={() => removeNote(note.id)}
-                  onPointerDown={(event) => event.stopPropagation()}
+                  aria-label="Resize note"
+                  className="workspace-note__resize-handle"
+                  onPointerCancel={endResize}
+                  onPointerDown={(event) => startResize(event, note)}
+                  onPointerMove={resizeNote}
+                  onPointerUp={endResize}
                   type="button"
-                >
-                  Delete
-                </button>
-              </div>
-              <input
-                aria-label="Note title"
-                className="workspace-note__title"
-                maxLength={80}
-                onChange={(event) => updateNoteTitle(note.id, event.target.value)}
-                placeholder="Name this idea"
-                ref={(element) => {
-                  if (element) noteTitleRefs.current.set(note.id, element);
-                  else noteTitleRefs.current.delete(note.id);
-                }}
-                value={note.title}
-              />
-              <textarea
-                aria-label={`${note.title} body`}
-                maxLength={1_000}
-                onChange={(event) => updateNoteText(note.id, event.target.value)}
-                placeholder="Write your thought..."
-                value={note.text}
-              />
-              </div>
+                />
               </article>
             ))}
           </div>

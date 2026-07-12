@@ -16,6 +16,23 @@ describe("workspace canvas utilities", () => {
     ).toEqual({ x: 266.6666666666667, y: 93.33333333333333 });
   });
 
+  it.each([
+    [0.75, { x: 560, y: 240 }],
+    [1, { x: 420, y: 180 }],
+    [1.25, { x: 336, y: 144 }],
+    [1.5, { x: 280, y: 120 }],
+  ])(
+    "converts connection pointer coordinates at %s zoom with pan",
+    (zoom, expected) => {
+      expect(
+        canvasPointToWorkspacePoint(
+          { x: 370, y: 210 },
+          { x: -50, y: 30, zoom },
+        ),
+      ).toEqual(expected);
+    },
+  );
+
   it("places keyboard-created notes at the current viewport center", () => {
     expect(
       getWorkspaceViewportCenterPosition(

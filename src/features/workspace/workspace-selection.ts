@@ -1,8 +1,13 @@
 import type { WorkspaceConnection } from "./workspace-connections";
-import type { WorkspaceNote, WorkspaceNoteColor } from "./workspace-notes";
+import {
+  DEFAULT_WORKSPACE_NOTE_HEIGHT,
+  DEFAULT_WORKSPACE_NOTE_WIDTH,
+  type WorkspaceNote,
+  type WorkspaceNoteColor,
+} from "./workspace-notes";
 
-export const WORKSPACE_NOTE_WIDTH = 280;
-export const WORKSPACE_NOTE_HEIGHT = 220;
+export const WORKSPACE_NOTE_WIDTH = DEFAULT_WORKSPACE_NOTE_WIDTH;
+export const WORKSPACE_NOTE_HEIGHT = DEFAULT_WORKSPACE_NOTE_HEIGHT;
 
 export type WorkspacePoint = {
   x: number;
@@ -45,8 +50,8 @@ export function selectWorkspaceNotesInRect(
       (note) =>
         note.x >= rect.left &&
         note.y >= rect.top &&
-        note.x + WORKSPACE_NOTE_WIDTH <= rect.right &&
-        note.y + WORKSPACE_NOTE_HEIGHT <= rect.bottom,
+        note.x + note.width <= rect.right &&
+        note.y + note.height <= rect.bottom,
     )
     .map((note) => note.id);
 }

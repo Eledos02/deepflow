@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   MAX_FREE_WORKSPACE_CONNECTIONS,
+  WORKSPACE_CONNECTIONS_STORAGE_KEY,
   addWorkspaceConnection,
   canCreateWorkspaceConnection,
   deleteWorkspaceConnection,
@@ -64,6 +65,22 @@ describe("workspace connections", () => {
         },
       ])[0].fromSide,
     ).toBeUndefined();
+  });
+
+  it("keeps legacy stored connections without anchor fields compatible", () => {
+    const legacy = {
+      id: "connection:legacy-1:legacy-2",
+      fromNoteId: "legacy-1",
+      toNoteId: "legacy-2",
+      createdAt: "2026-06-18T12:00:00.000Z",
+    };
+
+    expect(WORKSPACE_CONNECTIONS_STORAGE_KEY).toBe(
+      "deepflow:workspace-connections:v1",
+    );
+    expect(parseWorkspaceConnections([legacy])).toEqual([
+      { ...legacy, fromSide: undefined, toSide: undefined },
+    ]);
   });
 
   it("removes connections associated with a deleted note", () => {

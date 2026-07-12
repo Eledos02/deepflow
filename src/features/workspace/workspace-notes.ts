@@ -2,6 +2,12 @@ export const WORKSPACE_NOTES_STORAGE_KEY = "deepflow:workspace-notes:v1";
 export const MAX_FREE_WORKSPACE_NOTES = 10;
 export const DEFAULT_WORKSPACE_NOTE_TITLE = "Untitled note";
 export const DEFAULT_WORKSPACE_NOTE_COLOR = "warm-cream";
+export const DEFAULT_WORKSPACE_NOTE_WIDTH = 280;
+export const DEFAULT_WORKSPACE_NOTE_HEIGHT = 220;
+export const MIN_WORKSPACE_NOTE_WIDTH = 200;
+export const MIN_WORKSPACE_NOTE_HEIGHT = 160;
+export const MAX_WORKSPACE_NOTE_WIDTH = 720;
+export const MAX_WORKSPACE_NOTE_HEIGHT = 640;
 
 export const WORKSPACE_NOTE_COLORS = [
   { id: "warm-cream", label: "Warm Cream" },
@@ -20,13 +26,20 @@ export type WorkspaceNote = {
   color: WorkspaceNoteColor;
   x: number;
   y: number;
+  width: number;
+  height: number;
   createdAt: string;
   updatedAt: string;
 };
 
-type StoredWorkspaceNote = Omit<WorkspaceNote, "title" | "color"> & {
+type StoredWorkspaceNote = Omit<
+  WorkspaceNote,
+  "title" | "color" | "width" | "height"
+> & {
   title?: string;
   color?: string;
+  width?: unknown;
+  height?: unknown;
 };
 
 type NotePosition = {
@@ -48,6 +61,73 @@ function createId() {
 
 function isFiniteCoordinate(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function sanitizeStoredDimension(
+  value: unknown,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+) {
+  return typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= minimum &&
+    value <= maximum
+    ? Math.round(value)
+    : fallback;
+}
+
+function clampDimension(value: number, minimum: number, maximum: number) {
+  return Math.min(maximum, Math.max(minimum, Math.round(value)));
+}
+
+export function normalizeWorkspaceNoteDimensions(
+  width: unknown,
+  height: unknown,
+) {
+  return {
+    width: sanitizeStoredDimension(
+      width,
+      DEFAULT_WORKSPACE_NOTE_WIDTH,
+      MIN_WORKSPACE_NOTE_WIDTH,
+      MAX_WORKSPACE_NOTE_WIDTH,
+    ),
+    height: sanitizeStoredDimension(
+      height,
+      DEFAULT_WORKSPACE_NOTE_HEIGHT,
+      MIN_WORKSPACE_NOTE_HEIGHT,
+      MAX_WORKSPACE_NOTE_HEIGHT,
+    ),
+  };
+}
+
+export function resizeWorkspaceNoteDimensions({
+  width,
+  height,
+  deltaX,
+  deltaY,
+  zoom,
+}: {
+  width: number;
+  height: number;
+  deltaX: number;
+  deltaY: number;
+  zoom: number;
+}) {
+  const safeZoom = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+
+  return {
+    width: clampDimension(
+      width + deltaX / safeZoom,
+      MIN_WORKSPACE_NOTE_WIDTH,
+      MAX_WORKSPACE_NOTE_WIDTH,
+    ),
+    height: clampDimension(
+      height + deltaY / safeZoom,
+      MIN_WORKSPACE_NOTE_HEIGHT,
+      MAX_WORKSPACE_NOTE_HEIGHT,
+    ),
+  };
 }
 
 function isWorkspaceNoteColor(value: unknown): value is WorkspaceNoteColor {
@@ -90,6 +170,7 @@ export function parseWorkspaceNotes(value: unknown): WorkspaceNote[] {
         : DEFAULT_WORKSPACE_NOTE_COLOR,
       x: Math.round(note.x),
       y: Math.round(note.y),
+      ...normalizeWorkspaceNoteDimensions(note.width, note.height),
     }))
     .slice(0, MAX_FREE_WORKSPACE_NOTES);
 }
@@ -105,6 +186,8 @@ export function createWorkspaceNote({
   title = "",
   text = "",
   color = DEFAULT_WORKSPACE_NOTE_COLOR,
+  width = DEFAULT_WORKSPACE_NOTE_WIDTH,
+  height = DEFAULT_WORKSPACE_NOTE_HEIGHT,
 }: {
   id?: string;
   now?: string;
@@ -112,7 +195,11 @@ export function createWorkspaceNote({
   title?: string;
   text?: string;
   color?: WorkspaceNoteColor;
+  width?: number;
+  height?: number;
 }): WorkspaceNote {
+  const dimensions = normalizeWorkspaceNoteDimensions(width, height);
+
   return {
     id,
     title: title.slice(0, 80),
@@ -120,6 +207,7 @@ export function createWorkspaceNote({
     color,
     x: Math.round(position.x),
     y: Math.round(position.y),
+    ...dimensions,
     createdAt: now,
     updatedAt: now,
   };
@@ -128,7 +216,9 @@ export function createWorkspaceNote({
 export function updateWorkspaceNote(
   notes: WorkspaceNote[],
   id: string,
-  updates: Partial<Pick<WorkspaceNote, "title" | "text" | "color" | "x" | "y">>,
+  updates: Partial<
+    Pick<WorkspaceNote, "title" | "text" | "color" | "x" | "y" | "width" | "height">
+  >,
   now = new Date().toISOString(),
 ) {
   return notes.map((note) => {
@@ -151,6 +241,22 @@ export function updateWorkspaceNote(
         updates.y === undefined
           ? note.y
           : Math.round(updates.y),
+      width:
+        updates.width === undefined
+          ? note.width
+          : clampDimension(
+              updates.width,
+              MIN_WORKSPACE_NOTE_WIDTH,
+              MAX_WORKSPACE_NOTE_WIDTH,
+            ),
+      height:
+        updates.height === undefined
+          ? note.height
+          : clampDimension(
+              updates.height,
+              MIN_WORKSPACE_NOTE_HEIGHT,
+              MAX_WORKSPACE_NOTE_HEIGHT,
+            ),
       updatedAt: now,
     };
   });
