@@ -144,28 +144,47 @@ describe("Notes Canvas rendering", () => {
     expect(anchorRule).toContain("touch-action: none");
   });
 
-  it("prioritizes two-touch canvas panning without changing mouse pan", () => {
-    const canvasRule = rulesContaining(".workspace-canvas")
-      .find((body) => body.includes("overscroll-behavior: contain")) ?? "";
+  it("offers a CSS-expanded Canvas with a reachable compact toolbar", () => {
+    const expandedCardRule = rulesContaining(
+      '.workspace-canvas-card[data-expanded="true"]',
+    ).find((body) => body.includes("position: fixed")) ?? "";
+    const expandedCanvasRule = rulesContaining(
+      '.workspace-canvas-card[data-expanded="true"] .workspace-canvas',
+    ).find((body) => body.includes("touch-action: none")) ?? "";
 
-    expect(component).toContain('event.pointerType !== "touch"');
-    expect(component).toContain('event.pointerType === "touch"');
-    expect(component).toContain("activeTouchPointsRef.current.size !== 2");
-    expect(component).toContain("startWorkspaceTouchPan(");
-    expect(component).toContain("moveWorkspaceTouchPan(");
-    expect(component).toContain("movement.delta");
-    expect(component).toContain("if (event.pointerType === \"touch\") return;");
-    expect(canvasRule).toContain("touch-action: none");
+    expect(component).toContain('aria-label="Expand canvas"');
+    expect(component).toContain('aria-label="Minimize Canvas"');
+    expect(component).toContain('aria-label="Expanded Canvas controls"');
+    expect(component).toContain("data-expanded={isCanvasExpanded}");
+    expect(expandedCardRule).toContain("position: fixed");
+    expect(expandedCardRule).toContain("inset: 0");
+    expect(expandedCardRule).toContain("height: 100dvh");
+    expect(expandedCardRule).toContain("env(safe-area-inset-top)");
+    expect(expandedCanvasRule).toContain("touch-action: none");
   });
 
-  it("cancels single-touch work and suppresses release clicks on takeover", () => {
-    expect(component).toContain("setNotes(dragState.notes)");
-    expect(component).toContain("setNotes(resizeState.notes)");
+  it("uses one touch to pan only from blank space while expanded", () => {
+    const normalCanvasRule = rulesContaining(".workspace-canvas")
+      .find((body) => body.includes("min-height: clamp")) ?? "";
+
+    expect(component).toContain("shouldPanExpandedTouch");
+    expect(component).toContain('event.pointerType === "touch"');
+    expect(component).toContain("startedOnCanvasSurface");
+    expect(component).toContain(
+      'event.button !== 0 || event.pointerType === "touch"',
+    );
+    expect(normalCanvasRule).not.toContain("touch-action: none");
+    expect(component).not.toContain("activeTouchPointsRef");
+    expect(component).not.toContain("startWorkspaceTouchPan");
+  });
+
+  it("restores page scroll and releases interactions on minimize or Escape", () => {
+    expect(component).toContain('body.style.position = "fixed"');
+    expect(component).toContain("window.scrollTo(scrollX, scrollY)");
+    expect(component).toContain('event.key !== "Escape"');
+    expect(component).toContain("releaseCanvasInteractions()");
+    expect(component).toContain("dragState.element.releasePointerCapture");
+    expect(component).toContain("resizeState.element.releasePointerCapture");
     expect(component).toContain("cancelActiveConnection()");
-    expect(component).toContain("setSelectionBox(null)");
-    expect(component).toContain("suppressCanvasClicksRef.current = true");
-    expect(component).toContain("onClickCapture={handleCanvasClickCapture}");
-    expect(component).toContain("onPointerCancelCapture=");
-    expect(component).toContain("onPointerUpCapture=");
   });
 });

@@ -1,6 +1,9 @@
+import { FREE_WORKSPACE_LIMITS } from "./workspace-limits";
+
 export const WORKSPACE_CONNECTIONS_STORAGE_KEY =
   "deepflow:workspace-connections:v1";
-export const MAX_FREE_WORKSPACE_CONNECTIONS = 5;
+export const MAX_FREE_WORKSPACE_CONNECTIONS =
+  FREE_WORKSPACE_LIMITS.connections;
 
 export const WORKSPACE_CONNECTION_SIDES = [
   "top",

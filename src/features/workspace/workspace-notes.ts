@@ -1,5 +1,7 @@
+import { FREE_WORKSPACE_LIMITS } from "./workspace-limits";
+
 export const WORKSPACE_NOTES_STORAGE_KEY = "deepflow:workspace-notes:v1";
-export const MAX_FREE_WORKSPACE_NOTES = 10;
+export const MAX_FREE_WORKSPACE_NOTES = FREE_WORKSPACE_LIMITS.notes;
 export const DEFAULT_WORKSPACE_NOTE_TITLE = "Untitled note";
 export const DEFAULT_WORKSPACE_NOTE_COLOR = "warm-cream";
 export const DEFAULT_WORKSPACE_NOTE_WIDTH = 280;

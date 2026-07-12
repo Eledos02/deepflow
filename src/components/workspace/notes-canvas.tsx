@@ -74,14 +74,6 @@ import {
   canvasPointToWorkspacePoint,
   getWorkspaceViewportCenterPosition,
 } from "@/features/workspace/workspace-canvas-utils";
-import {
-  cancelWorkspaceTouchPan,
-  moveWorkspaceTouchPan,
-  panWorkspaceViewportByScreenDelta,
-  startWorkspaceTouchPan,
-  type WorkspaceTouchPanSession,
-  type WorkspaceTouchPoint,
-} from "@/features/workspace/workspace-touch-pan";
 
 const foundingMemberFeatures = [
   "Expanded Notes",
@@ -107,7 +99,6 @@ type DragState = {
 type ResizeState = {
   element: HTMLButtonElement;
   noteId: string;
-  notes: WorkspaceNote[];
   pointerId: number;
   startHeight: number;
   startPointerX: number;
@@ -209,6 +200,7 @@ export function NotesCanvas() {
     string | null
   >(null);
   const [hydrated, setHydrated] = useState(false);
+  const [isCanvasExpanded, setIsCanvasExpanded] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const [isMultiColorPaletteOpen, setIsMultiColorPaletteOpen] =
     useState(false);
@@ -222,13 +214,6 @@ export function NotesCanvas() {
   const resizeStateRef = useRef<ResizeState | null>(null);
   const panStateRef = useRef<PanState | null>(null);
   const connectionDragRef = useRef<ConnectionCaptureState | null>(null);
-  const activeTouchPointsRef = useRef(
-    new Map<number, WorkspaceTouchPoint>(),
-  );
-  const touchPanSessionRef = useRef<WorkspaceTouchPanSession | null>(null);
-  const touchGestureConsumedRef = useRef(false);
-  const suppressCanvasClicksRef = useRef(false);
-  const suppressCanvasClicksTimeoutRef = useRef<number | null>(null);
   const selectionBoxRef = useRef<SelectionBoxState | null>(null);
   const selectedNoteIdsRef = useRef<string[]>([]);
   const noteTitleRefs = useRef(new Map<string, HTMLInputElement>());
@@ -241,6 +226,10 @@ export function NotesCanvas() {
   const canDuplicateSelection =
     hasMultiSelection &&
     notes.length + selectedNoteIds.length <= MAX_FREE_WORKSPACE_NOTES;
+  const isViewportDefault =
+    viewport.x === DEFAULT_WORKSPACE_VIEWPORT.x &&
+    viewport.y === DEFAULT_WORKSPACE_VIEWPORT.y &&
+    viewport.zoom === DEFAULT_WORKSPACE_VIEWPORT.zoom;
 
   const setNoteSelection = useCallback((noteIds: string[]) => {
     const nextSelection = [...new Set(noteIds)];
@@ -300,12 +289,6 @@ export function NotesCanvas() {
 
     return () => window.cancelAnimationFrame(frameId);
   }, [notes]);
-
-  useEffect(() => () => {
-    if (suppressCanvasClicksTimeoutRef.current !== null) {
-      window.clearTimeout(suppressCanvasClicksTimeoutRef.current);
-    }
-  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -775,7 +758,6 @@ export function NotesCanvas() {
     resizeStateRef.current = {
       element: event.currentTarget,
       noteId: note.id,
-      notes,
       pointerId: event.pointerId,
       startHeight: note.height,
       startPointerX: event.clientX,
@@ -899,7 +881,7 @@ export function NotesCanvas() {
   }, [createNoteAtViewportCenter]);
 
   const startSelectionBox = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || event.pointerType === "touch") return;
 
     const target = event.target;
     const startedOnCanvasSurface =
@@ -958,17 +940,24 @@ export function NotesCanvas() {
   };
 
   const startPan = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "touch") return;
-
     const shouldPanWithSpace = event.button === 0 && spacePressedRef.current;
     const shouldPanWithMiddleButton = event.button === 1;
     const target = event.target;
+    const startedOnCanvasSurface =
+      target === canvasRef.current || target === worldRef.current;
+    const shouldPanExpandedTouch =
+      isCanvasExpanded &&
+      event.pointerType === "touch" &&
+      event.button === 0 &&
+      startedOnCanvasSurface;
     const startedOnControl =
       target instanceof Element &&
       target.closest("button, input, textarea, select, a");
 
     if (
-      (!shouldPanWithSpace && !shouldPanWithMiddleButton) ||
+      (!shouldPanWithSpace &&
+        !shouldPanWithMiddleButton &&
+        !shouldPanExpandedTouch) ||
       startedOnControl
     ) {
       return;
@@ -1021,198 +1010,6 @@ export function NotesCanvas() {
     }
   };
 
-  const scheduleCanvasClickSuppressionReset = () => {
-    if (suppressCanvasClicksTimeoutRef.current !== null) {
-      window.clearTimeout(suppressCanvasClicksTimeoutRef.current);
-    }
-
-    suppressCanvasClicksTimeoutRef.current = window.setTimeout(() => {
-      suppressCanvasClicksRef.current = false;
-      suppressCanvasClicksTimeoutRef.current = null;
-    }, 0);
-  };
-
-  const cancelSinglePointerInteractionsForTouchPan = () => {
-    const dragState = dragStateRef.current;
-    if (dragState) {
-      if (dragState.element.hasPointerCapture(dragState.pointerId)) {
-        dragState.element.releasePointerCapture(dragState.pointerId);
-      }
-      setNotes(dragState.notes);
-      dragStateRef.current = null;
-    }
-
-    const resizeState = resizeStateRef.current;
-    if (resizeState) {
-      if (resizeState.element.hasPointerCapture(resizeState.pointerId)) {
-        resizeState.element.releasePointerCapture(resizeState.pointerId);
-      }
-      setNotes(resizeState.notes);
-      resizeStateRef.current = null;
-    }
-
-    if (connectionDragRef.current) cancelActiveConnection();
-
-    const selectionBoxState = selectionBoxRef.current;
-    if (selectionBoxState) {
-      releaseCanvasPointerCapture(selectionBoxState.pointerId);
-      selectionBoxRef.current = null;
-      setSelectionBox(null);
-    }
-
-    panStateRef.current = null;
-    setNoteSelection([]);
-    window.getSelection()?.removeAllRanges();
-
-    const activeElement = document.activeElement;
-    if (
-      activeElement instanceof HTMLElement &&
-      canvasRef.current?.contains(activeElement)
-    ) {
-      activeElement.blur();
-    }
-  };
-
-  const captureActiveTouchPointers = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    for (const pointerId of activeTouchPointsRef.current.keys()) {
-      if (!canvas.hasPointerCapture(pointerId)) {
-        try {
-          canvas.setPointerCapture(pointerId);
-        } catch {
-          // The pointer may have ended between registration and capture.
-        }
-      }
-    }
-  };
-
-  const startTouchPointer = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== "touch") return false;
-
-    activeTouchPointsRef.current.set(event.pointerId, {
-      pointerId: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
-    });
-
-    if (touchPanSessionRef.current) {
-      captureActiveTouchPointers();
-      event.preventDefault();
-      event.stopPropagation();
-      return true;
-    }
-
-    if (
-      touchGestureConsumedRef.current ||
-      activeTouchPointsRef.current.size !== 2
-    ) {
-      return false;
-    }
-
-    const session = startWorkspaceTouchPan([
-      ...activeTouchPointsRef.current.values(),
-    ]);
-    if (!session) return false;
-
-    cancelSinglePointerInteractionsForTouchPan();
-    touchPanSessionRef.current = session;
-    touchGestureConsumedRef.current = true;
-    suppressCanvasClicksRef.current = true;
-    captureActiveTouchPointers();
-    setIsPanning(true);
-    event.preventDefault();
-    event.stopPropagation();
-    return true;
-  };
-
-  const moveTouchPointer = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== "touch") return false;
-
-    const point = activeTouchPointsRef.current.get(event.pointerId);
-    if (!point) return false;
-
-    activeTouchPointsRef.current.set(event.pointerId, {
-      pointerId: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
-    });
-
-    const session = touchPanSessionRef.current;
-    if (!session) return false;
-
-    const movement = moveWorkspaceTouchPan(
-      session,
-      activeTouchPointsRef.current,
-    );
-    if (movement) {
-      touchPanSessionRef.current = movement.session;
-      applyViewport(
-        panWorkspaceViewportByScreenDelta(
-          viewportRef.current,
-          movement.delta,
-        ),
-      );
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    return true;
-  };
-
-  const endTouchPointer = (
-    event: PointerEvent<HTMLDivElement>,
-    cancelled = false,
-  ) => {
-    if (event.pointerType !== "touch") return false;
-
-    const session = touchPanSessionRef.current;
-    const wasTracked = activeTouchPointsRef.current.delete(event.pointerId);
-    if (!wasTracked) return false;
-
-    if (!session) {
-      if (activeTouchPointsRef.current.size === 0) {
-        touchGestureConsumedRef.current = false;
-        if (suppressCanvasClicksRef.current) {
-          scheduleCanvasClickSuppressionReset();
-        }
-      }
-      return false;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (!cancelled && !session.pointerIds.includes(event.pointerId)) {
-      releaseCanvasPointerCapture(event.pointerId);
-      return true;
-    }
-
-    for (const pointerId of session.pointerIds) {
-      releaseCanvasPointerCapture(pointerId);
-    }
-    releaseCanvasPointerCapture(event.pointerId);
-
-    touchPanSessionRef.current = cancelWorkspaceTouchPan();
-    setViewport(viewportRef.current);
-    setIsPanning(false);
-
-    if (activeTouchPointsRef.current.size === 0) {
-      touchGestureConsumedRef.current = false;
-      scheduleCanvasClickSuppressionReset();
-    }
-
-    return true;
-  };
-
-  const handleCanvasClickCapture = (event: MouseEvent<HTMLDivElement>) => {
-    if (!suppressCanvasClicksRef.current) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-  };
-
   const getCanvasCenter = useCallback(() => {
     const bounds = canvasRef.current?.getBoundingClientRect();
 
@@ -1242,6 +1039,121 @@ export function NotesCanvas() {
     setViewport(defaultViewport);
   };
 
+  const releaseCanvasInteractions = useCallback(() => {
+    const dragState = dragStateRef.current;
+    if (dragState?.element.hasPointerCapture(dragState.pointerId)) {
+      dragState.element.releasePointerCapture(dragState.pointerId);
+    }
+    dragStateRef.current = null;
+
+    const resizeState = resizeStateRef.current;
+    if (resizeState?.element.hasPointerCapture(resizeState.pointerId)) {
+      resizeState.element.releasePointerCapture(resizeState.pointerId);
+    }
+    resizeStateRef.current = null;
+
+    if (connectionDragRef.current) cancelActiveConnection();
+
+    const selectionBoxState = selectionBoxRef.current;
+    if (selectionBoxState) {
+      releaseCanvasPointerCapture(selectionBoxState.pointerId);
+    }
+    selectionBoxRef.current = null;
+    setSelectionBox(null);
+
+    const panState = panStateRef.current;
+    if (panState) releaseCanvasPointerCapture(panState.pointerId);
+    panStateRef.current = null;
+    setViewport(viewportRef.current);
+    setIsPanning(false);
+  }, [cancelActiveConnection]);
+
+  const minimizeCanvas = useCallback(() => {
+    releaseCanvasInteractions();
+    setIsCanvasExpanded(false);
+  }, [releaseCanvasInteractions]);
+
+  useEffect(() => {
+    if (!isCanvasExpanded) return;
+
+    const root = document.documentElement;
+    const body = document.body;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const previousRootOverflow = root.style.overflow;
+    const previousBodyStyles = {
+      left: body.style.left,
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+    };
+
+    root.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = `-${scrollX}px`;
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+
+    return () => {
+      root.style.overflow = previousRootOverflow;
+      body.style.position = previousBodyStyles.position;
+      body.style.top = previousBodyStyles.top;
+      body.style.left = previousBodyStyles.left;
+      body.style.width = previousBodyStyles.width;
+      body.style.overflow = previousBodyStyles.overflow;
+      window.scrollTo(scrollX, scrollY);
+    };
+  }, [isCanvasExpanded]);
+
+  useEffect(() => {
+    if (!isCanvasExpanded) return;
+
+    const handleExpandedCanvasKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+
+      event.preventDefault();
+      minimizeCanvas();
+    };
+
+    window.addEventListener("keydown", handleExpandedCanvasKeyDown);
+    return () =>
+      window.removeEventListener("keydown", handleExpandedCanvasKeyDown);
+  }, [isCanvasExpanded, minimizeCanvas]);
+
+  useEffect(() => () => {
+    const dragState = dragStateRef.current;
+    if (dragState?.element.hasPointerCapture(dragState.pointerId)) {
+      dragState.element.releasePointerCapture(dragState.pointerId);
+    }
+    const resizeState = resizeStateRef.current;
+    if (resizeState?.element.hasPointerCapture(resizeState.pointerId)) {
+      resizeState.element.releasePointerCapture(resizeState.pointerId);
+    }
+    const connectionCapture = connectionDragRef.current;
+    if (
+      connectionCapture?.element.hasPointerCapture(
+        connectionCapture.session.pointerId,
+      )
+    ) {
+      connectionCapture.element.releasePointerCapture(
+        connectionCapture.session.pointerId,
+      );
+    }
+    const panState = panStateRef.current;
+    if (panState && canvasRef.current?.hasPointerCapture(panState.pointerId)) {
+      canvasRef.current.releasePointerCapture(panState.pointerId);
+    }
+    const selectionBoxState = selectionBoxRef.current;
+    if (
+      selectionBoxState &&
+      canvasRef.current?.hasPointerCapture(selectionBoxState.pointerId)
+    ) {
+      canvasRef.current.releasePointerCapture(selectionBoxState.pointerId);
+    }
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1266,25 +1178,85 @@ export function NotesCanvas() {
   }, [setZoom]);
 
   return (
-    <section className="workspace-canvas-card" aria-labelledby="notes-canvas-title">
-      <div className="workspace-canvas-card__header">
-        <div>
-          <span className="eyebrow">Notes Canvas</span>
-          <h2 id="notes-canvas-title">Map ideas while your focus session runs.</h2>
-          <p>
-            Capture thoughts, arrange priorities, and keep lightweight planning
-            beside your DeepFlow timers.
-          </p>
-        </div>
-        <button
-          className="button button--dark"
-          disabled={!canCreateNote}
-          onClick={addNote}
-          type="button"
+    <section
+      aria-labelledby="notes-canvas-title"
+      className="workspace-canvas-card"
+      data-expanded={isCanvasExpanded}
+    >
+      {isCanvasExpanded ? (
+        <div
+          aria-label="Expanded Canvas controls"
+          className="workspace-canvas__expanded-toolbar"
+          role="toolbar"
         >
-          Add note
-        </button>
-      </div>
+          <strong id="notes-canvas-title">Notes Canvas</strong>
+          <div className="workspace-canvas__expanded-actions">
+            <button
+              className="button button--dark"
+              disabled={!canCreateNote}
+              onClick={addNote}
+              type="button"
+            >
+              Add note
+            </button>
+            <button
+              aria-label="Zoom out"
+              disabled={viewport.zoom <= MIN_WORKSPACE_ZOOM}
+              onClick={() => setZoom(viewportRef.current.zoom - 0.1)}
+              type="button"
+            >
+              <span aria-hidden="true">-</span>
+            </button>
+            <output aria-live="polite">
+              {Math.round(viewport.zoom * 100)}%
+            </output>
+            <button
+              aria-label="Zoom in"
+              disabled={viewport.zoom >= MAX_WORKSPACE_ZOOM}
+              onClick={() => setZoom(viewportRef.current.zoom + 0.1)}
+              type="button"
+            >
+              <span aria-hidden="true">+</span>
+            </button>
+            <button
+              disabled={isViewportDefault}
+              onClick={resetViewport}
+              type="button"
+            >
+              Reset view
+            </button>
+            <button
+              aria-label="Minimize Canvas"
+              className="workspace-canvas__minimize"
+              onClick={minimizeCanvas}
+              type="button"
+            >
+              Minimize
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="workspace-canvas-card__header">
+          <div>
+            <span className="eyebrow">Notes Canvas</span>
+            <h2 id="notes-canvas-title">
+              Map ideas while your focus session runs.
+            </h2>
+            <p>
+              Capture thoughts, arrange priorities, and keep lightweight
+              planning beside your DeepFlow timers.
+            </p>
+          </div>
+          <button
+            className="button button--dark"
+            disabled={!canCreateNote}
+            onClick={addNote}
+            type="button"
+          >
+            Add note
+          </button>
+        </div>
+      )}
 
       <div className="workspace-canvas-shell">
         <div
@@ -1292,26 +1264,16 @@ export function NotesCanvas() {
           className="workspace-canvas"
           data-panning={isPanning}
           data-empty={notes.length === 0}
-          onClickCapture={handleCanvasClickCapture}
-          onPointerCancelCapture={(event) => {
-            endTouchPointer(event, true);
-          }}
           onPointerCancel={(event) => {
             endPan(event);
             endSelectionBox(event);
           }}
           onDoubleClick={handleCanvasDoubleClick}
-          onPointerDownCapture={(event) => {
-            if (!startTouchPointer(event)) startPan(event);
-          }}
+          onPointerDownCapture={startPan}
           onPointerDown={startSelectionBox}
-          onPointerMoveCapture={moveTouchPointer}
           onPointerMove={(event) => {
             panCanvas(event);
             moveSelectionBox(event);
-          }}
-          onPointerUpCapture={(event) => {
-            endTouchPointer(event);
           }}
           onPointerUp={(event) => {
             endPan(event);
@@ -1544,7 +1506,7 @@ export function NotesCanvas() {
                 title={
                   canDuplicateSelection
                     ? undefined
-                    : "Duplicating this selection would exceed the 10-note free limit."
+                    : `Duplicating this selection would exceed the ${MAX_FREE_WORKSPACE_NOTES}-note free limit.`
                 }
                 type="button"
               >
@@ -1579,37 +1541,48 @@ export function NotesCanvas() {
             ) : null}
           </div>
 
-          <div className="workspace-canvas__zoom-controls" aria-label="Canvas zoom controls">
-            <button
-              aria-label="Zoom out"
-              disabled={viewport.zoom <= MIN_WORKSPACE_ZOOM}
-              onClick={() => setZoom(viewportRef.current.zoom - 0.1)}
-              type="button"
+          {!isCanvasExpanded ? (
+            <div
+              aria-label="Canvas zoom controls"
+              className="workspace-canvas__zoom-controls"
             >
-              <span aria-hidden="true">-</span>
-            </button>
-            <output aria-live="polite">{Math.round(viewport.zoom * 100)}%</output>
-            <button
-              aria-label="Zoom in"
-              disabled={viewport.zoom >= MAX_WORKSPACE_ZOOM}
-              onClick={() => setZoom(viewportRef.current.zoom + 0.1)}
-              type="button"
-            >
-              <span aria-hidden="true">+</span>
-            </button>
-            <button
-              className="workspace-canvas__reset-view"
-              disabled={
-                viewport.x === DEFAULT_WORKSPACE_VIEWPORT.x &&
-                viewport.y === DEFAULT_WORKSPACE_VIEWPORT.y &&
-                viewport.zoom === DEFAULT_WORKSPACE_VIEWPORT.zoom
-              }
-              onClick={resetViewport}
-              type="button"
-            >
-              Reset view
-            </button>
-          </div>
+              <button
+                aria-label="Zoom out"
+                disabled={viewport.zoom <= MIN_WORKSPACE_ZOOM}
+                onClick={() => setZoom(viewportRef.current.zoom - 0.1)}
+                type="button"
+              >
+                <span aria-hidden="true">-</span>
+              </button>
+              <output aria-live="polite">
+                {Math.round(viewport.zoom * 100)}%
+              </output>
+              <button
+                aria-label="Zoom in"
+                disabled={viewport.zoom >= MAX_WORKSPACE_ZOOM}
+                onClick={() => setZoom(viewportRef.current.zoom + 0.1)}
+                type="button"
+              >
+                <span aria-hidden="true">+</span>
+              </button>
+              <button
+                className="workspace-canvas__reset-view"
+                disabled={isViewportDefault}
+                onClick={resetViewport}
+                type="button"
+              >
+                Reset view
+              </button>
+              <button
+                aria-label="Expand canvas"
+                className="workspace-canvas__expand"
+                onClick={() => setIsCanvasExpanded(true)}
+                type="button"
+              >
+                Expand canvas
+              </button>
+            </div>
+          ) : null}
 
           {notes.length === 0 ? (
             <div className="workspace-canvas__empty">
@@ -1623,41 +1596,46 @@ export function NotesCanvas() {
         </div>
       </div>
 
-      <div className="workspace-plan-row">
-        <div>
-          <strong>{notes.length} / {MAX_FREE_WORKSPACE_NOTES} notes used</strong>
-          <p>
-            Free workspace includes one board, up to 10 local notes, and{" "}
-            {MAX_FREE_WORKSPACE_CONNECTIONS} connections.
-          </p>
-        </div>
-        {!canCreateNote || !canCreateConnection ? (
-          <aside className="workspace-upgrade-card" aria-live="polite">
-            <span className="workspace-upgrade-card__badge">Free limit</span>
-            <h3>Workspace limit reached</h3>
+      {!isCanvasExpanded ? (
+        <div className="workspace-plan-row">
+          <div>
+            <strong>
+              {notes.length} / {MAX_FREE_WORKSPACE_NOTES} notes used
+            </strong>
             <p>
-              Free users can create up to 10 notes and{" "}
-              {MAX_FREE_WORKSPACE_CONNECTIONS} connections. Expanded canvas
-              capacity and future Workspace features are planned, but supporter
-              access is not active yet.
+              Free workspace includes one board, up to{" "}
+              {MAX_FREE_WORKSPACE_NOTES} local notes, and{" "}
+              {MAX_FREE_WORKSPACE_CONNECTIONS} connections.
             </p>
-            <div className="workspace-upgrade-card__features">
-              {foundingMemberFeatures.map((feature) => (
-                <span key={feature}>
-                  <CheckIcon />
-                  {feature}
-                </span>
-              ))}
-            </div>
-            <Link
-              className="button button--light button--full"
-              href="/pricing?source=workspace_upgrade#founding-member"
-            >
-              Join updates
-            </Link>
-          </aside>
-        ) : null}
-      </div>
+          </div>
+          {!canCreateNote || !canCreateConnection ? (
+            <aside className="workspace-upgrade-card" aria-live="polite">
+              <span className="workspace-upgrade-card__badge">Free limit</span>
+              <h3>Workspace limit reached</h3>
+              <p>
+                Free users can create up to {MAX_FREE_WORKSPACE_NOTES} notes and{" "}
+                {MAX_FREE_WORKSPACE_CONNECTIONS} connections. Expanded canvas
+                capacity and future Workspace features are planned, but supporter
+                access is not active yet.
+              </p>
+              <div className="workspace-upgrade-card__features">
+                {foundingMemberFeatures.map((feature) => (
+                  <span key={feature}>
+                    <CheckIcon />
+                    {feature}
+                  </span>
+                ))}
+              </div>
+              <Link
+                className="button button--light button--full"
+                href="/pricing?source=workspace_upgrade#founding-member"
+              >
+                Join updates
+              </Link>
+            </aside>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }
