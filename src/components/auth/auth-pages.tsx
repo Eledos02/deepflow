@@ -454,10 +454,13 @@ export function AccountPageContent() {
         </div>
         <section className="account-profile-section" aria-label="Profile details">
           <div className="account-profile-section__identity">
-            <span className="account-avatar" aria-hidden="true">{getAvatarInitial(profile?.displayName, user.email)}</span>
-            <div>
+            <div className="account-profile-section__member">
+              <span className="account-avatar" aria-hidden="true">{getAvatarInitial(profile?.displayName, user.email)}</span>
               <strong>{profile?.displayName || "DeepFlow member"}</strong>
-              <span>{user.email}</span>
+            </div>
+            <div className="account-profile-section__email">
+              <span>Account email</span>
+              <strong>{user.email}</strong>
             </div>
           </div>
           <form className="auth-form" onSubmit={handleSubmit}>
@@ -483,7 +486,9 @@ export function AccountPageContent() {
               <strong>{health.title}</strong>
               <p>{health.body}</p>
             </div>
-            <span>{health.statusLine}</span>
+            <span className="account-cloud-backup-card__status" role="status">
+              {health.statusLine}
+            </span>
           </div>
           <dl className="account-cloud-backup-card__metrics" aria-label="Cloud backup data summary">
             <div>
