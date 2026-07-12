@@ -143,4 +143,29 @@ describe("Notes Canvas rendering", () => {
 
     expect(anchorRule).toContain("touch-action: none");
   });
+
+  it("prioritizes two-touch canvas panning without changing mouse pan", () => {
+    const canvasRule = rulesContaining(".workspace-canvas")
+      .find((body) => body.includes("overscroll-behavior: contain")) ?? "";
+
+    expect(component).toContain('event.pointerType !== "touch"');
+    expect(component).toContain('event.pointerType === "touch"');
+    expect(component).toContain("activeTouchPointsRef.current.size !== 2");
+    expect(component).toContain("startWorkspaceTouchPan(");
+    expect(component).toContain("moveWorkspaceTouchPan(");
+    expect(component).toContain("movement.delta");
+    expect(component).toContain("if (event.pointerType === \"touch\") return;");
+    expect(canvasRule).toContain("touch-action: none");
+  });
+
+  it("cancels single-touch work and suppresses release clicks on takeover", () => {
+    expect(component).toContain("setNotes(dragState.notes)");
+    expect(component).toContain("setNotes(resizeState.notes)");
+    expect(component).toContain("cancelActiveConnection()");
+    expect(component).toContain("setSelectionBox(null)");
+    expect(component).toContain("suppressCanvasClicksRef.current = true");
+    expect(component).toContain("onClickCapture={handleCanvasClickCapture}");
+    expect(component).toContain("onPointerCancelCapture=");
+    expect(component).toContain("onPointerUpCapture=");
+  });
 });

@@ -74,6 +74,14 @@ import {
   canvasPointToWorkspacePoint,
   getWorkspaceViewportCenterPosition,
 } from "@/features/workspace/workspace-canvas-utils";
+import {
+  cancelWorkspaceTouchPan,
+  moveWorkspaceTouchPan,
+  panWorkspaceViewportByScreenDelta,
+  startWorkspaceTouchPan,
+  type WorkspaceTouchPanSession,
+  type WorkspaceTouchPoint,
+} from "@/features/workspace/workspace-touch-pan";
 
 const foundingMemberFeatures = [
   "Expanded Notes",
@@ -88,6 +96,7 @@ const foundingMemberFeatures = [
 ] as const;
 
 type DragState = {
+  element: HTMLDivElement;
   noteIds: string[];
   notes: WorkspaceNote[];
   pointerId: number;
@@ -96,7 +105,9 @@ type DragState = {
 };
 
 type ResizeState = {
+  element: HTMLButtonElement;
   noteId: string;
+  notes: WorkspaceNote[];
   pointerId: number;
   startHeight: number;
   startPointerX: number;
@@ -211,6 +222,13 @@ export function NotesCanvas() {
   const resizeStateRef = useRef<ResizeState | null>(null);
   const panStateRef = useRef<PanState | null>(null);
   const connectionDragRef = useRef<ConnectionCaptureState | null>(null);
+  const activeTouchPointsRef = useRef(
+    new Map<number, WorkspaceTouchPoint>(),
+  );
+  const touchPanSessionRef = useRef<WorkspaceTouchPanSession | null>(null);
+  const touchGestureConsumedRef = useRef(false);
+  const suppressCanvasClicksRef = useRef(false);
+  const suppressCanvasClicksTimeoutRef = useRef<number | null>(null);
   const selectionBoxRef = useRef<SelectionBoxState | null>(null);
   const selectedNoteIdsRef = useRef<string[]>([]);
   const noteTitleRefs = useRef(new Map<string, HTMLInputElement>());
@@ -282,6 +300,12 @@ export function NotesCanvas() {
 
     return () => window.cancelAnimationFrame(frameId);
   }, [notes]);
+
+  useEffect(() => () => {
+    if (suppressCanvasClicksTimeoutRef.current !== null) {
+      window.clearTimeout(suppressCanvasClicksTimeoutRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -706,6 +730,7 @@ export function NotesCanvas() {
 
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStateRef.current = {
+      element: event.currentTarget,
       noteIds,
       notes,
       pointerId: event.pointerId,
@@ -731,7 +756,9 @@ export function NotesCanvas() {
     const dragState = dragStateRef.current;
     if (!dragState || dragState.pointerId !== event.pointerId) return;
 
-    event.currentTarget.releasePointerCapture(event.pointerId);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
     dragStateRef.current = null;
   };
 
@@ -746,7 +773,9 @@ export function NotesCanvas() {
     selectNote(note.id, false);
     event.currentTarget.setPointerCapture(event.pointerId);
     resizeStateRef.current = {
+      element: event.currentTarget,
       noteId: note.id,
+      notes,
       pointerId: event.pointerId,
       startHeight: note.height,
       startPointerX: event.clientX,
@@ -929,6 +958,8 @@ export function NotesCanvas() {
   };
 
   const startPan = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "touch") return;
+
     const shouldPanWithSpace = event.button === 0 && spacePressedRef.current;
     const shouldPanWithMiddleButton = event.button === 1;
     const target = event.target;
@@ -982,6 +1013,204 @@ export function NotesCanvas() {
     panStateRef.current = null;
     setViewport(viewportRef.current);
     setIsPanning(false);
+  };
+
+  const releaseCanvasPointerCapture = (pointerId: number) => {
+    if (canvasRef.current?.hasPointerCapture(pointerId)) {
+      canvasRef.current.releasePointerCapture(pointerId);
+    }
+  };
+
+  const scheduleCanvasClickSuppressionReset = () => {
+    if (suppressCanvasClicksTimeoutRef.current !== null) {
+      window.clearTimeout(suppressCanvasClicksTimeoutRef.current);
+    }
+
+    suppressCanvasClicksTimeoutRef.current = window.setTimeout(() => {
+      suppressCanvasClicksRef.current = false;
+      suppressCanvasClicksTimeoutRef.current = null;
+    }, 0);
+  };
+
+  const cancelSinglePointerInteractionsForTouchPan = () => {
+    const dragState = dragStateRef.current;
+    if (dragState) {
+      if (dragState.element.hasPointerCapture(dragState.pointerId)) {
+        dragState.element.releasePointerCapture(dragState.pointerId);
+      }
+      setNotes(dragState.notes);
+      dragStateRef.current = null;
+    }
+
+    const resizeState = resizeStateRef.current;
+    if (resizeState) {
+      if (resizeState.element.hasPointerCapture(resizeState.pointerId)) {
+        resizeState.element.releasePointerCapture(resizeState.pointerId);
+      }
+      setNotes(resizeState.notes);
+      resizeStateRef.current = null;
+    }
+
+    if (connectionDragRef.current) cancelActiveConnection();
+
+    const selectionBoxState = selectionBoxRef.current;
+    if (selectionBoxState) {
+      releaseCanvasPointerCapture(selectionBoxState.pointerId);
+      selectionBoxRef.current = null;
+      setSelectionBox(null);
+    }
+
+    panStateRef.current = null;
+    setNoteSelection([]);
+    window.getSelection()?.removeAllRanges();
+
+    const activeElement = document.activeElement;
+    if (
+      activeElement instanceof HTMLElement &&
+      canvasRef.current?.contains(activeElement)
+    ) {
+      activeElement.blur();
+    }
+  };
+
+  const captureActiveTouchPointers = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    for (const pointerId of activeTouchPointsRef.current.keys()) {
+      if (!canvas.hasPointerCapture(pointerId)) {
+        try {
+          canvas.setPointerCapture(pointerId);
+        } catch {
+          // The pointer may have ended between registration and capture.
+        }
+      }
+    }
+  };
+
+  const startTouchPointer = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "touch") return false;
+
+    activeTouchPointsRef.current.set(event.pointerId, {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+    });
+
+    if (touchPanSessionRef.current) {
+      captureActiveTouchPointers();
+      event.preventDefault();
+      event.stopPropagation();
+      return true;
+    }
+
+    if (
+      touchGestureConsumedRef.current ||
+      activeTouchPointsRef.current.size !== 2
+    ) {
+      return false;
+    }
+
+    const session = startWorkspaceTouchPan([
+      ...activeTouchPointsRef.current.values(),
+    ]);
+    if (!session) return false;
+
+    cancelSinglePointerInteractionsForTouchPan();
+    touchPanSessionRef.current = session;
+    touchGestureConsumedRef.current = true;
+    suppressCanvasClicksRef.current = true;
+    captureActiveTouchPointers();
+    setIsPanning(true);
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
+  };
+
+  const moveTouchPointer = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "touch") return false;
+
+    const point = activeTouchPointsRef.current.get(event.pointerId);
+    if (!point) return false;
+
+    activeTouchPointsRef.current.set(event.pointerId, {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+    });
+
+    const session = touchPanSessionRef.current;
+    if (!session) return false;
+
+    const movement = moveWorkspaceTouchPan(
+      session,
+      activeTouchPointsRef.current,
+    );
+    if (movement) {
+      touchPanSessionRef.current = movement.session;
+      applyViewport(
+        panWorkspaceViewportByScreenDelta(
+          viewportRef.current,
+          movement.delta,
+        ),
+      );
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
+  };
+
+  const endTouchPointer = (
+    event: PointerEvent<HTMLDivElement>,
+    cancelled = false,
+  ) => {
+    if (event.pointerType !== "touch") return false;
+
+    const session = touchPanSessionRef.current;
+    const wasTracked = activeTouchPointsRef.current.delete(event.pointerId);
+    if (!wasTracked) return false;
+
+    if (!session) {
+      if (activeTouchPointsRef.current.size === 0) {
+        touchGestureConsumedRef.current = false;
+        if (suppressCanvasClicksRef.current) {
+          scheduleCanvasClickSuppressionReset();
+        }
+      }
+      return false;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!cancelled && !session.pointerIds.includes(event.pointerId)) {
+      releaseCanvasPointerCapture(event.pointerId);
+      return true;
+    }
+
+    for (const pointerId of session.pointerIds) {
+      releaseCanvasPointerCapture(pointerId);
+    }
+    releaseCanvasPointerCapture(event.pointerId);
+
+    touchPanSessionRef.current = cancelWorkspaceTouchPan();
+    setViewport(viewportRef.current);
+    setIsPanning(false);
+
+    if (activeTouchPointsRef.current.size === 0) {
+      touchGestureConsumedRef.current = false;
+      scheduleCanvasClickSuppressionReset();
+    }
+
+    return true;
+  };
+
+  const handleCanvasClickCapture = (event: MouseEvent<HTMLDivElement>) => {
+    if (!suppressCanvasClicksRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
   };
 
   const getCanvasCenter = useCallback(() => {
@@ -1063,16 +1292,26 @@ export function NotesCanvas() {
           className="workspace-canvas"
           data-panning={isPanning}
           data-empty={notes.length === 0}
+          onClickCapture={handleCanvasClickCapture}
+          onPointerCancelCapture={(event) => {
+            endTouchPointer(event, true);
+          }}
           onPointerCancel={(event) => {
             endPan(event);
             endSelectionBox(event);
           }}
           onDoubleClick={handleCanvasDoubleClick}
-          onPointerDownCapture={startPan}
+          onPointerDownCapture={(event) => {
+            if (!startTouchPointer(event)) startPan(event);
+          }}
           onPointerDown={startSelectionBox}
+          onPointerMoveCapture={moveTouchPointer}
           onPointerMove={(event) => {
             panCanvas(event);
             moveSelectionBox(event);
+          }}
+          onPointerUpCapture={(event) => {
+            endTouchPointer(event);
           }}
           onPointerUp={(event) => {
             endPan(event);
