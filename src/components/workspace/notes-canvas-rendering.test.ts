@@ -156,10 +156,18 @@ describe("Notes Canvas rendering", () => {
     expect(component).toContain('aria-label="Minimize Canvas"');
     expect(component).toContain('aria-label="Expanded Canvas controls"');
     expect(component).toContain("data-expanded={isCanvasExpanded}");
+    expect(component).toContain("createPortal(canvasCard, document.body)");
     expect(expandedCardRule).toContain("position: fixed");
     expect(expandedCardRule).toContain("inset: 0");
+    expect(expandedCardRule).toContain("width: 100vw");
+    expect(expandedCardRule).toContain("height: 100vh");
     expect(expandedCardRule).toContain("height: 100dvh");
     expect(expandedCardRule).toContain("env(safe-area-inset-top)");
+    expect(expandedCardRule).toContain("env(safe-area-inset-right)");
+    expect(expandedCardRule).toContain("env(safe-area-inset-bottom)");
+    expect(expandedCardRule).toContain("env(safe-area-inset-left)");
+    expect(expandedCardRule).toContain("z-index: 2147483000");
+    expect(expandedCardRule).toContain("background: #f7f4ec");
     expect(expandedCanvasRule).toContain("touch-action: none");
   });
 

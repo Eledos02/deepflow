@@ -173,8 +173,7 @@ export function parseWorkspaceNotes(value: unknown): WorkspaceNote[] {
       x: Math.round(note.x),
       y: Math.round(note.y),
       ...normalizeWorkspaceNoteDimensions(note.width, note.height),
-    }))
-    .slice(0, MAX_FREE_WORKSPACE_NOTES);
+    }));
 }
 
 export function canCreateWorkspaceNote(notes: WorkspaceNote[]) {

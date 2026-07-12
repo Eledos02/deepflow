@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import {
   useCallback,
   useEffect,
@@ -214,6 +215,7 @@ export function NotesCanvas() {
   const resizeStateRef = useRef<ResizeState | null>(null);
   const panStateRef = useRef<PanState | null>(null);
   const connectionDragRef = useRef<ConnectionCaptureState | null>(null);
+  const expandedScrollPositionRef = useRef({ x: 0, y: 0 });
   const selectionBoxRef = useRef<SelectionBoxState | null>(null);
   const selectedNoteIdsRef = useRef<string[]>([]);
   const noteTitleRefs = useRef(new Map<string, HTMLInputElement>());
@@ -1070,17 +1072,39 @@ export function NotesCanvas() {
 
   const minimizeCanvas = useCallback(() => {
     releaseCanvasInteractions();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setIsCanvasExpanded(false);
   }, [releaseCanvasInteractions]);
+
+  const expandCanvas = useCallback(() => {
+    expandedScrollPositionRef.current = {
+      x: window.scrollX,
+      y: window.scrollY,
+    };
+    setIsCanvasExpanded(true);
+  }, []);
 
   useEffect(() => {
     if (!isCanvasExpanded) return;
 
     const root = document.documentElement;
     const body = document.body;
-    const scrollX = window.scrollX;
-    const scrollY = window.scrollY;
+    const { x: scrollX, y: scrollY } = expandedScrollPositionRef.current;
+    const hadExpandedClass = body.classList.contains("workspace-canvas-expanded");
+    const expandedRoot = body.querySelector<HTMLElement>(
+      ':scope > .workspace-canvas-card[data-expanded="true"]',
+    );
+    const backgroundElements = [...body.children]
+      .filter((element) => element !== expandedRoot && element.tagName !== "SCRIPT")
+      .map((element) => ({
+        ariaHidden: element.getAttribute("aria-hidden"),
+        element: element as HTMLElement,
+        inert: (element as HTMLElement).inert,
+      }));
     const previousRootOverflow = root.style.overflow;
+    const previousRootScrollBehavior = root.style.scrollBehavior;
     const previousBodyStyles = {
       left: body.style.left,
       overflow: body.style.overflow,
@@ -1090,11 +1114,17 @@ export function NotesCanvas() {
     };
 
     root.style.overflow = "hidden";
+    root.style.scrollBehavior = "auto";
+    body.classList.add("workspace-canvas-expanded");
     body.style.position = "fixed";
     body.style.top = `-${scrollY}px`;
     body.style.left = `-${scrollX}px`;
     body.style.width = "100%";
     body.style.overflow = "hidden";
+    for (const background of backgroundElements) {
+      background.element.inert = true;
+      background.element.setAttribute("aria-hidden", "true");
+    }
 
     return () => {
       root.style.overflow = previousRootOverflow;
@@ -1103,7 +1133,41 @@ export function NotesCanvas() {
       body.style.left = previousBodyStyles.left;
       body.style.width = previousBodyStyles.width;
       body.style.overflow = previousBodyStyles.overflow;
-      window.scrollTo(scrollX, scrollY);
+      if (!hadExpandedClass) body.classList.remove("workspace-canvas-expanded");
+      for (const background of backgroundElements) {
+        background.element.inert = background.inert;
+        if (background.ariaHidden === null) {
+          background.element.removeAttribute("aria-hidden");
+        } else {
+          background.element.setAttribute("aria-hidden", background.ariaHidden);
+        }
+      }
+      const restoreScrollPosition = () => {
+        const currentScrollBehavior = root.style.scrollBehavior;
+        root.style.scrollBehavior = "auto";
+        window.scrollTo(scrollX, scrollY);
+        root.scrollLeft = scrollX;
+        root.scrollTop = scrollY;
+        body.scrollLeft = scrollX;
+        body.scrollTop = scrollY;
+        root.style.scrollBehavior = currentScrollBehavior;
+      };
+
+      restoreScrollPosition();
+      root.style.scrollBehavior = previousRootScrollBehavior;
+      window.requestAnimationFrame(() => {
+        if (body.classList.contains("workspace-canvas-expanded")) return;
+        restoreScrollPosition();
+        window.requestAnimationFrame(() => {
+          if (body.classList.contains("workspace-canvas-expanded")) return;
+          restoreScrollPosition();
+        });
+      });
+      window.setTimeout(() => {
+        if (body.classList.contains("workspace-canvas-expanded")) return;
+        restoreScrollPosition();
+        window.requestAnimationFrame(restoreScrollPosition);
+      }, 120);
     };
   }, [isCanvasExpanded]);
 
@@ -1177,7 +1241,7 @@ export function NotesCanvas() {
     return () => canvas.removeEventListener("wheel", handleCanvasWheel);
   }, [setZoom]);
 
-  return (
+  const canvasCard = (
     <section
       aria-labelledby="notes-canvas-title"
       className="workspace-canvas-card"
@@ -1225,15 +1289,15 @@ export function NotesCanvas() {
             >
               Reset view
             </button>
-            <button
-              aria-label="Minimize Canvas"
-              className="workspace-canvas__minimize"
-              onClick={minimizeCanvas}
-              type="button"
-            >
-              Minimize
-            </button>
           </div>
+          <button
+            aria-label="Minimize Canvas"
+            className="workspace-canvas__minimize"
+            onClick={minimizeCanvas}
+            type="button"
+          >
+            Minimize
+          </button>
         </div>
       ) : (
         <div className="workspace-canvas-card__header">
@@ -1576,7 +1640,7 @@ export function NotesCanvas() {
               <button
                 aria-label="Expand canvas"
                 className="workspace-canvas__expand"
-                onClick={() => setIsCanvasExpanded(true)}
+                onClick={expandCanvas}
                 type="button"
               >
                 Expand canvas
@@ -1638,4 +1702,8 @@ export function NotesCanvas() {
       ) : null}
     </section>
   );
+
+  return isCanvasExpanded
+    ? createPortal(canvasCard, document.body)
+    : canvasCard;
 }

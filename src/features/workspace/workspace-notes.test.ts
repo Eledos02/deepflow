@@ -220,7 +220,7 @@ describe("workspace notes", () => {
     expect(parsed[0].color).toBe("mist-green");
   });
 
-  it("filters invalid notes and caps imported notes at the free limit", () => {
+  it("filters invalid notes without removing grandfathered notes above the free limit", () => {
     const validNotes = Array.from({ length: MAX_FREE_WORKSPACE_NOTES + 2 }, (
       _,
       index,
@@ -233,7 +233,7 @@ describe("workspace notes", () => {
     );
 
     expect(parseWorkspaceNotes([...validNotes, { id: "broken" }])).toHaveLength(
-      MAX_FREE_WORKSPACE_NOTES,
+      MAX_FREE_WORKSPACE_NOTES + 2,
     );
   });
 
