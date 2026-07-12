@@ -1,10 +1,12 @@
 # Stripe Environment Variables
 
-V7.7 activates Stripe Checkout and verified webhooks in sandbox/test mode.
-Missing billing environment values must fail closed and never grant paid access.
+V7.7 configures Stripe Checkout and verified webhooks. V7.7.1 keeps new
+checkout sessions behind a server-authoritative launch-control flag. Missing
+billing environment values must fail closed and never grant paid access.
 
 ## Required For V7.7 Checkout
 
+- `BILLING_CHECKOUT_ENABLED=false`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
@@ -18,6 +20,15 @@ Missing billing environment values must fail closed and never grant paid access.
 
 ## Rules
 
+- `BILLING_CHECKOUT_ENABLED` is the production launch-control flag. Checkout is
+  enabled only when its normalized value is exactly `true`; missing, empty,
+  invalid, and `false` values disable new purchases.
+- Production must keep `BILLING_CHECKOUT_ENABLED=false` until DeepFlow Pro is
+  ready for public purchase.
+- Stripe remains configured while checkout is held. Existing subscriptions,
+  billing status, verified webhooks, and Customer Portal access remain active.
+- Changing `BILLING_CHECKOUT_ENABLED` requires a redeploy. Do not automatically
+  enable it in Preview deployments.
 - `STRIPE_SECRET_KEY` is server-only.
 - `STRIPE_WEBHOOK_SECRET` is server-only.
 - Stripe Price IDs are server-only for Checkout creation.
@@ -55,3 +66,11 @@ Missing billing environment values must fail closed and never grant paid access.
 
 Use test-mode Stripe keys only. Do not place live secrets in `.env.example`,
 docs, tests, screenshots, or browser-exposed variables.
+
+Controlled local or sandbox checkout QA may temporarily set:
+
+```dotenv
+BILLING_CHECKOUT_ENABLED=true
+```
+
+Every environment remains fail-closed unless that value is explicitly enabled.

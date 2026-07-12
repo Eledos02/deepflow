@@ -18,6 +18,7 @@ export type FounderAvailabilityConfig = {
 };
 
 export type StripeBillingEnvironment = Record<string, string | undefined> & {
+  BILLING_CHECKOUT_ENABLED?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?: string;
@@ -65,6 +66,12 @@ function requiredValue(value: string | undefined) {
 
 function parseBoolean(value: string | undefined) {
   return value?.trim().toLowerCase() === "true";
+}
+
+export function isBillingCheckoutEnabled(
+  environment: Record<string, string | undefined> = process.env,
+) {
+  return environment.BILLING_CHECKOUT_ENABLED?.trim().toLowerCase() === "true";
 }
 
 function parsePositiveInteger(value: string | undefined) {

@@ -1,6 +1,10 @@
 import Link from "next/link";
 
 import { BillingCheckoutButton } from "@/components/marketing/billing-checkout-button";
+import {
+  CheckoutHeldButton,
+  FounderWaitlistLink,
+} from "@/components/marketing/checkout-launch-hold";
 import { FoundingMemberWaitlist } from "@/components/marketing/founding-member-waitlist";
 import { InteractiveBrainwaveBackground } from "@/components/marketing/interactive-brainwave-background";
 import {
@@ -9,6 +13,7 @@ import {
   TargetIcon,
   TimerIcon,
 } from "@/components/ui/icons";
+import { isBillingCheckoutEnabled } from "@/features/billing/billing-plans";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
@@ -48,6 +53,8 @@ const founderFeatures = [
 ];
 
 export default function PricingPage() {
+  const checkoutEnabled = isBillingCheckoutEnabled(process.env);
+
   return (
     <section className="pricing-page">
       <InteractiveBrainwaveBackground />
@@ -60,6 +67,12 @@ export default function PricingPage() {
             are handled through Stripe and never change cloud restore, sync, or
             Notes Canvas behavior.
           </p>
+          {!checkoutEnabled ? (
+            <p className="pricing-launch-note">
+              Paid plans are currently in preview. Join the launch waitlist to
+              be notified when DeepFlow Pro becomes available.
+            </p>
+          ) : null}
         </div>
         <div className="pricing-grid">
           <article className="price-card">
@@ -82,14 +95,18 @@ export default function PricingPage() {
           <article className="price-card">
             <span className="price-card__eyebrow">Monthly</span>
             <span className="price-card__label">DeepFlow Monthly</span>
-            <strong className="price-card__status">$4.99/mo</strong>
+            <strong className="price-card__status">$4.99/month</strong>
             <p>
               A flexible monthly subscription for people who want to support
               DeepFlow while keeping account backup available.
             </p>
-            <BillingCheckoutButton plan="monthly">
-              Choose monthly
-            </BillingCheckoutButton>
+            {checkoutEnabled ? (
+              <BillingCheckoutButton plan="monthly">
+                Choose monthly
+              </BillingCheckoutButton>
+            ) : (
+              <CheckoutHeldButton />
+            )}
             <ul>
               {monthlyFeatures.map((feature) => (
                 <li key={feature}>
@@ -102,14 +119,18 @@ export default function PricingPage() {
           <article className="price-card">
             <span className="price-card__eyebrow">Annual</span>
             <span className="price-card__label">DeepFlow Annual</span>
-            <strong className="price-card__status">$39/yr</strong>
+            <strong className="price-card__status">$39/year</strong>
             <p>
               A yearly subscription for people who know DeepFlow belongs in
               their focus rhythm.
             </p>
-            <BillingCheckoutButton plan="annual">
-              Choose annual
-            </BillingCheckoutButton>
+            {checkoutEnabled ? (
+              <BillingCheckoutButton plan="annual">
+                Choose annual
+              </BillingCheckoutButton>
+            ) : (
+              <CheckoutHeldButton />
+            )}
             <ul>
               {annualFeatures.map((feature) => (
                 <li key={feature}>
@@ -123,19 +144,25 @@ export default function PricingPage() {
             <span className="price-card__badge">Limited</span>
             <span className="price-card__eyebrow">Launch price</span>
             <span className="price-card__label">Founding Member</span>
-            <strong className="price-card__status">$29/yr</strong>
+            <strong className="price-card__status">$29/year</strong>
             <p>
               A limited yearly launch price for early supporters. Availability
               is checked on the server before checkout opens.
             </p>
-            <BillingCheckoutButton
-              className="button button--light button--full"
-              plan="founder"
-            >
-              Choose Founder
-            </BillingCheckoutButton>
+            {checkoutEnabled ? (
+              <BillingCheckoutButton
+                className="button button--light button--full"
+                plan="founder"
+              >
+                Choose Founder
+              </BillingCheckoutButton>
+            ) : (
+              <FounderWaitlistLink />
+            )}
             <small className="price-card__note">
-              If the launch price is closed, checkout will not open.
+              {checkoutEnabled
+                ? "If the launch price is closed, checkout will not open."
+                : "No payment today. We will share an update before paid checkout opens."}
             </small>
             <ul>
               {founderFeatures.map((feature) => (

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   getSafeBillingConfigMessage,
   getStripeBillingConfig,
+  isBillingCheckoutEnabled,
 } from "../../../../features/billing/billing-plans";
 import {
   authenticateBillingRequest,
@@ -18,6 +19,17 @@ import { siteConfig } from "../../../../lib/site";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  if (!isBillingCheckoutEnabled(process.env)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "checkout_disabled",
+        detail: "Paid plans are not available yet.",
+      },
+      { status: 503 },
+    );
+  }
+
   const billingConfig = getStripeBillingConfig(process.env, siteConfig.url);
   if (!billingConfig.ok) {
     return NextResponse.json(

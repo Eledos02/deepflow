@@ -4632,6 +4632,14 @@ a:focus-visible {
   font-size: 1.05rem;
 }
 
+.pricing-heading .pricing-launch-note {
+  max-width: 620px;
+  margin-top: 18px;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
 .pricing-grid {
   display: grid;
   max-width: 900px;
@@ -4745,6 +4753,18 @@ a:focus-visible {
 .billing-action {
   display: grid;
   gap: 10px;
+}
+
+.button.pricing-checkout-disabled,
+.button.pricing-checkout-disabled:hover,
+.button.pricing-checkout-disabled:focus-visible {
+  border-color: rgba(87, 72, 53, 0.13);
+  background: #e9e4da;
+  box-shadow: none;
+  color: #716b62;
+  cursor: not-allowed;
+  opacity: 1;
+  transform: none;
 }
 
 .billing-action__error {

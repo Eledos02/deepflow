@@ -5,11 +5,15 @@ experience remains available, and billing state must fail closed to Free.
 
 ## Scope
 
+- Gate creation of new Checkout Sessions behind the server-only
+  `BILLING_CHECKOUT_ENABLED` launch-control flag.
 - Use Stripe Checkout for subscription signup.
 - Use Stripe Customer Portal for billing management.
 - Do not grant paid access from client-side URL parameters.
 - Do not use billing state to block existing timers, Workspace, Focus Journal,
   Routines, Goals, Insights, Cloud Restore, or account cloud backup.
+- Keep billing status, verified webhooks, and Customer Portal access operational
+  while new checkout sessions are held.
 
 ## Supabase Tables
 

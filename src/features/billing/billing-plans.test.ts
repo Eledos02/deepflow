@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   checkFounderAvailability,
   getStripeBillingConfig,
+  isBillingCheckoutEnabled,
   parseCheckoutPlan,
   planFromPriceId,
 } from "./billing-plans";
@@ -18,6 +19,16 @@ const env = {
 };
 
 describe("Stripe billing plan config", () => {
+  it("enables checkout only for a normalized true value", () => {
+    expect(isBillingCheckoutEnabled({})).toBe(false);
+    expect(isBillingCheckoutEnabled({ BILLING_CHECKOUT_ENABLED: "" })).toBe(false);
+    expect(isBillingCheckoutEnabled({ BILLING_CHECKOUT_ENABLED: "false" })).toBe(false);
+    expect(isBillingCheckoutEnabled({ BILLING_CHECKOUT_ENABLED: "1" })).toBe(false);
+    expect(isBillingCheckoutEnabled({ BILLING_CHECKOUT_ENABLED: "enabled" })).toBe(false);
+    expect(isBillingCheckoutEnabled({ BILLING_CHECKOUT_ENABLED: " true " })).toBe(true);
+    expect(isBillingCheckoutEnabled({ BILLING_CHECKOUT_ENABLED: "TRUE" })).toBe(true);
+  });
+
   it("accepts only supported checkout plan names", () => {
     expect(parseCheckoutPlan("monthly")).toBe("monthly");
     expect(parseCheckoutPlan("annual")).toBe("annual");

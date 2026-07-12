@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { POST as createCheckoutSession } from "../stripe/checkout/route";
 import { POST as createPortalSession } from "../stripe/portal/route";
 import { POST as billingWebhook } from "../stripe/webhook/route";
+import { POST as createCompatibilityCheckoutSession } from "./create-checkout-session/route";
 import { GET as getBillingStatus } from "./status/route";
 
 async function json(response: Response) {
@@ -10,6 +11,7 @@ async function json(response: Response) {
 }
 
 const billingEnv = {
+  BILLING_CHECKOUT_ENABLED: "true",
   STRIPE_SECRET_KEY: "sk_test_should_not_leak",
   STRIPE_WEBHOOK_SECRET: "whsec_should_not_leak",
   STRIPE_MONTHLY_PRICE_ID: "price_monthly",
@@ -36,22 +38,54 @@ function cleanupBillingEnv() {
 describe("Stripe billing routes", () => {
   afterEach(() => {
     cleanupBillingEnv();
+    vi.restoreAllMocks();
   });
 
-  it("fails closed without exposing secrets when billing env vars are missing", async () => {
+  it.each([
+    ["missing", undefined],
+    ["empty", ""],
+    ["false", "false"],
+    ["invalid", "enabled"],
+  ])("disables checkout for a %s launch flag without making external calls", async (_label, value) => {
+    setBillingEnv();
+    if (value === undefined) {
+      delete process.env.BILLING_CHECKOUT_ENABLED;
+    } else {
+      process.env.BILLING_CHECKOUT_ENABLED = value;
+    }
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
     const response = await createCheckoutSession(new Request("http://localhost/api/stripe/checkout", {
       method: "POST",
       body: JSON.stringify({ plan: "monthly" }),
     }));
-    const payload = await response.text();
 
     expect(response.status).toBe(503);
-    expect(payload).toContain("billing_unavailable");
-    expect(payload).not.toContain("sk_test");
-    expect(payload).not.toContain("whsec");
+    await expect(json(response)).resolves.toEqual({
+      ok: false,
+      error: "checkout_disabled",
+      detail: "Paid plans are not available yet.",
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("checkout rejects unauthenticated users before creating a session", async () => {
+  it("applies the launch hold to the compatibility checkout route", async () => {
+    setBillingEnv();
+    process.env.BILLING_CHECKOUT_ENABLED = "false";
+
+    const response = await createCompatibilityCheckoutSession(new Request(
+      "http://localhost/api/billing/create-checkout-session",
+      { method: "POST", body: JSON.stringify({ plan: "annual" }) },
+    ));
+
+    expect(response.status).toBe(503);
+    await expect(json(response)).resolves.toMatchObject({
+      ok: false,
+      error: "checkout_disabled",
+    });
+  });
+
+  it("exact true enables the existing authenticated checkout flow", async () => {
     setBillingEnv();
 
     const response = await createCheckoutSession(new Request("http://localhost/api/stripe/checkout", {
@@ -68,6 +102,7 @@ describe("Stripe billing routes", () => {
 
   it("portal rejects unauthenticated users before creating a session", async () => {
     setBillingEnv();
+    process.env.BILLING_CHECKOUT_ENABLED = "false";
 
     const response = await createPortalSession(new Request("http://localhost/api/stripe/portal", {
       method: "POST",
@@ -78,6 +113,21 @@ describe("Stripe billing routes", () => {
       ok: false,
       error: "authentication_required",
     });
+  });
+
+  it("returns the existing billing config failure after checkout is enabled", async () => {
+    process.env.BILLING_CHECKOUT_ENABLED = "true";
+    process.env.STRIPE_SECRET_KEY = "sk_test_should_not_leak";
+
+    const response = await createCheckoutSession(new Request(
+      "http://localhost/api/stripe/checkout",
+      { method: "POST", body: JSON.stringify({ plan: "monthly" }) },
+    ));
+    const payload = await response.text();
+
+    expect(response.status).toBe(503);
+    expect(payload).toContain("billing_unavailable");
+    expect(payload).not.toContain("sk_test_should_not_leak");
   });
 
   it("returns a fail-closed free billing status without exposing secrets", async () => {
